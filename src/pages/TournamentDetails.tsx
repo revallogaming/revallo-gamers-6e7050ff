@@ -109,18 +109,49 @@ const TournamentDetails = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Hero Banner */}
-      <div 
-        className="relative h-48 md:h-64 overflow-hidden border-b border-border/50"
-        style={{ 
-          background: `linear-gradient(135deg, ${gameInfo.color}40 0%, hsl(var(--background)) 100%)` 
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-        <div className="container relative h-full flex items-end pb-6">
-          <div className="flex items-center gap-4">
-            <GameIcon game={tournament.game} className="h-12 w-12" />
-            <div>
+      {/* Facebook-style Banner + Avatar */}
+      <div className="relative">
+        {/* Banner */}
+        <div 
+          className="relative h-48 md:h-72 overflow-hidden"
+          style={{ 
+            background: tournament.banner_url 
+              ? undefined 
+              : `linear-gradient(135deg, ${gameInfo.color}40 0%, hsl(var(--background)) 100%)` 
+          }}
+        >
+          {tournament.banner_url ? (
+            <img 
+              src={tournament.banner_url} 
+              alt={tournament.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <GameIcon game={tournament.game} className="h-24 w-24 opacity-30" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+        </div>
+        
+        {/* Organizer Avatar + Title (overlapping banner) */}
+        <div className="container mx-auto px-4">
+          <div className="relative -mt-16 md:-mt-20 flex flex-col md:flex-row md:items-end gap-4 pb-4">
+            {/* Organizer Avatar */}
+            <Link 
+              to={`/profile/${(tournament as any).organizer?.id}`}
+              className="flex-shrink-0"
+            >
+              <Avatar className="h-28 w-28 md:h-36 md:w-36 border-4 border-background shadow-xl ring-2 ring-primary/20">
+                <AvatarImage src={(tournament as any).organizer?.avatar_url} />
+                <AvatarFallback className="bg-primary/20 text-primary text-2xl md:text-3xl font-bold">
+                  {(tournament as any).organizer?.nickname?.[0]?.toUpperCase() || "O"}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+            
+            {/* Title and Status */}
+            <div className="flex-1 pb-2">
               <Badge 
                 variant="outline" 
                 className="mb-2"
@@ -131,9 +162,23 @@ const TournamentDetails = () => {
               <h1 className="font-display text-2xl md:text-4xl font-bold text-foreground">
                 {tournament.title}
               </h1>
+              <Link 
+                to={`/profile/${(tournament as any).organizer?.id}`}
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm mt-1 inline-flex items-center gap-1"
+              >
+                Organizado por <span className="font-medium text-primary">{(tournament as any).organizer?.nickname || "Organizador"}</span>
+              </Link>
+            </div>
+            
+            {/* Game Icon */}
+            <div className="hidden md:flex items-center gap-2 pb-2">
+              <GameIcon game={tournament.game} className="h-8 w-8" />
+              <span className="text-muted-foreground font-medium">{gameInfo.name}</span>
             </div>
           </div>
         </div>
+        
+        <div className="border-b border-border/50" />
       </div>
       
       <div className="container mx-auto px-4 py-8">
