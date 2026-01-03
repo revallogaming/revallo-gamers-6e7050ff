@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Coins, Trophy, Edit, Save, X, Gamepad2, Camera, Loader2, Copy, CheckCircle } from "lucide-react";
 import { GAME_INFO, GameType } from "@/types";
+import { GameIcon } from "@/components/GameIcon";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Navigate } from "react-router-dom";
@@ -200,8 +201,7 @@ const Profile = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {(Object.keys(GAME_INFO) as GameType[]).map((game) => (
-                            <SelectItem key={game} value={game} className="flex items-center gap-2">
-                              <img src={GAME_INFO[game].image} alt={GAME_INFO[game].name} className="h-4 w-4 object-contain inline-block mr-2" />
+                            <SelectItem key={game} value={game}>
                               {GAME_INFO[game].name}
                             </SelectItem>
                           ))}
@@ -225,7 +225,7 @@ const Profile = () => {
                     </h2>
                     {profile?.main_game && (
                       <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                        <img src={GAME_INFO[profile.main_game].image} alt={GAME_INFO[profile.main_game].name} className="h-4 w-4 object-contain" />
+                        <GameIcon game={profile.main_game} className="h-4 w-4" />
                         <span>{GAME_INFO[profile.main_game].name}</span>
                       </div>
                     )}

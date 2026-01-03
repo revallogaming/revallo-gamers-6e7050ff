@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trophy, Star, Gamepad2, Calendar } from "lucide-react";
 import { GAME_INFO } from "@/types";
+import { GameIcon } from "@/components/GameIcon";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -106,7 +107,7 @@ const PublicProfile = () => {
 
                 {profile.main_game && (
                   <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                    <img src={GAME_INFO[profile.main_game]?.image} alt={GAME_INFO[profile.main_game]?.name} className="h-4 w-4 object-contain" />
+                    <GameIcon game={profile.main_game} className="h-4 w-4" />
                     <span>{GAME_INFO[profile.main_game]?.name}</span>
                   </div>
                 )}

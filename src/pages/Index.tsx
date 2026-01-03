@@ -4,10 +4,11 @@ import { Header } from "@/components/Header";
 import { GameFilter } from "@/components/GameFilter";
 import { TournamentCard } from "@/components/TournamentCard";
 import { CreateTournamentDialog } from "@/components/CreateTournamentDialog";
+import { GameIcon } from "@/components/GameIcon";
 import { useTournaments } from "@/hooks/useTournaments";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType, GAME_INFO } from "@/types";
-import { Gamepad2, Trophy, Users, ChevronRight, Star, Plus } from "lucide-react";
+import { Gamepad2, Trophy, ChevronRight, Star, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
@@ -67,7 +68,7 @@ const Index = () => {
                         : "text-muted-foreground hover:bg-card hover:text-foreground"
                     }`}
                   >
-                    <img src={info.image} alt={info.name} className="h-5 w-5 object-contain" />
+                    <GameIcon game={game} className="h-5 w-5" />
                     <span className="font-medium flex-1 text-left">{info.name}</span>
                     {count > 0 && (
                       <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
@@ -151,7 +152,7 @@ const Index = () => {
               <section key={game} className="px-4 md:px-8 py-6 border-t border-border/30">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <img src={info.image} alt={info.name} className="h-6 w-6 object-contain" />
+                    <GameIcon game={game} className="h-6 w-6" />
                     <h2 className="font-display text-xl font-bold text-foreground">{info.name}</h2>
                     <span className="text-sm text-muted-foreground">
                       {gameTournaments.length} torneio{gameTournaments.length !== 1 && 's'}

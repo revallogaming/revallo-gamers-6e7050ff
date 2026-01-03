@@ -1,5 +1,6 @@
 import { GameType, GAME_INFO } from '@/types';
 import { Button } from '@/components/ui/button';
+import { GameIcon } from '@/components/GameIcon';
 import { cn } from '@/lib/utils';
 
 interface GameFilterProps {
@@ -34,7 +35,7 @@ export function GameFilter({ selected, onSelect }: GameFilterProps) {
               selected === game && `bg-${info.color} hover:bg-${info.color}/90`
             )}
           >
-            <img src={info.image} alt={info.name} className="h-4 w-4 object-contain" />
+            <GameIcon game={game} className="h-4 w-4" />
             {info.name}
           </Button>
         );

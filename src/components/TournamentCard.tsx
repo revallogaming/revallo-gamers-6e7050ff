@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale';
 import { Calendar, Users, Coins, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { GameIcon } from '@/components/GameIcon';
 import { Tournament, GAME_INFO, STATUS_INFO } from '@/types';
 
 interface TournamentCardProps {
@@ -32,7 +33,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
               )}
               <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
               <Badge variant="outline" className="gap-1">
-                <img src={gameInfo.image} alt={gameInfo.name} className="h-3 w-3 object-contain" />
+                <GameIcon game={tournament.game} className="h-3 w-3" />
                 {gameInfo.name}
               </Badge>
             </div>

@@ -14,6 +14,7 @@ import {
   ExternalLink, Copy, Link as LinkIcon
 } from "lucide-react";
 import { GAME_INFO, STATUS_INFO } from "@/types";
+import { GameIcon } from "@/components/GameIcon";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -100,7 +101,7 @@ const TournamentDetails = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         <div className="container relative h-full flex items-end pb-6">
           <div className="flex items-center gap-4">
-            <img src={gameInfo.image} alt={gameInfo.name} className="h-12 w-12 object-contain" />
+            <GameIcon game={tournament.game} className="h-12 w-12" />
             <div>
               <Badge 
                 variant="outline" 

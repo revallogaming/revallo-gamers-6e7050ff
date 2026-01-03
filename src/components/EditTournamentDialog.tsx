@@ -152,8 +152,7 @@ export function EditTournamentDialog({ tournament, children }: EditTournamentDia
                   </SelectTrigger>
                   <SelectContent>
                     {(Object.keys(GAME_INFO) as GameType[]).map((game) => (
-                      <SelectItem key={game} value={game} className="flex items-center gap-2">
-                        <img src={GAME_INFO[game].image} alt={GAME_INFO[game].name} className="h-4 w-4 object-contain inline-block mr-2" />
+                      <SelectItem key={game} value={game}>
                         {GAME_INFO[game].name}
                       </SelectItem>
                     ))}
