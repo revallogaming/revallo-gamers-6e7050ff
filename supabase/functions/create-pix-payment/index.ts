@@ -6,6 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limit config: 5 payments per 10 minutes
+const RATE_LIMIT_MAX_REQUESTS = 5;
+const RATE_LIMIT_WINDOW_MINUTES = 10;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,6 +32,31 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Não autorizado" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limiting check using service role
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data: allowed, error: rateLimitError } = await supabaseAdmin.rpc('check_rate_limit', {
+      p_user_id: user.id,
+      p_endpoint: 'create-pix-payment',
+      p_max_requests: RATE_LIMIT_MAX_REQUESTS,
+      p_window_minutes: RATE_LIMIT_WINDOW_MINUTES
+    });
+
+    if (rateLimitError) {
+      console.error("Rate limit check error:", rateLimitError);
+    }
+
+    if (allowed === false) {
+      console.warn("Rate limit exceeded for user:", user.id);
+      return new Response(
+        JSON.stringify({ error: "Muitas requisições. Aguarde alguns minutos." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -98,11 +127,7 @@ serve(async (req) => {
     const mpData = await mpResponse.json();
     console.log('Mercado Pago payment created successfully');
 
-    // Save payment record using service role
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // Save payment record using the same service role client
 
     const { data: payment, error: insertError } = await supabaseAdmin
       .from("pix_payments")
