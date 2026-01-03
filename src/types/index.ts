@@ -97,7 +97,7 @@ export const GAME_INFO: Record<GameType, { name: string; color: string }> = {
 };
 
 export const STATUS_INFO: Record<TournamentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {
-  upcoming: { label: 'Em breve', variant: 'secondary', color: '#6b7280' },
+  upcoming: { label: 'Inscrições abertas', variant: 'default', color: '#22c55e' },
   open: { label: 'Inscrições abertas', variant: 'default', color: '#22c55e' },
   in_progress: { label: 'Em andamento', variant: 'outline', color: '#f59e0b' },
   completed: { label: 'Finalizado', variant: 'secondary', color: '#6b7280' },
