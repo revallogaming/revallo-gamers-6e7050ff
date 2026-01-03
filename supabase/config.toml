@@ -4,7 +4,7 @@ project_id = "amufvgzrxeipylqmcfvx"
 verify_jwt = true
 
 [functions.create-tournament-registration-pix]
-verify_jwt = true
+verify_jwt = false
 
 [functions.mercadopago-webhook]
 verify_jwt = false
