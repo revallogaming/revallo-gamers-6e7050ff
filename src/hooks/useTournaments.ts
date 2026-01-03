@@ -81,7 +81,7 @@ export function useJoinTournament() {
       if (error) throw error;
       
       // Update participant count
-      await supabase.rpc('increment_participants', { tournament_id: tournamentId });
+      await supabase.rpc('increment_participants', { tournament_uuid: tournamentId });
       
       return data;
     },
