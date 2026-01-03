@@ -20,11 +20,6 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link to="/tournaments" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <Trophy className="h-4 w-4" />
-            <span className="font-medium">Torneios</span>
-          </Link>
-          
           {user ? (
             <>
               <Link to="/credits" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -61,15 +56,6 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container py-4 flex flex-col gap-4">
-            <Link 
-              to="/tournaments" 
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Trophy className="h-4 w-4" />
-              <span className="font-medium">Torneios</span>
-            </Link>
-            
             {user ? (
               <>
                 <Link 
