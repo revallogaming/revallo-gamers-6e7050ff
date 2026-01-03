@@ -73,28 +73,18 @@ export function useCredits() {
       referenceId?: string;
     }) => {
       if (!profile) throw new Error('Usuário não encontrado');
-      if (profile.credits < amount) throw new Error('Créditos insuficientes');
 
-      // Deduct credits
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ credits: profile.credits - amount })
-        .eq('id', profile.id);
+      // Use atomic RPC to prevent race conditions
+      const { data, error } = await supabase.rpc('spend_credits', {
+        p_user_id: profile.id,
+        p_amount: amount,
+        p_type: type,
+        p_description: description,
+        p_reference_id: referenceId || null
+      });
       
-      if (updateError) throw updateError;
-
-      // Record transaction
-      const { error: transactionError } = await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: profile.id,
-          amount: -amount,
-          type,
-          description,
-          reference_id: referenceId,
-        });
-      
-      if (transactionError) throw transactionError;
+      if (error) throw error;
+      if (!data) throw new Error('Créditos insuficientes');
     },
     onSuccess: () => {
       refreshProfile();

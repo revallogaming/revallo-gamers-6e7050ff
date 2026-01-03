@@ -6,6 +6,49 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function verifySignature(
+  signature: string,
+  requestId: string,
+  dataId: string,
+  secret: string
+): Promise<boolean> {
+  const parts = signature.split(',');
+  let ts = '';
+  let hash = '';
+
+  for (const part of parts) {
+    const [key, value] = part.split('=');
+    if (key === 'ts') ts = value;
+    if (key === 'v1') hash = value;
+  }
+
+  if (!ts || !hash) {
+    console.error('Missing ts or hash in signature');
+    return false;
+  }
+
+  // Create expected signature: HMAC-SHA256 of "id={dataId};request-id={requestId};ts={ts};"
+  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(manifest);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+  const expectedHash = Array.from(new Uint8Array(signatureBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  return hash === expectedHash;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -41,6 +84,36 @@ serve(async (req) => {
       });
     }
     console.log("Webhook received:", JSON.stringify(body));
+
+    // Verify signature for security
+    const signature = req.headers.get('x-signature');
+    const requestId = req.headers.get('x-request-id');
+    const secret = Deno.env.get('MERCADOPAGO_WEBHOOK_SECRET');
+
+    if (secret) {
+      // Only verify if secret is configured
+      if (!signature || !requestId) {
+        console.error('Missing signature headers');
+        return new Response(JSON.stringify({ error: 'Unauthorized - Missing headers' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const dataId = body.data?.id ? String(body.data.id) : '';
+      const isValid = await verifySignature(signature, requestId, dataId, secret);
+      
+      if (!isValid) {
+        console.error('Invalid signature');
+        return new Response(JSON.stringify({ error: 'Unauthorized - Invalid signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      console.log('Signature verified successfully');
+    } else {
+      console.warn('MERCADOPAGO_WEBHOOK_SECRET not configured - skipping signature verification');
+    }
 
     // Only process payment notifications
     if (body.type !== "payment" || body.action !== "payment.updated") {

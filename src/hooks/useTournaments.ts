@@ -80,9 +80,7 @@ export function useJoinTournament() {
       
       if (error) throw error;
       
-      // Update participant count
-      await supabase.rpc('increment_participants', { tournament_uuid: tournamentId });
-      
+      // Participant count is now updated automatically via database trigger
       return data;
     },
     onSuccess: (_, { tournamentId }) => {
