@@ -161,7 +161,101 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Find our payment record
+    // Check if this is a tournament registration payment (via metadata)
+    const metadata = mpPayment.metadata;
+    const isTournamentRegistration = metadata?.type === "tournament_registration";
+
+    if (isTournamentRegistration) {
+      // Handle tournament registration payment
+      console.log('Processing tournament registration payment');
+      
+      const tournamentId = metadata.tournament_id;
+      const userId = metadata.user_id;
+      const participantEmail = metadata.participant_email;
+
+      if (!tournamentId || !userId) {
+        console.error("Missing tournament_id or user_id in metadata");
+        return new Response(JSON.stringify({ error: "Invalid metadata" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (mpPayment.status === "approved") {
+        // Check if already registered (prevent duplicates)
+        const { data: existingParticipant } = await supabase
+          .from("tournament_participants")
+          .select("id")
+          .eq("tournament_id", tournamentId)
+          .eq("player_id", userId)
+          .single();
+
+        if (existingParticipant) {
+          console.log("User already registered in tournament, skipping");
+          return new Response(JSON.stringify({ received: true, already_registered: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Verify tournament is still open and has space
+        const { data: tournament, error: tournamentError } = await supabase
+          .from("tournaments")
+          .select("id, status, current_participants, max_participants")
+          .eq("id", tournamentId)
+          .single();
+
+        if (tournamentError || !tournament) {
+          console.error("Tournament not found:", tournamentError);
+          return new Response(JSON.stringify({ error: "Tournament not found" }), {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        if (tournament.status !== "open") {
+          console.error("Tournament not open for registration");
+          return new Response(JSON.stringify({ error: "Tournament closed" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        if (tournament.current_participants >= tournament.max_participants) {
+          console.error("Tournament is full");
+          return new Response(JSON.stringify({ error: "Tournament full" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Register participant
+        const { error: insertError } = await supabase
+          .from("tournament_participants")
+          .insert({
+            tournament_id: tournamentId,
+            player_id: userId,
+            participant_email: participantEmail,
+          });
+
+        if (insertError) {
+          console.error("Error registering participant:", insertError);
+          return new Response(JSON.stringify({ error: "Registration failed" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        console.log(`Successfully registered user ${userId} in tournament ${tournamentId}`);
+      } else if (mpPayment.status === "rejected" || mpPayment.status === "cancelled") {
+        console.log("Tournament registration payment rejected/cancelled");
+      }
+
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Handle credit purchase payment (existing logic)
     const { data: payment, error: findError } = await supabase
       .from("pix_payments")
       .select("*")
@@ -178,7 +272,7 @@ serve(async (req) => {
 
     // Only process if payment is approved and not already confirmed
     if (mpPayment.status === "approved" && payment.status !== "confirmed") {
-      console.log('Processing approved payment confirmation');
+      console.log('Processing approved credit purchase payment');
 
       // Update payment status
       await supabase
