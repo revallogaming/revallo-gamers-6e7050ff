@@ -3,6 +3,7 @@ import { useParams, Navigate, Link, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useTournament, useTournamentParticipants } from "@/hooks/useTournaments";
 import { useAuth } from "@/hooks/useAuth";
+import { useFollowers } from "@/hooks/useFollowers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Trophy, Calendar, Users, Coins, Clock, 
   ArrowLeft, Star, Medal, CheckCircle, AlertCircle,
-  ExternalLink, Copy, Link as LinkIcon
+  ExternalLink, Copy, Link as LinkIcon, UserPlus, UserCheck
 } from "lucide-react";
 import { GAME_INFO, STATUS_INFO } from "@/types";
 import { GameIcon } from "@/components/GameIcon";
@@ -28,6 +29,9 @@ const TournamentDetails = () => {
   const { data: participants } = useTournamentParticipants(id || "");
   const { user } = useAuth();
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  
+  const organizerId = (tournament as any)?.organizer?.id;
+  const { isFollowing, toggleFollow, isToggling, followerCount } = useFollowers(organizerId);
 
   // Auto-open join dialog if ?join=true
   useEffect(() => {
@@ -162,12 +166,40 @@ const TournamentDetails = () => {
               <h1 className="font-display text-2xl md:text-4xl font-bold text-foreground">
                 {tournament.title}
               </h1>
-              <Link 
-                to={`/profile/${(tournament as any).organizer?.id}`}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm mt-1 inline-flex items-center gap-1"
-              >
-                Organizado por <span className="font-medium text-primary">{(tournament as any).organizer?.nickname || "Organizador"}</span>
-              </Link>
+              <div className="flex flex-wrap items-center gap-3 mt-2">
+                <Link 
+                  to={`/profile/${(tournament as any).organizer?.id}`}
+                  className="text-muted-foreground hover:text-foreground transition-colors text-sm inline-flex items-center gap-1"
+                >
+                  Organizado por <span className="font-medium text-primary">{(tournament as any).organizer?.nickname || "Organizador"}</span>
+                </Link>
+                {followerCount !== undefined && followerCount > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    • {followerCount} {followerCount === 1 ? 'seguidor' : 'seguidores'}
+                  </span>
+                )}
+                {user && user.id !== organizerId && (
+                  <Button
+                    variant={isFollowing ? "outline" : "default"}
+                    size="sm"
+                    onClick={toggleFollow}
+                    disabled={isToggling}
+                    className="h-7 text-xs"
+                  >
+                    {isFollowing ? (
+                      <>
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Seguindo
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-3 w-3 mr-1" />
+                        Seguir
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
             
             {/* Game Icon */}

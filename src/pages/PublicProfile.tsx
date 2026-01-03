@@ -5,16 +5,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trophy, Star, Gamepad2, Calendar } from "lucide-react";
-import { GAME_INFO } from "@/types";
+import { ArrowLeft, Trophy, Star, Gamepad2, Calendar, UserPlus, UserCheck, Users } from "lucide-react";
+import { GAME_INFO, STATUS_INFO } from "@/types";
 import { GameIcon } from "@/components/GameIcon";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAuth } from "@/hooks/useAuth";
+import { useFollowers } from "@/hooks/useFollowers";
 
 const PublicProfile = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { isFollowing, toggleFollow, isToggling, followerCount, followingCount } = useFollowers(id);
 
   // Fetch profile data
   const { data: profile, isLoading } = useQuery({
@@ -49,6 +53,22 @@ const PublicProfile = () => {
     enabled: !!id,
   });
 
+  // Fetch tournaments created by this user
+  const { data: createdTournaments } = useQuery({
+    queryKey: ["user-created-tournaments", id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from("tournaments")
+        .select("*")
+        .eq("organizer_id", id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -76,6 +96,8 @@ const PublicProfile = () => {
     );
   }
 
+  const isOwnProfile = user?.id === id;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -91,9 +113,9 @@ const PublicProfile = () => {
           <Card className="lg:col-span-1 border-border/50 bg-card/80">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">
-                <Avatar className="h-24 w-24 border-4 border-primary/50 glow-primary">
+                <Avatar className="h-32 w-32 border-4 border-primary/50 glow-primary">
                   <AvatarImage src={profile.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary/20 text-primary text-2xl font-bold">
+                  <AvatarFallback className="bg-primary/20 text-primary text-3xl font-bold">
                     {profile.nickname?.[0]?.toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
@@ -116,6 +138,40 @@ const PublicProfile = () => {
                   <p className="mt-3 text-sm text-muted-foreground">{profile.bio}</p>
                 )}
 
+                {/* Follower Stats */}
+                <div className="mt-4 flex items-center gap-4 text-sm">
+                  <div className="text-center">
+                    <span className="font-bold text-foreground">{followerCount ?? 0}</span>
+                    <span className="text-muted-foreground ml-1">seguidores</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="font-bold text-foreground">{followingCount ?? 0}</span>
+                    <span className="text-muted-foreground ml-1">seguindo</span>
+                  </div>
+                </div>
+
+                {/* Follow Button */}
+                {user && !isOwnProfile && (
+                  <Button
+                    variant={isFollowing ? "outline" : "default"}
+                    className="mt-4 w-full"
+                    onClick={toggleFollow}
+                    disabled={isToggling}
+                  >
+                    {isFollowing ? (
+                      <>
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Seguindo
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Seguir
+                      </>
+                    )}
+                  </Button>
+                )}
+
                 <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
                   <span>Membro desde {format(new Date(profile.created_at), "MMMM 'de' yyyy", { locale: ptBR })}</span>
@@ -124,8 +180,64 @@ const PublicProfile = () => {
             </CardContent>
           </Card>
 
-          {/* Participations */}
-          <div className="lg:col-span-2">
+          {/* Content Area */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Created Tournaments */}
+            {createdTournaments && createdTournaments.length > 0 && (
+              <Card className="border-border/50">
+                <CardContent className="pt-6">
+                  <h3 className="font-display text-xl font-bold text-foreground flex items-center gap-2 mb-4">
+                    <Users className="h-5 w-5 text-accent" />
+                    Torneios Organizados
+                  </h3>
+
+                  <div className="space-y-3">
+                    {createdTournaments.map((t: any) => {
+                      const statusInfo = STATUS_INFO[t.status as keyof typeof STATUS_INFO];
+                      return (
+                        <Link
+                          key={t.id}
+                          to={`/tournament/${t.id}`}
+                          className="block"
+                        >
+                          <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:border-primary/30 transition-all bg-background/50">
+                            <div className="flex items-center gap-3">
+                              {t.banner_url ? (
+                                <img 
+                                  src={t.banner_url} 
+                                  alt={t.title} 
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                                  <GameIcon game={t.game} className="h-6 w-6" />
+                                </div>
+                              )}
+                              <div>
+                                <h4 className="font-medium text-foreground">{t.title}</h4>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span>{format(new Date(t.start_date), "dd/MM/yyyy", { locale: ptBR })}</span>
+                                  <span>•</span>
+                                  <span>{t.current_participants}/{t.max_participants} jogadores</span>
+                                </div>
+                              </div>
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              style={{ borderColor: statusInfo?.color, color: statusInfo?.color }}
+                            >
+                              {statusInfo?.label}
+                            </Badge>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Participations */}
             <Card className="border-border/50">
               <CardContent className="pt-6">
                 <h3 className="font-display text-xl font-bold text-foreground flex items-center gap-2 mb-4">
