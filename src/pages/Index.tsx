@@ -111,11 +111,11 @@ const Index = () => {
             <div className="relative px-4 md:px-8 py-8 md:py-12">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                  <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
-                    Compete. Vença. <span className="text-gradient-primary">Conquiste.</span>
+                <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
+                    Seu próximo <span className="text-gradient-primary">campeonato</span> começa aqui.
                   </h1>
                   <p className="text-muted-foreground max-w-lg">
-                    Participe dos melhores torneios de eSports do Brasil.
+                    Encontre torneios, desafie os melhores e prove que você é lenda.
                   </p>
                 </div>
                 
