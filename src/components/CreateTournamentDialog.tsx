@@ -96,16 +96,17 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
     
     const { error } = await supabase.storage
-      .from("avatars")
+      .from("tournament-banners")
       .upload(fileName, bannerFile);
 
     if (error) {
       console.error("Error uploading banner:", error);
+      toast.error("Erro ao fazer upload do banner");
       return null;
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from("avatars")
+      .from("tournament-banners")
       .getPublicUrl(fileName);
 
     return publicUrl;
