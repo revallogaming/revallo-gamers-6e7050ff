@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, Users, Coins, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { GameIcon } from '@/components/GameIcon';
 import { Tournament, GAME_INFO, STATUS_INFO } from '@/types';
 
@@ -12,8 +13,17 @@ interface TournamentCardProps {
 }
 
 export function TournamentCard({ tournament }: TournamentCardProps) {
+  const navigate = useNavigate();
   const gameInfo = GAME_INFO[tournament.game];
   const statusInfo = STATUS_INFO[tournament.status];
+  
+  const canJoin = tournament.status === 'open' && tournament.current_participants < tournament.max_participants;
+
+  const handleJoinClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/tournament/${tournament.id}?join=true`);
+  };
 
   return (
     <Link to={`/tournament/${tournament.id}`}>
@@ -73,6 +83,16 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
                 <p className="text-sm font-semibold text-accent">{tournament.prize_description}</p>
               </div>
             )}
+
+            {/* Join Button */}
+            <Button
+              onClick={handleJoinClick}
+              className="w-full mt-4"
+              variant={canJoin ? "default" : "secondary"}
+              disabled={!canJoin}
+            >
+              {canJoin ? 'Inscrever-se' : tournament.status === 'completed' ? 'Encerrado' : 'Inscrições fechadas'}
+            </Button>
           </div>
         </CardContent>
       </Card>
