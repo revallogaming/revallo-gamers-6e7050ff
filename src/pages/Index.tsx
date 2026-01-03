@@ -133,7 +133,7 @@ const Index = () => {
                 <Star className="h-4 w-4 text-accent" />
                 <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">Em Destaque</h2>
               </div>
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {highlightedTournaments.map((tournament) => (
                   <TournamentCard key={tournament.id} tournament={tournament} />
                 ))}
@@ -169,7 +169,7 @@ const Index = () => {
                     </Button>
                   </Link>
                 </div>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                   {gameTournaments.slice(0, 8).map((tournament) => (
                     <TournamentCard key={tournament.id} tournament={tournament} />
                   ))}
@@ -181,10 +181,10 @@ const Index = () => {
           {/* Loading State */}
           {isLoading && (
             <div className="px-4 md:px-6 py-4">
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {[...Array(8)].map((_, i) => (
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                {[...Array(12)].map((_, i) => (
                   <div key={i} className="rounded-lg border border-border/50 bg-card overflow-hidden">
-                    <Skeleton className="aspect-video w-full" />
+                    <Skeleton className="aspect-[4/3] w-full" />
                     <div className="p-3">
                       <Skeleton className="mb-2 h-4 w-full" />
                       <Skeleton className="h-3 w-2/3" />

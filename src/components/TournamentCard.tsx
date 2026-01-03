@@ -37,7 +37,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
       {/* Banner Image */}
       <div className="relative">
         {tournament.banner_url ? (
-          <div className="aspect-video w-full overflow-hidden">
+          <div className="aspect-[4/3] w-full overflow-hidden">
             <img 
               src={tournament.banner_url} 
               alt={tournament.title}
@@ -46,7 +46,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
           </div>
         ) : (
           <div 
-            className="aspect-video w-full flex items-center justify-center"
+            className="aspect-[4/3] w-full flex items-center justify-center"
             style={{ background: `linear-gradient(135deg, ${gameInfo.color}40 0%, hsl(var(--muted)) 100%)` }}
           >
             <GameIcon game={tournament.game} className="h-12 w-12 opacity-50" />
