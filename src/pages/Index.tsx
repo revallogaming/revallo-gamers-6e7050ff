@@ -123,13 +123,13 @@ const Index = () => {
 
           {/* Highlighted Tournaments */}
           {highlightedTournaments.length > 0 && (
-            <section className="px-4 md:px-8 py-6">
-              <div className="flex items-center gap-2 mb-4">
+            <section className="px-4 md:px-8 py-4">
+              <div className="flex items-center gap-2 mb-3">
                 <Star className="h-5 w-5 text-accent" />
-                <h2 className="font-display text-xl font-bold text-foreground">Em Destaque</h2>
+                <h2 className="font-display text-lg font-bold text-foreground">Em Destaque</h2>
               </div>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {highlightedTournaments.slice(0, 3).map((tournament) => (
+              <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                {highlightedTournaments.slice(0, 6).map((tournament) => (
                   <TournamentCard key={tournament.id} tournament={tournament} />
                 ))}
               </div>
@@ -149,21 +149,21 @@ const Index = () => {
             const info = GAME_INFO[game];
             
             return (
-              <section key={game} className="px-4 md:px-8 py-6 border-t border-border/30">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <GameIcon game={game} className="h-6 w-6" />
-                    <h2 className="font-display text-xl font-bold text-foreground">{info.name}</h2>
-                    <span className="text-sm text-muted-foreground">
-                      {gameTournaments.length} torneio{gameTournaments.length !== 1 && 's'}
+              <section key={game} className="px-4 md:px-8 py-4 border-t border-border/30">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <GameIcon game={game} className="h-5 w-5" />
+                    <h2 className="font-display text-lg font-bold text-foreground">{info.name}</h2>
+                    <span className="text-xs text-muted-foreground">
+                      ({gameTournaments.length})
                     </span>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                    Ver todos <ChevronRight className="ml-1 h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground text-xs h-7">
+                    Ver todos <ChevronRight className="ml-1 h-3 w-3" />
                   </Button>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {gameTournaments.slice(0, 6).map((tournament) => (
+                <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  {gameTournaments.slice(0, 12).map((tournament) => (
                     <TournamentCard key={tournament.id} tournament={tournament} />
                   ))}
                 </div>
@@ -173,16 +173,15 @@ const Index = () => {
 
           {/* Loading State */}
           {isLoading && (
-            <div className="px-4 md:px-8 py-6">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="rounded-xl border border-border/50 bg-card p-4">
-                    <Skeleton className="mb-3 h-5 w-20" />
-                    <Skeleton className="mb-2 h-6 w-full" />
-                    <Skeleton className="mb-4 h-4 w-3/4" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-8 w-20" />
-                      <Skeleton className="h-8 w-20" />
+            <div className="px-4 md:px-8 py-4">
+              <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className="rounded-lg border border-border/50 bg-card overflow-hidden">
+                    <Skeleton className="aspect-[4/3] w-full" />
+                    <div className="p-3">
+                      <Skeleton className="mb-2 h-4 w-16" />
+                      <Skeleton className="mb-2 h-4 w-full" />
+                      <Skeleton className="h-8 w-full" />
                     </div>
                   </div>
                 ))}

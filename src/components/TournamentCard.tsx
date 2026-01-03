@@ -41,9 +41,9 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
     <Link to={`/tournament/${tournament.id}`}>
       <Card className="card-hover border-glow bg-gradient-card overflow-hidden group">
         <CardContent className="p-0">
-          {/* Banner Image */}
+          {/* Banner Image - Compact */}
           {tournament.banner_url ? (
-            <div className="aspect-square w-full overflow-hidden">
+            <div className="aspect-[4/3] w-full overflow-hidden">
               <img 
                 src={tournament.banner_url} 
                 alt={tournament.title}
@@ -52,71 +52,64 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
             </div>
           ) : (
             <div 
-              className="aspect-square w-full flex items-center justify-center"
+              className="aspect-[4/3] w-full flex items-center justify-center"
               style={{ background: `linear-gradient(135deg, ${gameInfo.color}40 0%, hsl(var(--muted)) 100%)` }}
             >
-              <GameIcon game={tournament.game} className="h-16 w-16 opacity-50" />
+              <GameIcon game={tournament.game} className="h-10 w-10 opacity-50" />
             </div>
           )}
           
-          <div className="p-4">
-            {/* Badges */}
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <div className="p-3">
+            {/* Badges - Compact */}
+            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
               {tournament.is_highlighted && (
-                <Badge className="bg-accent text-accent-foreground gap-1">
-                  <Star className="h-3 w-3" />
+                <Badge className="bg-accent text-accent-foreground gap-0.5 text-[10px] px-1.5 py-0">
+                  <Star className="h-2.5 w-2.5" />
                   Destaque
                 </Badge>
               )}
-              <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-              <Badge variant="outline" className="gap-1">
-                <GameIcon game={tournament.game} className="h-3 w-3" />
+              <Badge variant={statusInfo.variant} className="text-[10px] px-1.5 py-0">{statusInfo.label}</Badge>
+              <Badge variant="outline" className="gap-0.5 text-[10px] px-1.5 py-0">
+                <GameIcon game={tournament.game} className="h-2.5 w-2.5" />
                 {gameInfo.name}
               </Badge>
             </div>
 
             {/* Title */}
-            <h3 className="font-display text-lg font-bold text-foreground mb-1 group-hover:text-gradient-primary transition-all line-clamp-1">
+            <h3 className="font-display text-sm font-bold text-foreground mb-1 group-hover:text-gradient-primary transition-all line-clamp-1">
               {tournament.title}
             </h3>
 
-            {/* Description */}
-            {tournament.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                {tournament.description}
-              </p>
-            )}
-
-            {/* Info Grid */}
-            <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+            {/* Info Row - Compact */}
+            <div className="flex items-center gap-3 text-[11px] mb-2">
               <div className="flex items-center gap-1 text-muted-foreground">
-                <Calendar className="h-3.5 w-3.5 text-secondary" />
+                <Calendar className="h-3 w-3 text-secondary" />
                 <span>{format(new Date(tournament.start_date), 'dd MMM', { locale: ptBR })}</span>
               </div>
               <div className="flex items-center gap-1 text-muted-foreground">
-                <Users className="h-3.5 w-3.5 text-secondary" />
+                <Users className="h-3 w-3 text-secondary" />
                 <span>{tournament.current_participants}/{tournament.max_participants}</span>
               </div>
               <div className="flex items-center gap-1 text-muted-foreground">
-                <Coins className="h-3.5 w-3.5 text-accent" />
-                <span>{tournament.entry_fee > 0 ? `R$ ${(tournament.entry_fee / 100).toFixed(2).replace('.', ',')}` : 'Grátis'}</span>
+                <Coins className="h-3 w-3 text-accent" />
+                <span>{tournament.entry_fee > 0 ? `R$${(tournament.entry_fee / 100).toFixed(0)}` : 'Grátis'}</span>
               </div>
             </div>
 
-            {/* Prize */}
+            {/* Prize - Compact */}
             {tournament.prize_description && (
-              <div className="p-2 rounded-lg bg-muted/50 border border-border/50 mb-3">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Premiação</span>
-                <p className="text-sm font-semibold text-accent line-clamp-1">{tournament.prize_description}</p>
+              <div className="text-[11px] text-accent font-medium line-clamp-1 mb-2">
+                🏆 {tournament.prize_description}
               </div>
             )}
 
-            {/* Join Button */}
+            {/* Join Button - Smaller */}
             <Button
               onClick={handleJoinClick}
-              className="w-full"
+              className="w-full h-8 text-xs"
               variant={canJoin ? "default" : "secondary"}
               disabled={!canJoin}
+              size="sm"
             >
               {getButtonText()}
             </Button>
