@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, RefreshCw, Shield, Coins, Ban, Trash2, UserX, CheckCircle, Edit3 } from 'lucide-react';
+import { Search, Plus, Minus, RefreshCw, Shield, Coins, Ban, Trash2, UserX, CheckCircle, Edit3, Crown, UserMinus } from 'lucide-react';
 
 interface UserWithCredits {
   id: string;
@@ -110,7 +110,7 @@ export default function Admin() {
 
   const updateCredits = async (userId: string, amount: number) => {
     try {
-      const { error } = await supabase.rpc('add_credits', {
+      const { data, error } = await supabase.rpc('admin_add_credits', {
         p_user_id: userId,
         p_amount: amount,
       });
@@ -120,9 +120,43 @@ export default function Admin() {
       toast.success(`${amount > 0 ? 'Adicionados' : 'Removidos'} ${Math.abs(amount)} créditos`);
       fetchUsers();
       setCreditAmounts(prev => ({ ...prev, [userId]: '' }));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating credits:', error);
-      toast.error('Erro ao atualizar créditos');
+      toast.error(error.message || 'Erro ao atualizar créditos');
+    }
+  };
+
+  const handleAddAdminRole = async (userId: string, nickname: string) => {
+    try {
+      const { error } = await supabase.rpc('admin_add_role', {
+        p_user_id: userId,
+        p_role: 'admin',
+      });
+
+      if (error) throw error;
+
+      toast.success(`${nickname} agora é administrador`);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error adding admin role:', error);
+      toast.error(error.message || 'Erro ao promover a admin');
+    }
+  };
+
+  const handleRemoveAdminRole = async (userId: string, nickname: string) => {
+    try {
+      const { error } = await supabase.rpc('admin_remove_role', {
+        p_user_id: userId,
+        p_role: 'admin',
+      });
+
+      if (error) throw error;
+
+      toast.success(`${nickname} não é mais administrador`);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error removing admin role:', error);
+      toast.error(error.message || 'Erro ao remover admin');
     }
   };
 
@@ -283,26 +317,27 @@ export default function Admin() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead>Usuário</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Créditos</TableHead>
-                    <TableHead className="text-center">Gerenciar Créditos</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
-                        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        Nenhum usuário encontrado
-                      </TableCell>
-                    </TableRow>
+                        <TableHead>Usuário</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-center">Admin</TableHead>
+                        <TableHead className="text-right">Créditos</TableHead>
+                        <TableHead className="text-center">Gerenciar Créditos</TableHead>
+                        <TableHead className="text-center">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8">
+                            <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredUsers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            Nenhum usuário encontrado
+                          </TableCell>
+                        </TableRow>
                   ) : (
                     filteredUsers.map((u) => (
                       <TableRow key={u.id} className={u.is_banned ? 'bg-destructive/5' : ''}>
@@ -340,6 +375,29 @@ export default function Admin() {
                               ))
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {u.roles.includes('admin') ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-500/10"
+                              onClick={() => handleRemoveAdminRole(u.id, u.nickname)}
+                            >
+                              <UserMinus className="h-4 w-4" />
+                              Remover Admin
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                              onClick={() => handleAddAdminRole(u.id, u.nickname)}
+                            >
+                              <Crown className="h-4 w-4" />
+                              Tornar Admin
+                            </Button>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
