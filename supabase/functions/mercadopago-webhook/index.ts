@@ -50,9 +50,11 @@ async function verifySignature(
 }
 
 async function sendRegistrationConfirmationEmail(
-  email: string,
+  participantEmail: string,
+  organizerEmail: string | null,
   tournamentTitle: string,
-  tournamentLink: string | null
+  tournamentLink: string | null,
+  playerNickname: string
 ): Promise<void> {
   const smtpHost = Deno.env.get("SMTP_HOST");
   const smtpPort = Deno.env.get("SMTP_PORT");
@@ -77,7 +79,8 @@ async function sendRegistrationConfirmationEmail(
       },
     });
 
-    const htmlContent = `
+    // Email para o jogador
+    const playerHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h1 style="color: #10b981; margin-bottom: 24px;">🎮 Inscrição Confirmada!</h1>
         <p style="font-size: 16px; color: #333; line-height: 1.6;">
@@ -100,21 +103,58 @@ async function sendRegistrationConfirmationEmail(
         </p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
         <p style="font-size: 12px; color: #9ca3af;">
-          Este email foi enviado automaticamente pela plataforma Revallo Gamers.
+          Este email foi enviado automaticamente pela plataforma Revallo.
         </p>
       </div>
     `;
 
     await client.send({
       from: smtpUser,
-      to: email,
+      to: participantEmail,
       subject: `✅ Inscrição Confirmada: ${tournamentTitle}`,
       content: "auto",
-      html: htmlContent,
+      html: playerHtml,
     });
+    console.log("Player confirmation email sent to:", participantEmail);
+
+    // Email para o organizador (se disponível)
+    if (organizerEmail) {
+      const organizerHtml = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #6366f1; margin-bottom: 24px;">🎯 Nova Inscrição no seu Torneio!</h1>
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">
+            Um novo jogador se inscreveu no seu torneio:
+          </p>
+          <div style="background: linear-gradient(135deg, #1f2937, #374151); border-radius: 12px; padding: 20px; margin: 24px 0;">
+            <h2 style="color: #fff; margin: 0; font-size: 20px;">${tournamentTitle}</h2>
+          </div>
+          <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin: 16px 0;">
+            <p style="margin: 0; font-size: 14px; color: #333;">
+              <strong>Jogador:</strong> ${playerNickname}<br>
+              <strong>Email:</strong> ${participantEmail}
+            </p>
+          </div>
+          <p style="font-size: 14px; color: #666; margin-top: 24px;">
+            Acesse a plataforma Revallo para gerenciar os participantes.
+          </p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+          <p style="font-size: 12px; color: #9ca3af;">
+            Este email foi enviado automaticamente pela plataforma Revallo.
+          </p>
+        </div>
+      `;
+
+      await client.send({
+        from: smtpUser,
+        to: organizerEmail,
+        subject: `🎯 Nova Inscrição: ${playerNickname} - ${tournamentTitle}`,
+        content: "auto",
+        html: organizerHtml,
+      });
+      console.log("Organizer notification email sent to:", organizerEmail);
+    }
 
     await client.close();
-    console.log("Registration confirmation email sent successfully via SMTP to:", email);
   } catch (error) {
     console.error("Error sending confirmation email via SMTP:", error);
   }
@@ -268,10 +308,10 @@ serve(async (req) => {
           });
         }
 
-        // Verify tournament is still open and has space
+        // Verify tournament is still accepting registrations
         const { data: tournament, error: tournamentError } = await supabase
           .from("tournaments")
-          .select("id, title, status, current_participants, max_participants, tournament_link")
+          .select("id, title, status, current_participants, max_participants, tournament_link, organizer_id")
           .eq("id", tournamentId)
           .single();
 
@@ -283,8 +323,9 @@ serve(async (req) => {
           });
         }
 
-        if (tournament.status !== "open") {
-          console.error("Tournament not open for registration");
+        // Allow upcoming and open tournaments
+        if (!["upcoming", "open"].includes(tournament.status)) {
+          console.error("Tournament not accepting registrations:", tournament.status);
           return new Response(JSON.stringify({ error: "Tournament closed" }), {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -298,6 +339,17 @@ serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
+
+        // Get player nickname for organizer email
+        const { data: playerProfile } = await supabase
+          .from("profiles")
+          .select("nickname")
+          .eq("id", userId)
+          .single();
+
+        // Get organizer email from auth.users
+        const { data: organizerAuth } = await supabase.auth.admin.getUserById(tournament.organizer_id);
+        const organizerEmail = organizerAuth?.user?.email || null;
 
         // Register participant
         const { error: insertError } = await supabase
@@ -318,12 +370,14 @@ serve(async (req) => {
 
         console.log(`Successfully registered user ${userId} in tournament ${tournamentId}`);
 
-        // Send confirmation email (non-blocking)
+        // Send confirmation email to player and organizer (non-blocking)
         if (participantEmail) {
           sendRegistrationConfirmationEmail(
             participantEmail,
+            organizerEmail,
             tournament.title,
-            tournament.tournament_link
+            tournament.tournament_link,
+            playerProfile?.nickname || "Jogador"
           ).catch(err => console.error("Email send error:", err));
         }
       } else if (mpPayment.status === "rejected" || mpPayment.status === "cancelled") {
