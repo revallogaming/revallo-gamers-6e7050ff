@@ -73,14 +73,82 @@ const handler = async (req: Request): Promise<Response> => {
     const data: MassEmailRequest = await req.json();
     const { emails, subject, message, tournamentTitle } = data;
 
-    if (!emails || emails.length === 0) {
+    // Input validation for emails
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return new Response(
         JSON.stringify({ error: "No emails provided" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log(`Sending mass email to ${emails.length} recipients for tournament: ${tournamentTitle}`);
+    // Validate email count limit
+    if (emails.length > 500) {
+      return new Response(
+        JSON.stringify({ error: "Limite máximo de 500 destinatários por envio" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Input validation for subject
+    if (!subject || typeof subject !== 'string' || subject.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Assunto é obrigatório" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (subject.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Assunto deve ter no máximo 200 caracteres" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Input validation for message
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Mensagem é obrigatória" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (message.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: "Mensagem deve ter no máximo 5000 caracteres" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Input validation for tournamentTitle
+    if (!tournamentTitle || typeof tournamentTitle !== 'string' || tournamentTitle.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Título do torneio é obrigatório" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (tournamentTitle.length > 150) {
+      return new Response(
+        JSON.stringify({ error: "Título do torneio deve ter no máximo 150 caracteres" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Sanitize inputs - escape HTML to prevent injection
+    const escapeHtml = (str: string): string => {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    const sanitizedSubject = escapeHtml(subject.trim());
+    const sanitizedMessage = escapeHtml(message.trim());
+    const sanitizedTournamentTitle = escapeHtml(tournamentTitle.trim());
+
+    console.log(`Sending mass email to ${emails.length} recipients for tournament: ${sanitizedTournamentTitle}`);
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -102,13 +170,13 @@ const handler = async (req: Request): Promise<Response> => {
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎮 ${tournamentTitle}</h1>
+            <h1>🎮 ${sanitizedTournamentTitle}</h1>
             <p>Mensagem do Organizador</p>
           </div>
           <div class="content">
             <div class="badge">📢 Comunicado</div>
             <div class="message-box">
-              ${message.replace(/\n/g, '<br>')}
+              ${sanitizedMessage.replace(/\n/g, '<br>')}
             </div>
             <div class="footer">
               <p>Este email foi enviado através da plataforma Revallo.</p>
@@ -143,7 +211,7 @@ const handler = async (req: Request): Promise<Response> => {
         const emailResponse = await resend.emails.send({
           from: "Revallo <onboarding@resend.dev>",
           to: batch,
-          subject: `🎮 ${tournamentTitle}: ${subject}`,
+          subject: `🎮 ${sanitizedTournamentTitle}: ${sanitizedSubject}`,
           html: emailHtml,
         });
         
