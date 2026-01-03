@@ -219,7 +219,9 @@ const Index = () => {
                 Para Organizadores
               </Link>
               <span>Suporte</span>
-              <span>Termos de Uso</span>
+              <Link to="/termos-de-uso" className="hover:text-foreground transition-colors">
+                Termos de Uso
+              </Link>
             </div>
             <p className="text-sm text-muted-foreground">
               © 2026 Revallo. Todos os direitos reservados.
