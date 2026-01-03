@@ -32,7 +32,8 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
               )}
               <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
               <Badge variant="outline" className="gap-1">
-                {gameInfo.icon} {gameInfo.name}
+                <img src={gameInfo.image} alt={gameInfo.name} className="h-3 w-3 object-contain" />
+                {gameInfo.name}
               </Badge>
             </div>
 

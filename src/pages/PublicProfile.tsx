@@ -106,7 +106,7 @@ const PublicProfile = () => {
 
                 {profile.main_game && (
                   <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                    <span>{GAME_INFO[profile.main_game]?.icon}</span>
+                    <img src={GAME_INFO[profile.main_game]?.image} alt={GAME_INFO[profile.main_game]?.name} className="h-4 w-4 object-contain" />
                     <span>{GAME_INFO[profile.main_game]?.name}</span>
                   </div>
                 )}
