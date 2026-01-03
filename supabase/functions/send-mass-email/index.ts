@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +19,55 @@ interface MassEmailRequest {
   tournamentTitle: string;
 }
 
+async function sendEmailViaSMTP(
+  to: string | string[],
+  subject: string,
+  html: string
+): Promise<boolean> {
+  const smtpHost = Deno.env.get("SMTP_HOST");
+  const smtpPort = Deno.env.get("SMTP_PORT");
+  const smtpUser = Deno.env.get("SMTP_USER");
+  const smtpPass = Deno.env.get("SMTP_PASS");
+
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    console.log("SMTP credentials not configured");
+    return false;
+  }
+
+  try {
+    const client = new SMTPClient({
+      connection: {
+        hostname: smtpHost,
+        port: parseInt(smtpPort),
+        tls: true,
+        auth: {
+          username: smtpUser,
+          password: smtpPass,
+        },
+      },
+    });
+
+    // Send to each recipient individually to avoid exposing email addresses
+    const recipients = Array.isArray(to) ? to : [to];
+    for (const recipient of recipients) {
+      await client.send({
+        from: smtpUser,
+        to: recipient,
+        subject: subject,
+        content: "auto",
+        html: html,
+      });
+    }
+
+    await client.close();
+    console.log(`Email sent successfully via SMTP to ${recipients.length} recipients`);
+    return true;
+  } catch (error) {
+    console.error("Error sending email via SMTP:", error);
+    return false;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Authentication check - require logged in user
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
         global: {
           headers: { Authorization: req.headers.get("Authorization")! },
@@ -188,43 +237,31 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    
-    if (!resendApiKey) {
-      console.log("RESEND_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ success: false, error: "Email service not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    const resend = new Resend(resendApiKey);
-    
-    // Send emails in batches of 50 to avoid rate limits
+    // Send emails in batches
     const batchSize = 50;
-    const results: any[] = [];
+    const results: { batch: number; success: boolean; count: number }[] = [];
     
     for (let i = 0; i < emails.length; i += batchSize) {
       const batch = emails.slice(i, i + batchSize);
+      const batchNum = Math.floor(i / batchSize) + 1;
       
       try {
-        const emailResponse = await resend.emails.send({
-          from: "Revallo <onboarding@resend.dev>",
-          to: batch,
-          subject: `🎮 ${sanitizedTournamentTitle}: ${sanitizedSubject}`,
-          html: emailHtml,
-        });
+        const success = await sendEmailViaSMTP(
+          batch,
+          `🎮 ${sanitizedTournamentTitle}: ${sanitizedSubject}`,
+          emailHtml
+        );
         
-        results.push({ batch: Math.floor(i / batchSize) + 1, success: true, response: emailResponse });
-        console.log(`Batch ${Math.floor(i / batchSize) + 1} sent successfully`);
+        results.push({ batch: batchNum, success, count: batch.length });
+        console.log(`Batch ${batchNum} sent: ${success ? 'success' : 'failed'}`);
       } catch (batchError: any) {
-        results.push({ batch: Math.floor(i / batchSize) + 1, success: false, error: batchError.message });
-        console.error(`Batch ${Math.floor(i / batchSize) + 1} failed:`, batchError);
+        results.push({ batch: batchNum, success: false, count: batch.length });
+        console.error(`Batch ${batchNum} failed:`, batchError);
       }
       
       // Small delay between batches
       if (i + batchSize < emails.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
