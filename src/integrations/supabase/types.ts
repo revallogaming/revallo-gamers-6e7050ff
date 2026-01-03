@@ -477,7 +477,25 @@ export type Database = {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
       }
+      admin_add_credits: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: boolean
+      }
+      admin_add_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       admin_delete_user: { Args: { p_user_id: string }; Returns: boolean }
+      admin_remove_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       admin_set_credits: {
         Args: { p_amount: number; p_user_id: string }
         Returns: boolean
