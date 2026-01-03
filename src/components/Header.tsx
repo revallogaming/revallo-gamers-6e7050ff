@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
-import { Gamepad2, Trophy, Coins, User, LogOut, Menu, X } from 'lucide-react';
+import { Gamepad2, Trophy, Coins, User, LogOut, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 
 export function Header() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, hasRole } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isAdmin = hasRole('admin');
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -22,6 +23,12 @@ export function Header() {
         <nav className="hidden md:flex items-center gap-6">
           {user ? (
             <>
+              {isAdmin && (
+                <Link to="/admin" className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
+                  <Shield className="h-4 w-4" />
+                  <span className="font-medium">Admin</span>
+                </Link>
+              )}
               <Link to="/credits" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Coins className="h-4 w-4" />
                 <span className="font-medium">{profile?.credits ?? 0} créditos</span>
@@ -58,6 +65,16 @@ export function Header() {
           <nav className="container py-4 flex flex-col gap-4">
             {user ? (
               <>
+                {isAdmin && (
+                  <Link 
+                    to="/admin" 
+                    className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span className="font-medium">Admin</span>
+                  </Link>
+                )}
                 <Link 
                   to="/credits" 
                   className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
