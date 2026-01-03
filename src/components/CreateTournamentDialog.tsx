@@ -269,12 +269,9 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-b from-card to-background border-border/50">
+      <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto bg-gradient-to-b from-card to-background border-border/50 scrollbar-thin">
         <DialogHeader className="pb-4 border-b border-border/30">
           <DialogTitle className="font-display text-2xl text-gradient-primary">Criar Novo Torneio</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Preencha os dados do torneio. 5% do valor de cada inscrição será retido como taxa da plataforma.
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
@@ -289,7 +286,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               onClick={() => document.getElementById("banner-upload")?.click()}
             >
               {bannerPreview ? (
-                <div className="relative aspect-video rounded-lg overflow-hidden">
+                <div className="relative aspect-square rounded-lg overflow-hidden max-w-[300px] mx-auto">
                   <img 
                     src={bannerPreview} 
                     alt="Banner preview" 
@@ -300,18 +297,18 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                     <ImageIcon className="h-8 w-8 text-primary" />
                   </div>
                   <span className="text-sm font-medium">Clique para adicionar banner</span>
-                  <span className="text-xs mt-1 text-muted-foreground/70">Recomendado: 1920x1080</span>
+                  <span className="text-xs mt-1 text-muted-foreground/70">Formato: 1080x1080 (1:1) • JPG/JPEG</span>
                 </div>
               )}
               <input
                 id="banner-upload"
                 type="file"
-                accept="image/*"
+                accept=".jpg,.jpeg,image/jpeg"
                 onChange={handleBannerChange}
                 className="hidden"
               />
