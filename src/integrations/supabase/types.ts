@@ -142,7 +142,6 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
-          credits: number
           highlighted_until: string | null
           id: string
           is_highlighted: boolean
@@ -154,7 +153,6 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          credits?: number
           highlighted_until?: string | null
           id: string
           is_highlighted?: boolean
@@ -166,7 +164,6 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          credits?: number
           highlighted_until?: string | null
           id?: string
           is_highlighted?: boolean
