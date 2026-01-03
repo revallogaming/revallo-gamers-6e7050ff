@@ -34,7 +34,8 @@ export function GameFilter({ selected, onSelect }: GameFilterProps) {
               selected === game && `bg-${info.color} hover:bg-${info.color}/90`
             )}
           >
-            {info.icon} {info.name}
+            <img src={info.image} alt={info.name} className="h-4 w-4 object-contain" />
+            {info.name}
           </Button>
         );
       })}

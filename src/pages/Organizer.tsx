@@ -239,7 +239,7 @@ function TournamentsList({ tournaments, userId, isLoading, onDelete, onCopyLink,
           >
             <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50">
               <div className="flex items-center gap-4 w-full">
-                <div className="text-3xl">{gameInfo?.icon}</div>
+                <img src={gameInfo?.image} alt={gameInfo?.name} className="h-8 w-8 object-contain" />
                 
                 <div className="flex-1 min-w-0 text-left">
                   <div className="flex items-center gap-2 flex-wrap">

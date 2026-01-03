@@ -200,8 +200,9 @@ const Profile = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {(Object.keys(GAME_INFO) as GameType[]).map((game) => (
-                            <SelectItem key={game} value={game}>
-                              {GAME_INFO[game].icon} {GAME_INFO[game].name}
+                            <SelectItem key={game} value={game} className="flex items-center gap-2">
+                              <img src={GAME_INFO[game].image} alt={GAME_INFO[game].name} className="h-4 w-4 object-contain inline-block mr-2" />
+                              {GAME_INFO[game].name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -224,7 +225,7 @@ const Profile = () => {
                     </h2>
                     {profile?.main_game && (
                       <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                        <span>{GAME_INFO[profile.main_game].icon}</span>
+                        <img src={GAME_INFO[profile.main_game].image} alt={GAME_INFO[profile.main_game].name} className="h-4 w-4 object-contain" />
                         <span>{GAME_INFO[profile.main_game].name}</span>
                       </div>
                     )}

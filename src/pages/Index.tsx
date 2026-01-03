@@ -67,7 +67,7 @@ const Index = () => {
                         : "text-muted-foreground hover:bg-card hover:text-foreground"
                     }`}
                   >
-                    <span className="text-xl">{info.icon}</span>
+                    <img src={info.image} alt={info.name} className="h-5 w-5 object-contain" />
                     <span className="font-medium flex-1 text-left">{info.name}</span>
                     {count > 0 && (
                       <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
@@ -80,25 +80,6 @@ const Index = () => {
             </nav>
           </div>
           
-          {/* Live Stats */}
-          <div className="mt-auto p-4 border-t border-border/50">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-sm">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-muted-foreground">Torneios ativos</span>
-                <span className="ml-auto font-bold text-foreground">
-                  {tournaments?.filter(t => t.status === 'open' || t.status === 'in_progress').length || 0}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Jogadores</span>
-                <span className="ml-auto font-bold text-foreground">
-                  {tournaments?.reduce((acc, t) => acc + t.current_participants, 0) || 0}
-                </span>
-              </div>
-            </div>
-          </div>
         </aside>
 
         {/* Main Content */}
@@ -170,7 +151,7 @@ const Index = () => {
               <section key={game} className="px-4 md:px-8 py-6 border-t border-border/30">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{info.icon}</span>
+                    <img src={info.image} alt={info.name} className="h-6 w-6 object-contain" />
                     <h2 className="font-display text-xl font-bold text-foreground">{info.name}</h2>
                     <span className="text-sm text-muted-foreground">
                       {gameTournaments.length} torneio{gameTournaments.length !== 1 && 's'}
