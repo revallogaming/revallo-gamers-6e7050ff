@@ -99,8 +99,8 @@ serve(async (req) => {
       );
     }
 
-    // Validate tournament status
-    if (tournament.status !== "open") {
+    // Validate tournament status (allow upcoming and open)
+    if (!["upcoming", "open"].includes(tournament.status)) {
       return new Response(
         JSON.stringify({ error: "Inscrições encerradas para este torneio" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

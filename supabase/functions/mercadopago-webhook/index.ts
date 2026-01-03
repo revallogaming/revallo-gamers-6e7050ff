@@ -7,6 +7,68 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Platform fee: 5%
+const PLATFORM_FEE_PERCENT = 5;
+
+async function transferToOrganizer(
+  accessToken: string,
+  organizerPixKey: string,
+  amountBrl: number,
+  tournamentTitle: string,
+  paymentId: string
+): Promise<{ success: boolean; error?: string; transferId?: string }> {
+  // Calculate organizer amount (95%)
+  const organizerAmount = Number((amountBrl * (100 - PLATFORM_FEE_PERCENT) / 100).toFixed(2));
+  
+  console.log(`Initiating PIX transfer: R$${organizerAmount} to ${organizerPixKey}`);
+  
+  try {
+    // Create a PIX disbursement using Mercado Pago API
+    const response = await fetch("https://api.mercadopago.com/v1/payments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        "X-Idempotency-Key": `transfer-${paymentId}-${Date.now()}`,
+      },
+      body: JSON.stringify({
+        transaction_amount: organizerAmount,
+        description: `Repasse: ${tournamentTitle.substring(0, 50)}`,
+        payment_method_id: "pix",
+        payer: {
+          email: "noreply@revallo.com.br",
+        },
+        additional_info: {
+          payer: {
+            first_name: "Revallo",
+            last_name: "Platform",
+          },
+        },
+        point_of_interaction: {
+          type: "PIX_TRANSFER",
+          transaction_data: {
+            pix_key: organizerPixKey,
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("PIX transfer error:", errorText);
+      return { success: false, error: `Transfer API error: ${response.status}` };
+    }
+
+    const data = await response.json();
+    console.log(`PIX transfer initiated: ${data.id}, status: ${data.status}`);
+    
+    return { success: true, transferId: String(data.id) };
+  } catch (error) {
+    console.error("PIX transfer exception:", error);
+    return { success: false, error: String(error) };
+  }
+}
+
 async function verifySignature(
   signature: string,
   requestId: string,
@@ -351,6 +413,13 @@ serve(async (req) => {
         const { data: organizerAuth } = await supabase.auth.admin.getUserById(tournament.organizer_id);
         const organizerEmail = organizerAuth?.user?.email || null;
 
+        // Get organizer PIX key for transfer
+        const { data: organizerPaymentInfo } = await supabase
+          .from("organizer_payment_info")
+          .select("pix_key")
+          .eq("organizer_id", tournament.organizer_id)
+          .single();
+
         // Register participant
         const { error: insertError } = await supabase
           .from("tournament_participants")
@@ -369,6 +438,27 @@ serve(async (req) => {
         }
 
         console.log(`Successfully registered user ${userId} in tournament ${tournamentId}`);
+
+        // Transfer 95% to organizer via PIX (non-blocking)
+        const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+        if (accessToken && organizerPaymentInfo?.pix_key) {
+          const amountBrl = mpPayment.transaction_amount;
+          transferToOrganizer(
+            accessToken,
+            organizerPaymentInfo.pix_key,
+            amountBrl,
+            tournament.title,
+            String(paymentId)
+          ).then(result => {
+            if (result.success) {
+              console.log(`PIX transfer successful: ${result.transferId}`);
+            } else {
+              console.error(`PIX transfer failed: ${result.error}`);
+            }
+          }).catch(err => console.error("PIX transfer error:", err));
+        } else {
+          console.warn("Organizer PIX key not configured, skipping transfer");
+        }
 
         // Send confirmation email to player and organizer (non-blocking)
         if (participantEmail) {

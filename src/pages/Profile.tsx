@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   User, Coins, Trophy, Edit, Save, X, Gamepad2, Camera, Loader2, 
   Copy, CheckCircle, Settings, Shield, Bell, LogOut, Trash2, Calendar,
-  Users, ExternalLink
+  Users, ExternalLink, Wallet
 } from "lucide-react";
 import { GAME_INFO, GameType, STATUS_INFO } from "@/types";
 import { GameIcon } from "@/components/GameIcon";
@@ -51,6 +51,8 @@ const Profile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [pixKey, setPixKey] = useState("");
+  const [isSavingPix, setIsSavingPix] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch user's created tournaments
@@ -66,6 +68,26 @@ const Profile = () => {
       
       if (error) throw error;
       return data || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch organizer payment info
+  const { data: paymentInfo, isLoading: loadingPaymentInfo, refetch: refetchPaymentInfo } = useQuery({
+    queryKey: ["organizer-payment-info", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from("organizer_payment_info")
+        .select("*")
+        .eq("organizer_id", user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      if (data) {
+        setPixKey(data.pix_key || "");
+      }
+      return data;
     },
     enabled: !!user,
   });
@@ -219,6 +241,35 @@ const Profile = () => {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleSavePixKey = async () => {
+    if (!user) return;
+    
+    setIsSavingPix(true);
+    try {
+      if (paymentInfo) {
+        // Update existing
+        const { error } = await supabase
+          .from("organizer_payment_info")
+          .update({ pix_key: pixKey.trim() || null })
+          .eq("organizer_id", user.id);
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from("organizer_payment_info")
+          .insert({ organizer_id: user.id, pix_key: pixKey.trim() || null });
+        if (error) throw error;
+      }
+      
+      await refetchPaymentInfo();
+      toast({ title: "Chave PIX salva!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSavingPix(false);
+    }
   };
 
   return (
@@ -400,10 +451,11 @@ const Profile = () => {
           {/* Tabs Content */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="tournaments">
-              <TabsList className="w-full grid grid-cols-3">
+              <TabsList className="w-full grid grid-cols-4">
                 <TabsTrigger value="tournaments">Meus Torneios</TabsTrigger>
                 <TabsTrigger value="transactions">Transações</TabsTrigger>
                 <TabsTrigger value="payments">Pagamentos</TabsTrigger>
+                <TabsTrigger value="settings">Configurações</TabsTrigger>
               </TabsList>
 
               <TabsContent value="tournaments" className="mt-4">
@@ -596,6 +648,103 @@ const Profile = () => {
                         Nenhum pagamento encontrado
                       </p>
                     )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="settings" className="mt-4 space-y-4">
+                {/* Organizer Payment Settings */}
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Wallet className="h-5 w-5 text-primary" />
+                      Recebimento de Inscrições
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Configure sua chave PIX para receber automaticamente 95% das inscrições dos seus torneios.
+                      Os 5% restantes são retidos como taxa da plataforma.
+                    </p>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="pix-key">Chave PIX</Label>
+                      <Input
+                        id="pix-key"
+                        value={pixKey}
+                        onChange={(e) => setPixKey(e.target.value)}
+                        placeholder="CPF, CNPJ, Email, Telefone ou Chave Aleatória"
+                        disabled={loadingPaymentInfo}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Certifique-se de que a chave está correta. Os repasses são feitos automaticamente após cada inscrição confirmada.
+                      </p>
+                    </div>
+
+                    <Button 
+                      onClick={handleSavePixKey} 
+                      disabled={isSavingPix || loadingPaymentInfo}
+                      className="w-full sm:w-auto"
+                    >
+                      {isSavingPix ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Salvar Chave PIX
+                        </>
+                      )}
+                    </Button>
+
+                    {paymentInfo?.pix_key && (
+                      <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+                        <div className="flex items-center gap-2 text-green-500">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="text-sm font-medium">Chave PIX configurada</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Você receberá automaticamente os repasses das inscrições.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Account Settings */}
+                <Card className="border-border/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="h-5 w-5 text-muted-foreground" />
+                      Conta
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between py-2">
+                      <div>
+                        <p className="font-medium">Email</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between py-2">
+                      <div>
+                        <p className="font-medium">Membro desde</p>
+                        <p className="text-sm text-muted-foreground">
+                          {profile?.created_at && format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <hr className="border-border/50" />
+                    <Button 
+                      variant="destructive" 
+                      className="w-full"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sair da Conta
+                    </Button>
                   </CardContent>
                 </Card>
               </TabsContent>
