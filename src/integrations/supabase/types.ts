@@ -182,6 +182,7 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          banner_url: string | null
           created_at: string
           current_participants: number
           description: string | null
@@ -193,6 +194,7 @@ export type Database = {
           is_highlighted: boolean
           max_participants: number
           organizer_id: string
+          organizer_pix_key: string | null
           prize_description: string | null
           registration_deadline: string
           rules: string | null
@@ -202,6 +204,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_url?: string | null
           created_at?: string
           current_participants?: number
           description?: string | null
@@ -213,6 +216,7 @@ export type Database = {
           is_highlighted?: boolean
           max_participants?: number
           organizer_id: string
+          organizer_pix_key?: string | null
           prize_description?: string | null
           registration_deadline: string
           rules?: string | null
@@ -222,6 +226,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_url?: string | null
           created_at?: string
           current_participants?: number
           description?: string | null
@@ -233,6 +238,7 @@ export type Database = {
           is_highlighted?: boolean
           max_participants?: number
           organizer_id?: string
+          organizer_pix_key?: string | null
           prize_description?: string | null
           registration_deadline?: string
           rules?: string | null
@@ -291,7 +297,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "organizer" | "player"
-      game_type: "freefire" | "fortnite" | "cod"
+      game_type:
+        | "freefire"
+        | "fortnite"
+        | "cod"
+        | "league_of_legends"
+        | "valorant"
       payment_status: "pending" | "confirmed" | "failed" | "refunded"
       tournament_status:
         | "upcoming"
@@ -427,7 +438,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "organizer", "player"],
-      game_type: ["freefire", "fortnite", "cod"],
+      game_type: [
+        "freefire",
+        "fortnite",
+        "cod",
+        "league_of_legends",
+        "valorant",
+      ],
       payment_status: ["pending", "confirmed", "failed", "refunded"],
       tournament_status: [
         "upcoming",

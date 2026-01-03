@@ -1,4 +1,4 @@
-export type GameType = 'freefire' | 'fortnite' | 'cod';
+export type GameType = 'freefire' | 'fortnite' | 'cod' | 'league_of_legends' | 'valorant';
 export type TournamentStatus = 'upcoming' | 'open' | 'in_progress' | 'completed' | 'cancelled';
 export type AppRole = 'admin' | 'organizer' | 'player';
 
@@ -32,6 +32,8 @@ export interface Tournament {
   status: TournamentStatus;
   is_highlighted: boolean;
   highlighted_until: string | null;
+  banner_url: string | null;
+  organizer_pix_key: string | null;
   created_at: string;
   updated_at: string;
   organizer?: Profile;
@@ -81,6 +83,8 @@ export const GAME_INFO: Record<GameType, { name: string; color: string; icon: st
   freefire: { name: 'Free Fire', color: 'freefire', icon: '🔥' },
   fortnite: { name: 'Fortnite', color: 'fortnite', icon: '🎯' },
   cod: { name: 'Call of Duty', color: 'cod', icon: '🎖️' },
+  league_of_legends: { name: 'League of Legends', color: 'lol', icon: '⚔️' },
+  valorant: { name: 'Valorant', color: 'valorant', icon: '🎮' },
 };
 
 export const STATUS_INFO: Record<TournamentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {

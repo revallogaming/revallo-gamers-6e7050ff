@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { GameFilter } from "@/components/GameFilter";
 import { TournamentCard } from "@/components/TournamentCard";
+import { CreateTournamentDialog } from "@/components/CreateTournamentDialog";
 import { useTournaments } from "@/hooks/useTournaments";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType, GAME_INFO } from "@/types";
-import { Gamepad2, Trophy, Users, ChevronRight, Star } from "lucide-react";
+import { Gamepad2, Trophy, Users, ChevronRight, Star, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+
 const Index = () => {
   const [selectedGame, setSelectedGame] = useState<GameType | "all">("all");
   const { user } = useAuth();
@@ -21,10 +23,12 @@ const Index = () => {
   const regularTournaments = tournaments?.filter(t => !t.is_highlighted) || [];
 
   // Get tournaments by game for sidebar
-  const tournamentsByGame = {
+  const tournamentsByGame: Record<GameType, typeof tournaments> = {
     freefire: tournaments?.filter(t => t.game === 'freefire' && t.status === 'open') || [],
     fortnite: tournaments?.filter(t => t.game === 'fortnite' && t.status === 'open') || [],
     cod: tournaments?.filter(t => t.game === 'cod' && t.status === 'open') || [],
+    league_of_legends: tournaments?.filter(t => t.game === 'league_of_legends' && t.status === 'open') || [],
+    valorant: tournaments?.filter(t => t.game === 'valorant' && t.status === 'open') || [],
   };
 
   return (
@@ -111,13 +115,25 @@ const Index = () => {
                     Compete. Vença. <span className="text-gradient-primary">Conquiste.</span>
                   </h1>
                   <p className="text-muted-foreground max-w-lg">
-                    Participe dos melhores torneios de Free Fire, Fortnite e Call of Duty do Brasil.
+                    Participe dos melhores torneios de eSports do Brasil.
                   </p>
                 </div>
                 
-                {/* Mobile Game Filter */}
-                <div className="lg:hidden">
-                  <GameFilter selected={selectedGame} onSelect={setSelectedGame} />
+                <div className="flex items-center gap-4">
+                  {/* Create Tournament Button - Only for logged users */}
+                  {user && (
+                    <CreateTournamentDialog>
+                      <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold gap-2">
+                        <Plus className="h-4 w-4" />
+                        Criar Torneio
+                      </Button>
+                    </CreateTournamentDialog>
+                  )}
+                  
+                  {/* Mobile Game Filter */}
+                  <div className="lg:hidden">
+                    <GameFilter selected={selectedGame} onSelect={setSelectedGame} />
+                  </div>
                 </div>
               </div>
             </div>
