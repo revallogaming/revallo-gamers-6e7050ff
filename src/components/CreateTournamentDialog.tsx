@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useCredits } from "@/hooks/useCredits";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -23,33 +24,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Loader2, Image as ImageIcon, Star, Coins } from "lucide-react";
 
 interface CreateTournamentDialogProps {
   children?: React.ReactNode;
 }
 
+// Boost packages: credits -> days highlighted
+const BOOST_PACKAGES = [
+  { credits: 50, days: 1, label: "1 dia" },
+  { credits: 100, days: 3, label: "3 dias" },
+  { credits: 200, days: 7, label: "7 dias" },
+  { credits: 400, days: 14, label: "14 dias" },
+];
+
 export function CreateTournamentDialog({ children }: CreateTournamentDialogProps) {
   const { user } = useAuth();
+  const { credits, spendCredits } = useCredits();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [enableBoost, setEnableBoost] = useState(false);
+  const [selectedBoost, setSelectedBoost] = useState(0);
   
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     game: "" as GameType | "",
     rules: "",
-    prize_description: "",
-    entry_fee: 0,
+    prize_amount: 0,
+    entry_fee_brl: 0,
     max_participants: 100,
     start_date: "",
     end_date: "",
     registration_deadline: "",
     organizer_pix_key: "",
   });
+
+  const selectedBoostPackage = BOOST_PACKAGES[selectedBoost];
+  const hasEnoughCredits = credits >= (selectedBoostPackage?.credits || 0);
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,6 +118,12 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
       return;
     }
 
+    // Check credits for boost
+    if (enableBoost && !hasEnoughCredits) {
+      toast.error("Créditos insuficientes para impulsionar o torneio");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -110,6 +132,22 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
       if (bannerFile) {
         bannerUrl = await uploadBanner();
       }
+
+      // Calculate highlighted_until if boost is enabled
+      let highlightedUntil = null;
+      let isHighlighted = false;
+      
+      if (enableBoost && selectedBoostPackage) {
+        const boostEndDate = new Date();
+        boostEndDate.setDate(boostEndDate.getDate() + selectedBoostPackage.days);
+        highlightedUntil = boostEndDate.toISOString();
+        isHighlighted = true;
+      }
+
+      // Format prize description from amount
+      const prizeDescription = formData.prize_amount > 0 
+        ? `Premiação total: R$ ${formData.prize_amount.toFixed(2).replace('.', ',')}`
+        : null;
 
       // Create tournament
       const { data: tournament, error } = await supabase
@@ -120,19 +158,31 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           description: formData.description || null,
           game: formData.game as GameType,
           rules: formData.rules || null,
-          prize_description: formData.prize_description || null,
-          entry_fee: formData.entry_fee,
+          prize_description: prizeDescription,
+          entry_fee: Math.round(formData.entry_fee_brl * 100), // Store as centavos for precision
           max_participants: formData.max_participants,
           start_date: formData.start_date,
           end_date: formData.end_date || null,
           registration_deadline: formData.registration_deadline,
           banner_url: bannerUrl,
           status: "upcoming",
+          is_highlighted: isHighlighted,
+          highlighted_until: highlightedUntil,
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Spend credits for boost if enabled
+      if (enableBoost && selectedBoostPackage) {
+        await spendCredits.mutateAsync({
+          amount: selectedBoostPackage.credits,
+          type: "tournament_boost",
+          description: `Impulso de torneio: ${formData.title} (${selectedBoostPackage.label})`,
+          referenceId: tournament.id,
+        });
+      }
 
       // Save PIX key in separate secure table
       const { error: pixError } = await supabase
@@ -155,9 +205,9 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             tournamentTitle: formData.title,
             game: GAME_INFO[formData.game as GameType].name,
             startDate: formData.start_date,
-            entryFee: formData.entry_fee,
+            entryFee: formData.entry_fee_brl,
             maxParticipants: formData.max_participants,
-            prizeDescription: formData.prize_description,
+            prizeDescription: prizeDescription,
             pixKey: formData.organizer_pix_key,
           },
         });
@@ -183,8 +233,8 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
       description: "",
       game: "",
       rules: "",
-      prize_description: "",
-      entry_fee: 0,
+      prize_amount: 0,
+      entry_fee_brl: 0,
       max_participants: 100,
       start_date: "",
       end_date: "",
@@ -193,6 +243,8 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
     });
     setBannerFile(null);
     setBannerPreview(null);
+    setEnableBoost(false);
+    setSelectedBoost(0);
   };
 
   return (
@@ -296,15 +348,20 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           {/* Entry Fee and Max Participants */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="entry_fee">Valor da Inscrição (créditos) *</Label>
-              <Input
-                id="entry_fee"
-                type="number"
-                min={0}
-                value={formData.entry_fee}
-                onChange={(e) => setFormData({ ...formData, entry_fee: parseInt(e.target.value) || 0 })}
-                required
-              />
+              <Label htmlFor="entry_fee_brl">Valor da Inscrição (R$) *</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+                <Input
+                  id="entry_fee_brl"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={formData.entry_fee_brl}
+                  onChange={(e) => setFormData({ ...formData, entry_fee_brl: parseFloat(e.target.value) || 0 })}
+                  className="pl-10"
+                  required
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Taxa da plataforma: 5% (você receberá 95% de cada inscrição)
               </p>
@@ -322,16 +379,22 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             </div>
           </div>
 
-          {/* Prize Description */}
+          {/* Prize Amount */}
           <div className="space-y-2">
-            <Label htmlFor="prize_description">Premiação</Label>
-            <Textarea
-              id="prize_description"
-              value={formData.prize_description}
-              onChange={(e) => setFormData({ ...formData, prize_description: e.target.value })}
-              placeholder="Ex: 1º lugar: R$ 500 | 2º lugar: R$ 200 | 3º lugar: R$ 100"
-              rows={2}
-            />
+            <Label htmlFor="prize_amount">Premiação Total (R$)</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+              <Input
+                id="prize_amount"
+                type="number"
+                min={0}
+                step="0.01"
+                value={formData.prize_amount}
+                onChange={(e) => setFormData({ ...formData, prize_amount: parseFloat(e.target.value) || 0 })}
+                className="pl-10"
+                placeholder="0,00"
+              />
+            </div>
           </div>
 
           {/* Dates */}
@@ -340,7 +403,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               <Label htmlFor="registration_deadline">Fim das Inscrições *</Label>
               <Input
                 id="registration_deadline"
-                type="datetime-local"
+                type="date"
                 value={formData.registration_deadline}
                 onChange={(e) => setFormData({ ...formData, registration_deadline: e.target.value })}
                 required
@@ -350,7 +413,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               <Label htmlFor="start_date">Data de Início *</Label>
               <Input
                 id="start_date"
-                type="datetime-local"
+                type="date"
                 value={formData.start_date}
                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                 required
@@ -360,7 +423,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               <Label htmlFor="end_date">Data de Término</Label>
               <Input
                 id="end_date"
-                type="datetime-local"
+                type="date"
                 value={formData.end_date}
                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
               />
@@ -394,6 +457,61 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             </p>
           </div>
 
+          {/* Boost Section */}
+          <div className="space-y-4 p-4 rounded-lg border border-accent/30 bg-accent/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Star className="h-5 w-5 text-accent" />
+                <div>
+                  <Label htmlFor="boost-toggle" className="text-base font-semibold cursor-pointer">
+                    Impulsionar Torneio
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Apareça na seção de destaque da página inicial
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="boost-toggle"
+                checked={enableBoost}
+                onCheckedChange={setEnableBoost}
+              />
+            </div>
+
+            {enableBoost && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Coins className="h-4 w-4" />
+                  <span>Seus créditos: <strong className="text-foreground">{credits}</strong></span>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {BOOST_PACKAGES.map((pkg, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setSelectedBoost(index)}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        selectedBoost === index
+                          ? "border-accent bg-accent/10"
+                          : "border-border hover:border-accent/50"
+                      } ${credits < pkg.credits ? "opacity-50" : ""}`}
+                    >
+                      <div className="font-bold text-foreground">{pkg.label}</div>
+                      <div className="text-sm text-accent">{pkg.credits} créditos</div>
+                    </button>
+                  ))}
+                </div>
+
+                {!hasEnoughCredits && (
+                  <p className="text-xs text-destructive">
+                    Créditos insuficientes. Você precisa de {selectedBoostPackage.credits} créditos.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Submit */}
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
@@ -401,13 +519,18 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             </Button>
             <Button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || (enableBoost && !hasEnoughCredits)}
               className="bg-gradient-primary hover:opacity-90 glow-primary"
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Criando...
+                </>
+              ) : enableBoost ? (
+                <>
+                  <Star className="mr-2 h-4 w-4" />
+                  Criar e Impulsionar
                 </>
               ) : (
                 "Criar Torneio"
