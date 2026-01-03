@@ -3,20 +3,20 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface GameFilterProps {
-  selected: GameType | null;
-  onSelect: (game: GameType | null) => void;
+  selected: GameType | "all";
+  onSelect: (game: GameType | "all") => void;
 }
 
 export function GameFilter({ selected, onSelect }: GameFilterProps) {
   return (
     <div className="flex flex-wrap gap-2">
       <Button
-        variant={selected === null ? 'default' : 'outline'}
+        variant={selected === "all" ? 'default' : 'outline'}
         size="sm"
-        onClick={() => onSelect(null)}
+        onClick={() => onSelect("all")}
         className={cn(
           'font-semibold',
-          selected === null && 'bg-gradient-primary glow-primary'
+          selected === "all" && 'bg-gradient-primary glow-primary'
         )}
       >
         Todos
