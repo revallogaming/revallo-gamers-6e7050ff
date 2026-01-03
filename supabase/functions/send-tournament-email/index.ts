@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
@@ -25,7 +26,44 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Authentication check - require logged in user
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: req.headers.get("Authorization")! },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error("Auth error:", authError);
+      return new Response(
+        JSON.stringify({ error: "Não autorizado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const data: TournamentEmailRequest = await req.json();
+
+    // Validate email matches authenticated user (prevent email spoofing)
+    if (data.email !== user.email) {
+      console.error("Email mismatch: attempted to send to different email");
+      return new Response(
+        JSON.stringify({ error: "Email não autorizado" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Basic input validation
+    if (!data.tournamentTitle || data.tournamentTitle.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Título do torneio inválido" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const formatDate = (dateStr: string) => {
       if (!dateStr) return "Não definido";
@@ -39,17 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     };
 
-    // Log the email data
-    console.log("Tournament email data:", {
-      to: data.email,
-      tournamentTitle: data.tournamentTitle,
-      game: data.game,
-      startDate: formatDate(data.startDate),
-      entryFee: data.entryFee,
-      maxParticipants: data.maxParticipants,
-      prizeDescription: data.prizeDescription,
-      pixKey: data.pixKey,
-    });
+    console.log("Tournament email request from authenticated user");
 
     // Email HTML template
     const emailHtml = `
