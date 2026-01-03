@@ -513,6 +513,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_organizer_participant_emails: {
+        Args: { p_tournament_id: string }
+        Returns: {
+          participant_email: string
+          participant_id: string
+          player_id: string
+          player_nickname: string
+        }[]
+      }
       get_public_profile: {
         Args: { profile_id: string }
         Returns: {
