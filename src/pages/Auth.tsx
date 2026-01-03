@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Gamepad2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Gamepad2, Mail, Lock, User, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ const Auth = () => {
   const [nickname, setNickname] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -25,28 +26,108 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        await signIn(email, password);
-        toast({ title: "Bem-vindo de volta!" });
+        const { error } = await signIn(email, password);
+        if (error) {
+          // Handle email not confirmed error
+          if (error.message.includes("Email not confirmed")) {
+            toast({ 
+              title: "Email não confirmado", 
+              description: "Por favor, verifique seu email e clique no link de confirmação.",
+              variant: "destructive" 
+            });
+          } else {
+            throw error;
+          }
+        } else {
+          toast({ title: "Bem-vindo de volta!" });
+          navigate("/");
+        }
       } else {
         if (!nickname.trim()) {
           toast({ title: "Digite um nickname", variant: "destructive" });
           setIsLoading(false);
           return;
         }
-        await signUp(email, password, nickname);
-        toast({ title: "Conta criada com sucesso!" });
+        const { error } = await signUp(email, password, nickname);
+        if (error) throw error;
+        
+        // Show email confirmation message
+        setShowEmailConfirmation(true);
       }
-      navigate("/");
     } catch (error: any) {
+      let errorMessage = error.message;
+      
+      // Translate common error messages
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Email ou senha incorretos";
+      } else if (error.message.includes("User already registered")) {
+        errorMessage = "Este email já está cadastrado";
+      } else if (error.message.includes("Password should be at least")) {
+        errorMessage = "A senha deve ter pelo menos 6 caracteres";
+      }
+      
       toast({ 
         title: isLogin ? "Erro ao entrar" : "Erro ao criar conta", 
-        description: error.message,
+        description: errorMessage,
         variant: "destructive" 
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Email confirmation success screen
+  if (showEmailConfirmation) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/5" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent opacity-50" />
+        
+        <Card className="relative w-full max-w-md border-border/50 bg-card/80 backdrop-blur-xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/20">
+              <CheckCircle className="h-10 w-10 text-green-500" />
+            </div>
+            <CardTitle className="font-display text-2xl text-foreground">
+              Verifique seu Email
+            </CardTitle>
+          </CardHeader>
+          
+          <CardContent className="space-y-6 text-center">
+            <div className="space-y-2">
+              <p className="text-muted-foreground">
+                Enviamos um link de confirmação para:
+              </p>
+              <p className="font-semibold text-foreground text-lg">
+                {email}
+              </p>
+            </div>
+            
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                📧 Clique no link enviado para seu email para ativar sua conta.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Não recebeu? Verifique a pasta de spam.
+              </p>
+            </div>
+            
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setShowEmailConfirmation(false);
+                setIsLogin(true);
+                setPassword("");
+              }}
+            >
+              Voltar para Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
