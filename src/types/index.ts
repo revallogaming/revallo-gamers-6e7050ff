@@ -83,10 +83,10 @@ export const GAME_INFO: Record<GameType, { name: string; color: string; icon: st
   cod: { name: 'Call of Duty', color: 'cod', icon: '🎖️' },
 };
 
-export const STATUS_INFO: Record<TournamentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  upcoming: { label: 'Em breve', variant: 'secondary' },
-  open: { label: 'Inscrições abertas', variant: 'default' },
-  in_progress: { label: 'Em andamento', variant: 'outline' },
-  completed: { label: 'Finalizado', variant: 'secondary' },
-  cancelled: { label: 'Cancelado', variant: 'destructive' },
+export const STATUS_INFO: Record<TournamentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {
+  upcoming: { label: 'Em breve', variant: 'secondary', color: '#6b7280' },
+  open: { label: 'Inscrições abertas', variant: 'default', color: '#22c55e' },
+  in_progress: { label: 'Em andamento', variant: 'outline', color: '#f59e0b' },
+  completed: { label: 'Finalizado', variant: 'secondary', color: '#6b7280' },
+  cancelled: { label: 'Cancelado', variant: 'destructive', color: '#ef4444' },
 };

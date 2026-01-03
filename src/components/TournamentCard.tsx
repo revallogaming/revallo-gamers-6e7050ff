@@ -15,7 +15,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
   const statusInfo = STATUS_INFO[tournament.status];
 
   return (
-    <Link to={`/tournaments/${tournament.id}`}>
+    <Link to={`/tournament/${tournament.id}`}>
       <Card className="card-hover border-glow bg-gradient-card overflow-hidden group">
         <CardContent className="p-0">
           {/* Game Header */}
