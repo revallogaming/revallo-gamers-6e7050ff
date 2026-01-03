@@ -284,6 +284,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_participants: {
+        Args: { tournament_uuid: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "organizer" | "player"
