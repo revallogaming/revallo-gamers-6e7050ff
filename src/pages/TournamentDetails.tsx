@@ -2,7 +2,6 @@ import { useParams, Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useTournament, useTournamentParticipants, useJoinTournament } from "@/hooks/useTournaments";
 import { useAuth } from "@/hooks/useAuth";
-import { useCredits } from "@/hooks/useCredits";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,8 +20,7 @@ const TournamentDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { data: tournament, isLoading } = useTournament(id || "");
   const { data: participants } = useTournamentParticipants(id || "");
-  const { user, profile } = useAuth();
-  const { spendCredits } = useCredits();
+  const { user } = useAuth();
   const joinTournament = useJoinTournament();
   const { toast } = useToast();
 
@@ -41,27 +39,8 @@ const TournamentDetails = () => {
       return;
     }
 
-    if ((profile?.credits ?? 0) < tournament.entry_fee) {
-      toast({ 
-        title: "Créditos insuficientes", 
-        description: `Você precisa de ${tournament.entry_fee} créditos`,
-        variant: "destructive" 
-      });
-      return;
-    }
-
     try {
-      // Spend credits first
-      if (tournament.entry_fee > 0) {
-        await spendCredits.mutateAsync({
-          amount: tournament.entry_fee,
-          type: "tournament_entry",
-          description: `Inscrição: ${tournament.title}`,
-          referenceId: tournament.id,
-        });
-      }
-
-      // Then join tournament
+      // Join tournament (payment is made via PIX externally)
       await joinTournament.mutateAsync({
         tournamentId: tournament.id,
         playerId: user.id,
@@ -285,7 +264,7 @@ const TournamentDetails = () => {
                       Inscrição
                     </span>
                     <span className="font-bold text-accent">
-                      {tournament.entry_fee > 0 ? `${tournament.entry_fee} créditos` : "Grátis"}
+                      {tournament.entry_fee > 0 ? `R$ ${(tournament.entry_fee / 100).toFixed(2).replace('.', ',')}` : "Grátis"}
                     </span>
                   </div>
                 </div>
@@ -308,12 +287,12 @@ const TournamentDetails = () => {
                   <Button
                     className="w-full bg-gradient-primary hover:opacity-90 glow-primary"
                     onClick={handleJoin}
-                    disabled={joinTournament.isPending || spendCredits.isPending}
+                    disabled={joinTournament.isPending}
                   >
-                    {joinTournament.isPending || spendCredits.isPending
+                    {joinTournament.isPending
                       ? "Inscrevendo..."
                       : tournament.entry_fee > 0
-                      ? `Inscrever-se (${tournament.entry_fee} créditos)`
+                      ? `Inscrever-se (R$ ${(tournament.entry_fee / 100).toFixed(2).replace('.', ',')})`
                       : "Inscrever-se Grátis"}
                   </Button>
                 ) : (
@@ -323,9 +302,9 @@ const TournamentDetails = () => {
                   </div>
                 )}
                 
-                {user && !isRegistered && tournament.entry_fee > 0 && (
-                  <p className="text-xs text-center text-muted-foreground">
-                    Seu saldo: {profile?.credits ?? 0} créditos
+                {tournament.entry_fee > 0 && (
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Pagamento via PIX diretamente ao organizador
                   </p>
                 )}
               </CardContent>

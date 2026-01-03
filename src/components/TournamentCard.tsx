@@ -60,7 +60,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Coins className="h-4 w-4 text-accent" />
-                <span>{tournament.entry_fee > 0 ? `${tournament.entry_fee} créd` : 'Grátis'}</span>
+                <span>{tournament.entry_fee > 0 ? `R$ ${(tournament.entry_fee / 100).toFixed(2).replace('.', ',')}` : 'Grátis'}</span>
               </div>
             </div>
 
