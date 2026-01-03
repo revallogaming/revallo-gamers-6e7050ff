@@ -386,6 +386,55 @@ export type Database = {
         }
         Relationships: []
       }
+      public_tournament_participants: {
+        Row: {
+          id: string | null
+          placement: number | null
+          player_id: string | null
+          registered_at: string | null
+          score: number | null
+          tournament_id: string | null
+        }
+        Insert: {
+          id?: string | null
+          placement?: number | null
+          player_id?: string | null
+          registered_at?: string | null
+          score?: number | null
+          tournament_id?: string | null
+        }
+        Update: {
+          id?: string | null
+          placement?: number | null
+          player_id?: string | null
+          registered_at?: string | null
+          score?: number | null
+          tournament_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_participants_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_participants_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_participants_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_credits: {
