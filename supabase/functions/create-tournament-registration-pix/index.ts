@@ -87,7 +87,7 @@ serve(async (req) => {
     // Verify tournament exists and has the correct entry fee
     const { data: tournament, error: tournamentError } = await supabaseAdmin
       .from("tournaments")
-      .select("id, title, entry_fee, status, current_participants, max_participants")
+      .select("id, title, entry_fee, status, current_participants, max_participants, organizer_id")
       .eq("id", tournament_id)
       .single();
 
@@ -98,6 +98,10 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Get organizer info for email notification
+    const { data: organizerAuth } = await supabaseAdmin.auth.admin.getUserById(tournament.organizer_id);
+    const organizerEmail = organizerAuth?.user?.email;
 
     // Validate tournament status (allow upcoming and open)
     if (!["upcoming", "open"].includes(tournament.status)) {
@@ -190,8 +194,59 @@ serve(async (req) => {
     const mpData = await mpResponse.json();
     console.log('Mercado Pago payment created for tournament registration');
 
-    // We could save a pending registration record here if needed
-    // For now, we just return the PIX data and rely on webhook for confirmation
+    // Send email notification to organizer about PIX generated
+    if (organizerEmail) {
+      try {
+        const smtpUsername = Deno.env.get("SMTP_USERNAME");
+        const smtpPassword = Deno.env.get("SMTP_PASSWORD");
+        
+        if (smtpUsername && smtpPassword) {
+          const { SMTPClient } = await import("https://deno.land/x/denomailer@1.6.0/mod.ts");
+          
+          const client = new SMTPClient({
+            connection: {
+              hostname: "smtp.gmail.com",
+              port: 465,
+              tls: true,
+              auth: {
+                username: smtpUsername,
+                password: smtpPassword,
+              },
+            },
+          });
+
+          await client.send({
+            from: smtpUsername,
+            to: organizerEmail,
+            subject: `PIX Gerado - ${tournament.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #7c3aed;">PIX Gerado!</h2>
+                <p>Um jogador está prestes a se inscrever no seu torneio.</p>
+                <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <p><strong>Torneio:</strong> ${tournament.title}</p>
+                  <p><strong>Valor:</strong> R$ ${amount_brl.toFixed(2)}</p>
+                  <p><strong>Email do jogador:</strong> ${email}</p>
+                </div>
+                <p style="color: #6b7280; font-size: 14px;">
+                  Você receberá outra notificação quando o pagamento for confirmado.
+                </p>
+                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                <p style="color: #9ca3af; font-size: 12px;">Equipe Revallo</p>
+              </div>
+            `,
+          });
+
+          await client.close();
+          console.log("PIX generated notification sent to organizer:", organizerEmail);
+        } else {
+          console.warn("SMTP credentials not configured, skipping organizer notification");
+        }
+      } catch (emailError) {
+        console.error("Failed to send PIX generated notification:", emailError);
+        // Don't fail the payment creation if email fails
+      }
+    }
 
     return new Response(
       JSON.stringify({
