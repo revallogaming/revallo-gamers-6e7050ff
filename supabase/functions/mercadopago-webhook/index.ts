@@ -145,8 +145,8 @@ async function sendRegistrationConfirmationEmail(
   tournamentLink: string | null,
   playerNickname: string
 ): Promise<void> {
-  const smtpUsername = Deno.env.get("SMTP_USERNAME");
-  const smtpPassword = Deno.env.get("SMTP_PASSWORD");
+  const smtpUsername = Deno.env.get("SMTP_USER") || "suporte.revallo@gmail.com";
+  const smtpPassword = Deno.env.get("SMTP_PASS");
 
   if (!smtpUsername || !smtpPassword) {
     console.log("SMTP credentials not configured, skipping email");
