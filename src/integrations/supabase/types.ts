@@ -14,16 +14,287 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          reference_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pix_payments: {
+        Row: {
+          amount_brl: number
+          created_at: string
+          credits_amount: number
+          id: string
+          mercadopago_id: string | null
+          paid_at: string | null
+          qr_code: string | null
+          qr_code_base64: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Insert: {
+          amount_brl: number
+          created_at?: string
+          credits_amount: number
+          id?: string
+          mercadopago_id?: string | null
+          paid_at?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Update: {
+          amount_brl?: number
+          created_at?: string
+          credits_amount?: number
+          id?: string
+          mercadopago_id?: string | null
+          paid_at?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pix_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          credits: number
+          highlighted_until: string | null
+          id: string
+          is_highlighted: boolean
+          main_game: Database["public"]["Enums"]["game_type"] | null
+          nickname: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          credits?: number
+          highlighted_until?: string | null
+          id: string
+          is_highlighted?: boolean
+          main_game?: Database["public"]["Enums"]["game_type"] | null
+          nickname: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          credits?: number
+          highlighted_until?: string | null
+          id?: string
+          is_highlighted?: boolean
+          main_game?: Database["public"]["Enums"]["game_type"] | null
+          nickname?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tournament_participants: {
+        Row: {
+          id: string
+          placement: number | null
+          player_id: string
+          registered_at: string
+          score: number | null
+          tournament_id: string
+        }
+        Insert: {
+          id?: string
+          placement?: number | null
+          player_id: string
+          registered_at?: string
+          score?: number | null
+          tournament_id: string
+        }
+        Update: {
+          id?: string
+          placement?: number | null
+          player_id?: string
+          registered_at?: string
+          score?: number | null
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_participants_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_participants_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          current_participants: number
+          description: string | null
+          end_date: string | null
+          entry_fee: number
+          game: Database["public"]["Enums"]["game_type"]
+          highlighted_until: string | null
+          id: string
+          is_highlighted: boolean
+          max_participants: number
+          organizer_id: string
+          prize_description: string | null
+          registration_deadline: string
+          rules: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["tournament_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_participants?: number
+          description?: string | null
+          end_date?: string | null
+          entry_fee?: number
+          game: Database["public"]["Enums"]["game_type"]
+          highlighted_until?: string | null
+          id?: string
+          is_highlighted?: boolean
+          max_participants?: number
+          organizer_id: string
+          prize_description?: string | null
+          registration_deadline: string
+          rules?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["tournament_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_participants?: number
+          description?: string | null
+          end_date?: string | null
+          entry_fee?: number
+          game?: Database["public"]["Enums"]["game_type"]
+          highlighted_until?: string | null
+          id?: string
+          is_highlighted?: boolean
+          max_participants?: number
+          organizer_id?: string
+          prize_description?: string | null
+          registration_deadline?: string
+          rules?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["tournament_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "organizer" | "player"
+      game_type: "freefire" | "fortnite" | "cod"
+      payment_status: "pending" | "confirmed" | "failed" | "refunded"
+      tournament_status:
+        | "upcoming"
+        | "open"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +421,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "organizer", "player"],
+      game_type: ["freefire", "fortnite", "cod"],
+      payment_status: ["pending", "confirmed", "failed", "refunded"],
+      tournament_status: [
+        "upcoming",
+        "open",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+    },
   },
 } as const
