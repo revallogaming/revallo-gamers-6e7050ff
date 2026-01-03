@@ -21,14 +21,13 @@ export function useOrganizerParticipants(tournamentId: string, isOrganizer: bool
   return useQuery({
     queryKey: ['organizer-participants', tournamentId],
     queryFn: async () => {
-      // Organizers can access full participant data including emails via RLS
-      const { data, error } = await supabase
+      // First get basic participant data (without email due to RLS)
+      const { data: basicData, error: basicError } = await supabase
         .from('tournament_participants')
         .select(`
           id,
           tournament_id,
           player_id,
-          participant_email,
           placement,
           score,
           registered_at,
@@ -42,13 +41,32 @@ export function useOrganizerParticipants(tournamentId: string, isOrganizer: bool
         .eq('tournament_id', tournamentId)
         .order('registered_at', { ascending: true });
 
-      if (error) throw error;
+      if (basicError) throw basicError;
 
-      return (data || []).map((p: any) => ({
+      // Then get emails via secure RPC function (only works for organizers)
+      const { data: emailData, error: emailError } = await supabase
+        .rpc('get_organizer_participant_emails', { p_tournament_id: tournamentId });
+
+      if (emailError) {
+        console.warn('Could not fetch participant emails:', emailError.message);
+      }
+
+      // Create email lookup map
+      const emailMap = new Map<string, string>();
+      if (emailData) {
+        emailData.forEach((e: { participant_id: string; participant_email: string }) => {
+          if (e.participant_email) {
+            emailMap.set(e.participant_id, e.participant_email);
+          }
+        });
+      }
+
+      // Merge data
+      return (basicData || []).map((p: any) => ({
         id: p.id,
         tournament_id: p.tournament_id,
         player_id: p.player_id,
-        participant_email: p.participant_email,
+        participant_email: emailMap.get(p.id) || null,
         placement: p.placement,
         score: p.score,
         registered_at: p.registered_at,
