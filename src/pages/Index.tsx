@@ -4,13 +4,14 @@ import { Header } from "@/components/Header";
 import { GameFilter } from "@/components/GameFilter";
 import { TournamentCard } from "@/components/TournamentCard";
 import { useTournaments } from "@/hooks/useTournaments";
+import { useAuth } from "@/hooks/useAuth";
 import { GameType, GAME_INFO } from "@/types";
-import { Gamepad2, Trophy, Users, Zap, ChevronRight, Star } from "lucide-react";
+import { Gamepad2, Trophy, Users, ChevronRight, Star } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-
 const Index = () => {
   const [selectedGame, setSelectedGame] = useState<GameType | "all">("all");
+  const { user } = useAuth();
   const { data: tournaments, isLoading } = useTournaments(
     selectedGame === "all" ? undefined : selectedGame
   );
@@ -38,6 +39,17 @@ const Index = () => {
               Jogos
             </h3>
             <nav className="space-y-1">
+              <button
+                onClick={() => setSelectedGame("all")}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  selectedGame === "all"
+                    ? "bg-primary/20 text-primary"
+                    : "text-muted-foreground hover:bg-card hover:text-foreground"
+                }`}
+              >
+                <Gamepad2 className="h-5 w-5" />
+                <span className="font-medium flex-1 text-left">Todos</span>
+              </button>
               {(Object.keys(GAME_INFO) as GameType[]).map((game) => {
                 const info = GAME_INFO[game];
                 const count = tournamentsByGame[game].length;
@@ -61,17 +73,6 @@ const Index = () => {
                   </button>
                 );
               })}
-              <button
-                onClick={() => setSelectedGame("all")}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                  selectedGame === "all"
-                    ? "bg-primary/20 text-primary"
-                    : "text-muted-foreground hover:bg-card hover:text-foreground"
-                }`}
-              >
-                <Gamepad2 className="h-5 w-5" />
-                <span className="font-medium flex-1 text-left">Todos</span>
-              </button>
             </nav>
           </div>
           
@@ -106,10 +107,6 @@ const Index = () => {
             <div className="relative px-4 md:px-8 py-8 md:py-12">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-primary">
-                    <Zap className="h-4 w-4" />
-                    <span>Torneios ao vivo agora</span>
-                  </div>
                   <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
                     Compete. Vença. <span className="text-gradient-primary">Conquiste.</span>
                   </h1>
@@ -208,22 +205,24 @@ const Index = () => {
             </div>
           )}
 
-          {/* CTA Section */}
-          <section className="px-4 md:px-8 py-12 border-t border-border/50">
-            <div className="text-center max-w-2xl mx-auto">
-              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
-                Pronto para competir?
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Crie sua conta e comece a participar dos melhores torneios de eSports do Brasil.
-              </p>
-              <Link to="/auth">
-                <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold px-8">
-                  Criar Conta Grátis
-                </Button>
-              </Link>
-            </div>
-          </section>
+          {/* CTA Section - Only show for non-logged users */}
+          {!user && (
+            <section className="px-4 md:px-8 py-12 border-t border-border/50">
+              <div className="text-center max-w-2xl mx-auto">
+                <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  Pronto para competir?
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Crie sua conta e comece a participar dos melhores torneios de eSports do Brasil.
+                </p>
+                <Link to="/auth">
+                  <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold px-8">
+                    Criar Conta Grátis
+                  </Button>
+                </Link>
+              </div>
+            </section>
+          )}
         </main>
       </div>
       
