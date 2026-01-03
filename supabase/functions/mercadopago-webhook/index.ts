@@ -11,8 +11,35 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Handle GET requests (webhook verification)
+  if (req.method === "GET") {
+    console.log("Webhook verification request received");
+    return new Response(JSON.stringify({ status: "ok" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
-    const body = await req.json();
+    const text = await req.text();
+    
+    // Handle empty body
+    if (!text || text.trim() === "") {
+      console.log("Empty body received - likely a test request");
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let body;
+    try {
+      body = JSON.parse(text);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError, "Body:", text);
+      return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     console.log("Webhook received:", JSON.stringify(body));
 
     // Only process payment notifications
