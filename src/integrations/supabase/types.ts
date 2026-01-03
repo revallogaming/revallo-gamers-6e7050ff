@@ -290,9 +290,15 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_participants: {
-        Args: { tournament_uuid: string }
-        Returns: undefined
+      spend_credits: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_reference_id?: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
