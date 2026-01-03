@@ -88,12 +88,12 @@ export interface UserRole {
   created_at: string;
 }
 
-export const GAME_INFO: Record<GameType, { name: string; color: string; image: string }> = {
-  freefire: { name: 'Free Fire', color: 'freefire', image: '/images/games/freefire.png' },
-  fortnite: { name: 'Fortnite', color: 'fortnite', image: '/images/games/fortnite.png' },
-  cod: { name: 'Call of Duty', color: 'cod', image: '/images/games/cod.png' },
-  league_of_legends: { name: 'League of Legends', color: 'lol', image: '/images/games/lol.png' },
-  valorant: { name: 'Valorant', color: 'valorant', image: '/images/games/valorant.png' },
+export const GAME_INFO: Record<GameType, { name: string; color: string }> = {
+  freefire: { name: 'Free Fire', color: 'freefire' },
+  fortnite: { name: 'Fortnite', color: 'fortnite' },
+  cod: { name: 'Call of Duty', color: 'cod' },
+  league_of_legends: { name: 'League of Legends', color: 'lol' },
+  valorant: { name: 'Valorant', color: 'valorant' },
 };
 
 export const STATUS_INFO: Record<TournamentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {
