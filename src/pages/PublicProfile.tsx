@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,11 +15,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollowers } from "@/hooks/useFollowers";
+import { FollowersDialog } from "@/components/FollowersDialog";
 
 const PublicProfile = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { isFollowing, toggleFollow, isToggling, followerCount, followingCount } = useFollowers(id);
+  const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
+  const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
 
   // Fetch profile data
   const { data: profile, isLoading } = useQuery({
@@ -140,14 +144,20 @@ const PublicProfile = () => {
 
                 {/* Follower Stats */}
                 <div className="mt-4 flex items-center gap-4 text-sm">
-                  <div className="text-center">
+                  <button 
+                    onClick={() => setFollowersDialogOpen(true)}
+                    className="text-center hover:text-primary transition-colors cursor-pointer"
+                  >
                     <span className="font-bold text-foreground">{followerCount ?? 0}</span>
                     <span className="text-muted-foreground ml-1">seguidores</span>
-                  </div>
-                  <div className="text-center">
+                  </button>
+                  <button 
+                    onClick={() => setFollowingDialogOpen(true)}
+                    className="text-center hover:text-primary transition-colors cursor-pointer"
+                  >
                     <span className="font-bold text-foreground">{followingCount ?? 0}</span>
                     <span className="text-muted-foreground ml-1">seguindo</span>
-                  </div>
+                  </button>
                 </div>
 
                 {/* Follow Button */}
@@ -282,6 +292,23 @@ const PublicProfile = () => {
           </div>
         </div>
       </div>
+      {/* Followers Dialog */}
+      {id && (
+        <>
+          <FollowersDialog
+            open={followersDialogOpen}
+            onOpenChange={setFollowersDialogOpen}
+            userId={id}
+            type="followers"
+          />
+          <FollowersDialog
+            open={followingDialogOpen}
+            onOpenChange={setFollowingDialogOpen}
+            userId={id}
+            type="following"
+          />
+        </>
+      )}
     </div>
   );
 };
