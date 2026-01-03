@@ -47,7 +47,7 @@ serve(async (req) => {
     );
 
     if (!validPackage) {
-      console.error(`Invalid package: ${amount_brl} BRL = ${credits_amount} credits`);
+      console.error('Payment validation failed: invalid package requested');
       return new Response(
         JSON.stringify({ 
           error: "Pacote de créditos inválido",
@@ -57,7 +57,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Creating PIX payment for user ${user.id}: R$${amount_brl} = ${credits_amount} créditos`);
+    console.log('PIX payment request initiated');
 
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     if (!accessToken) {
@@ -96,7 +96,7 @@ serve(async (req) => {
     }
 
     const mpData = await mpResponse.json();
-    console.log("Mercado Pago payment created:", mpData.id);
+    console.log('Mercado Pago payment created successfully');
 
     // Save payment record using service role
     const supabaseAdmin = createClient(
@@ -126,7 +126,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Payment saved:", payment.id);
+    console.log('Payment record saved successfully');
 
     return new Response(
       JSON.stringify({

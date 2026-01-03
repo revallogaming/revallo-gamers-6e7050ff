@@ -83,7 +83,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    console.log("Webhook received:", JSON.stringify(body));
+    console.log('Webhook notification received', { type: body.type, action: body.action });
 
     // MANDATORY signature verification for security
     const signature = req.headers.get('x-signature');
@@ -154,7 +154,7 @@ serve(async (req) => {
     }
 
     const mpPayment = await mpResponse.json();
-    console.log("MP Payment status:", mpPayment.status);
+    console.log('Payment status retrieved from provider');
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -178,7 +178,7 @@ serve(async (req) => {
 
     // Only process if payment is approved and not already confirmed
     if (mpPayment.status === "approved" && payment.status !== "confirmed") {
-      console.log(`Confirming payment ${payment.id} for user ${payment.user_id}`);
+      console.log('Processing approved payment confirmation');
 
       // Update payment status
       await supabase
@@ -206,7 +206,7 @@ serve(async (req) => {
         reference_id: payment.id,
       });
 
-      console.log(`Credits added: ${payment.credits_amount} to user ${payment.user_id}`);
+      console.log('Credit transaction completed successfully');
     } else if (mpPayment.status === "rejected" || mpPayment.status === "cancelled") {
       await supabase
         .from("pix_payments")
