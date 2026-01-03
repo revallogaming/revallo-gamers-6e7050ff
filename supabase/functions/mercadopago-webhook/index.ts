@@ -49,6 +49,69 @@ async function verifySignature(
   return hash === expectedHash;
 }
 
+async function sendRegistrationConfirmationEmail(
+  email: string,
+  tournamentTitle: string,
+  tournamentLink: string | null
+): Promise<void> {
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendApiKey) {
+    console.log("RESEND_API_KEY not configured, skipping email");
+    return;
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${resendApiKey}`,
+      },
+      body: JSON.stringify({
+        from: "Revallo Gamers <onboarding@resend.dev>",
+        to: [email],
+        subject: `✅ Inscrição Confirmada: ${tournamentTitle}`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #10b981; margin-bottom: 24px;">🎮 Inscrição Confirmada!</h1>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+              Parabéns! Seu pagamento foi confirmado e você está oficialmente inscrito no torneio:
+            </p>
+            <div style="background: linear-gradient(135deg, #1f2937, #374151); border-radius: 12px; padding: 20px; margin: 24px 0;">
+              <h2 style="color: #fff; margin: 0; font-size: 20px;">${tournamentTitle}</h2>
+            </div>
+            ${tournamentLink ? `
+              <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                Acesse o link do torneio para mais informações:
+              </p>
+              <a href="${tournamentLink}" 
+                 style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 16px 0;">
+                Acessar Torneio
+              </a>
+            ` : ''}
+            <p style="font-size: 14px; color: #666; margin-top: 32px; line-height: 1.6;">
+              Fique atento às atualizações do organizador. Boa sorte! 🏆
+            </p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+            <p style="font-size: 12px; color: #9ca3af;">
+              Este email foi enviado automaticamente pela plataforma Revallo Gamers.
+            </p>
+          </div>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Resend API error:", errorText);
+    } else {
+      console.log("Registration confirmation email sent successfully to:", email);
+    }
+  } catch (error) {
+    console.error("Error sending confirmation email:", error);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -200,7 +263,7 @@ serve(async (req) => {
         // Verify tournament is still open and has space
         const { data: tournament, error: tournamentError } = await supabase
           .from("tournaments")
-          .select("id, status, current_participants, max_participants")
+          .select("id, title, status, current_participants, max_participants, tournament_link")
           .eq("id", tournamentId)
           .single();
 
@@ -246,6 +309,15 @@ serve(async (req) => {
         }
 
         console.log(`Successfully registered user ${userId} in tournament ${tournamentId}`);
+
+        // Send confirmation email (non-blocking)
+        if (participantEmail) {
+          sendRegistrationConfirmationEmail(
+            participantEmail,
+            tournament.title,
+            tournament.tournament_link
+          ).catch(err => console.error("Email send error:", err));
+        }
       } else if (mpPayment.status === "rejected" || mpPayment.status === "cancelled") {
         console.log("Tournament registration payment rejected/cancelled");
       }
