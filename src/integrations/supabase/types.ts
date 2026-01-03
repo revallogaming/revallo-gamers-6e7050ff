@@ -176,6 +176,7 @@ export type Database = {
       tournament_participants: {
         Row: {
           id: string
+          participant_email: string | null
           placement: number | null
           player_id: string
           registered_at: string
@@ -184,6 +185,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          participant_email?: string | null
           placement?: number | null
           player_id: string
           registered_at?: string
@@ -192,6 +194,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          participant_email?: string | null
           placement?: number | null
           player_id?: string
           registered_at?: string
@@ -242,6 +245,7 @@ export type Database = {
           start_date: string
           status: Database["public"]["Enums"]["tournament_status"]
           title: string
+          tournament_link: string | null
           updated_at: string
         }
         Insert: {
@@ -263,6 +267,7 @@ export type Database = {
           start_date: string
           status?: Database["public"]["Enums"]["tournament_status"]
           title: string
+          tournament_link?: string | null
           updated_at?: string
         }
         Update: {
@@ -284,6 +289,7 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["tournament_status"]
           title?: string
+          tournament_link?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -33,7 +33,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Loader2, Image as ImageIcon, Star, Coins, CalendarIcon, Trophy, Users, DollarSign, FileText, Key, Gamepad2 } from "lucide-react";
+import { Plus, Loader2, Image as ImageIcon, Star, Coins, CalendarIcon, Trophy, Users, DollarSign, FileText, Key, Gamepad2, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CreateTournamentDialogProps {
@@ -71,6 +71,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
     end_date: null as Date | null,
     registration_deadline: null as Date | null,
     organizer_pix_key: "",
+    tournament_link: "",
   });
 
   const selectedBoostPackage = BOOST_PACKAGES[selectedBoost];
@@ -177,6 +178,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           status: "upcoming",
           is_highlighted: isHighlighted,
           highlighted_until: highlightedUntil,
+          tournament_link: formData.tournament_link || null,
         })
         .select()
         .single();
@@ -249,6 +251,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
       end_date: null,
       registration_deadline: null,
       organizer_pix_key: "",
+      tournament_link: "",
     });
     setBannerFile(null);
     setBannerPreview(null);
@@ -545,6 +548,25 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                 placeholder="Descreva as regras do torneio..."
                 className="min-h-[100px] bg-muted/30 border-border/50 focus:border-primary/50"
               />
+            </div>
+
+            {/* Tournament Link */}
+            <div className="space-y-2">
+              <Label htmlFor="tournament_link" className="text-xs text-muted-foreground flex items-center gap-2">
+                <LinkIcon className="h-3 w-3" />
+                Link do Torneio (Discord, WhatsApp, etc)
+              </Label>
+              <Input
+                id="tournament_link"
+                type="url"
+                value={formData.tournament_link}
+                onChange={(e) => setFormData({ ...formData, tournament_link: e.target.value })}
+                placeholder="https://discord.gg/... ou https://chat.whatsapp.com/..."
+                className="h-12 bg-muted/30 border-border/50 focus:border-primary/50"
+              />
+              <p className="text-xs text-muted-foreground/70">
+                Este link será enviado aos participantes inscritos
+              </p>
             </div>
 
             {/* PIX Key */}

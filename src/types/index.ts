@@ -8,7 +8,7 @@ export interface Profile {
   avatar_url: string | null;
   main_game: GameType | null;
   bio: string | null;
-  credits: number;
+  credits?: number;
   is_highlighted: boolean;
   highlighted_until: string | null;
   created_at: string;
@@ -33,6 +33,7 @@ export interface Tournament {
   is_highlighted: boolean;
   highlighted_until: string | null;
   banner_url: string | null;
+  tournament_link: string | null;
   created_at: string;
   updated_at: string;
   organizer?: Profile;
@@ -53,6 +54,7 @@ export interface TournamentParticipant {
   placement: number | null;
   score: number;
   registered_at: string;
+  participant_email: string | null;
   player?: Profile;
 }
 

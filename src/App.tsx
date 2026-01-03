@@ -12,6 +12,8 @@ import TournamentDetails from "./pages/TournamentDetails";
 import Organizer from "./pages/Organizer";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import MyTournaments from "./pages/MyTournaments";
+import PublicProfile from "./pages/PublicProfile";
 
 const queryClient = new QueryClient();
 
@@ -26,9 +28,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:id" element={<PublicProfile />} />
             <Route path="/credits" element={<Credits />} />
             <Route path="/tournament/:id" element={<TournamentDetails />} />
             <Route path="/tournaments" element={<Index />} />
+            <Route path="/my-tournaments" element={<MyTournaments />} />
             <Route path="/organizer" element={<Organizer />} />
             <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

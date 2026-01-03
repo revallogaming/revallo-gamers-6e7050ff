@@ -29,6 +29,10 @@ export function Header() {
                   <span className="font-medium">Admin</span>
                 </Link>
               )}
+              <Link to="/my-tournaments" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                <Trophy className="h-4 w-4" />
+                <span className="font-medium">Meus Torneios</span>
+              </Link>
               <Link to="/credits" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Coins className="h-4 w-4" />
                 <span className="font-medium">{profile?.credits ?? 0} créditos</span>
@@ -75,6 +79,14 @@ export function Header() {
                     <span className="font-medium">Admin</span>
                   </Link>
                 )}
+                <Link 
+                  to="/my-tournaments" 
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Trophy className="h-4 w-4" />
+                  <span className="font-medium">Meus Torneios</span>
+                </Link>
                 <Link 
                   to="/credits" 
                   className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"

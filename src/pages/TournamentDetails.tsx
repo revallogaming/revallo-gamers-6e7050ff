@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { useTournament, useTournamentParticipants, useJoinTournament } from "@/hooks/useTournaments";
+import { useTournament, useTournamentParticipants } from "@/hooks/useTournaments";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,20 +10,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { 
   Trophy, Calendar, Users, Coins, Clock, 
-  ArrowLeft, Star, Medal, CheckCircle, AlertCircle 
+  ArrowLeft, Star, Medal, CheckCircle, AlertCircle,
+  ExternalLink, Copy, Link as LinkIcon
 } from "lucide-react";
 import { GAME_INFO, STATUS_INFO } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { JoinTournamentDialog } from "@/components/JoinTournamentDialog";
+import { toast } from "sonner";
 
 const TournamentDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { data: tournament, isLoading } = useTournament(id || "");
   const { data: participants } = useTournamentParticipants(id || "");
   const { user } = useAuth();
-  const joinTournament = useJoinTournament();
-  const { toast } = useToast();
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
 
   if (!id) {
     return <Navigate to="/" replace />;
@@ -33,25 +36,18 @@ const TournamentDetails = () => {
     !isRegistered && 
     (tournament?.current_participants ?? 0) < (tournament?.max_participants ?? 0);
 
-  const handleJoin = async () => {
-    if (!user || !tournament) {
-      toast({ title: "Faça login para se inscrever", variant: "destructive" });
+  const handleJoin = () => {
+    if (!user) {
+      toast.error("Faça login para se inscrever");
       return;
     }
+    setJoinDialogOpen(true);
+  };
 
-    try {
-      // Join tournament (payment is made via PIX externally)
-      await joinTournament.mutateAsync({
-        tournamentId: tournament.id,
-        playerId: user.id,
-      });
-    } catch (error: any) {
-      toast({ 
-        title: "Erro na inscrição", 
-        description: error.message, 
-        variant: "destructive" 
-      });
-    }
+  const copyTournamentLink = () => {
+    const url = `${window.location.origin}/tournament/${id}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link do torneio copiado!");
   };
 
   if (isLoading) {
@@ -122,10 +118,16 @@ const TournamentDetails = () => {
       </div>
       
       <div className="container mx-auto px-4 py-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Link>
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Link>
+          <Button variant="outline" size="sm" onClick={copyTournamentLink}>
+            <Copy className="h-4 w-4 mr-2" />
+            Copiar Link
+          </Button>
+        </div>
         
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Content */}
@@ -173,6 +175,29 @@ const TournamentDetails = () => {
               </Card>
             )}
             
+            {/* Tournament Link */}
+            {tournament.tournament_link && (
+              <Card className="border-border/50 border-secondary/30 bg-secondary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-secondary">
+                    <LinkIcon className="h-5 w-5" />
+                    Link do Torneio
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <a 
+                    href={tournament.tournament_link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Acessar link do torneio
+                  </a>
+                </CardContent>
+              </Card>
+            )}
+            
             {/* Participants */}
             <Card className="border-border/50">
               <CardHeader>
@@ -190,9 +215,10 @@ const TournamentDetails = () => {
                 {participants && participants.length > 0 ? (
                   <div className="grid gap-2 sm:grid-cols-2">
                     {participants.map((p, i) => (
-                      <div
+                      <Link
                         key={p.id}
-                        className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3"
+                        to={`/profile/${(p as any).player?.id}`}
+                        className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3 hover:border-primary/30 transition-all"
                       >
                         <span className="text-sm font-bold text-muted-foreground w-6">
                           #{i + 1}
@@ -209,7 +235,7 @@ const TournamentDetails = () => {
                         {p.placement && p.placement <= 3 && (
                           <Star className="ml-auto h-4 w-4 text-accent" />
                         )}
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 ) : (
@@ -287,11 +313,8 @@ const TournamentDetails = () => {
                   <Button
                     className="w-full bg-gradient-primary hover:opacity-90 glow-primary"
                     onClick={handleJoin}
-                    disabled={joinTournament.isPending}
                   >
-                    {joinTournament.isPending
-                      ? "Inscrevendo..."
-                      : tournament.entry_fee > 0
+                    {tournament.entry_fee > 0
                       ? `Inscrever-se (R$ ${(tournament.entry_fee / 100).toFixed(2).replace('.', ',')})`
                       : "Inscrever-se Grátis"}
                   </Button>
@@ -312,6 +335,16 @@ const TournamentDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Join Tournament Dialog */}
+      {tournament && user && (
+        <JoinTournamentDialog
+          open={joinDialogOpen}
+          onOpenChange={setJoinDialogOpen}
+          tournament={tournament}
+          userId={user.id}
+        />
+      )}
     </div>
   );
 };
