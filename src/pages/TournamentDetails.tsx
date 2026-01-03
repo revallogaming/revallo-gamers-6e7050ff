@@ -344,11 +344,6 @@ const TournamentDetails = () => {
                   </div>
                 )}
                 
-                {tournament.entry_fee > 0 && (
-                  <p className="text-xs text-center text-muted-foreground mt-2">
-                    Pagamento via PIX diretamente ao organizador
-                  </p>
-                )}
               </CardContent>
             </Card>
           </div>
