@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import MyTournaments from "./pages/MyTournaments";
 import PublicProfile from "./pages/PublicProfile";
 import TermsOfUse from "./pages/TermsOfUse";
+import Tournaments from "./pages/Tournaments";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +35,7 @@ const App = () => (
             <Route path="/profile/:id" element={<PublicProfile />} />
             <Route path="/credits" element={<Credits />} />
             <Route path="/tournament/:id" element={<TournamentDetails />} />
-            <Route path="/tournaments" element={<Index />} />
+            <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/my-tournaments" element={<MyTournaments />} />
             <Route path="/organizer" element={<Organizer />} />
             <Route path="/admin" element={<Admin />} />
