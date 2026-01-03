@@ -145,12 +145,10 @@ async function sendRegistrationConfirmationEmail(
   tournamentLink: string | null,
   playerNickname: string
 ): Promise<void> {
-  const smtpHost = Deno.env.get("SMTP_HOST");
-  const smtpPort = Deno.env.get("SMTP_PORT");
-  const smtpUser = Deno.env.get("SMTP_USER");
-  const smtpPass = Deno.env.get("SMTP_PASS");
+  const smtpUsername = Deno.env.get("SMTP_USERNAME");
+  const smtpPassword = Deno.env.get("SMTP_PASSWORD");
 
-  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+  if (!smtpUsername || !smtpPassword) {
     console.log("SMTP credentials not configured, skipping email");
     return;
   }
@@ -158,12 +156,12 @@ async function sendRegistrationConfirmationEmail(
   try {
     const client = new SMTPClient({
       connection: {
-        hostname: smtpHost,
-        port: parseInt(smtpPort),
+        hostname: "smtp.gmail.com",
+        port: 465,
         tls: true,
         auth: {
-          username: smtpUser,
-          password: smtpPass,
+          username: smtpUsername,
+          password: smtpPassword,
         },
       },
     });
@@ -198,7 +196,7 @@ async function sendRegistrationConfirmationEmail(
     `;
 
     await client.send({
-      from: smtpUser,
+      from: smtpUsername,
       to: participantEmail,
       subject: `✅ Inscrição Confirmada: ${tournamentTitle}`,
       content: "auto",
@@ -234,7 +232,7 @@ async function sendRegistrationConfirmationEmail(
       `;
 
       await client.send({
-        from: smtpUser,
+        from: smtpUsername,
         to: organizerEmail,
         subject: `🎯 Nova Inscrição: ${playerNickname} - ${tournamentTitle}`,
         content: "auto",
