@@ -172,10 +172,10 @@ const Tournaments = () => {
           {/* Tournaments Grid */}
           <section className="px-4 md:px-6 py-6">
             {isLoading ? (
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {[...Array(16)].map((_, i) => (
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                {[...Array(18)].map((_, i) => (
                   <div key={i} className="rounded-lg border border-border/50 bg-card overflow-hidden">
-                    <Skeleton className="aspect-video w-full" />
+                    <Skeleton className="aspect-[4/3] w-full" />
                     <div className="p-3">
                       <Skeleton className="mb-2 h-4 w-full" />
                       <Skeleton className="h-3 w-2/3" />
@@ -185,7 +185,7 @@ const Tournaments = () => {
               </div>
             ) : tournaments.length > 0 ? (
               <>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                   {tournaments.map((tournament) => (
                     <TournamentCard key={tournament.id} tournament={tournament} />
                   ))}
