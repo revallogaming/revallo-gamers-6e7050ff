@@ -21,10 +21,16 @@ async function transferToOrganizer(
   const organizerAmount = Number((amountBrl * (100 - PLATFORM_FEE_PERCENT) / 100).toFixed(2));
   
   console.log(`Initiating PIX transfer: R$${organizerAmount} to ${organizerPixKey}`);
+  console.log(`Payment ID reference: ${paymentId}, Tournament: ${tournamentTitle}`);
+  
+  // Note: Mercado Pago PIX transfers (disbursements) require a different API
+  // and may require additional account verification (Conta Digital MP)
+  // For now, we log the transfer request for manual processing or future API integration
   
   try {
-    // Create a PIX disbursement using Mercado Pago API
-    const response = await fetch("https://api.mercadopago.com/v1/payments", {
+    // Option 1: Use Mercado Pago's Point of Interaction for PIX transfers
+    // This requires the account to have "Mercado Pago Conta Digital" enabled
+    const response = await fetch("https://api.mercadopago.com/v1/transaction_intentions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,31 +38,40 @@ async function transferToOrganizer(
         "X-Idempotency-Key": `transfer-${paymentId}-${Date.now()}`,
       },
       body: JSON.stringify({
-        transaction_amount: organizerAmount,
-        description: `Repasse: ${tournamentTitle.substring(0, 50)}`,
-        payment_method_id: "pix",
-        payer: {
-          email: "noreply@revallo.com.br",
+        device: {},
+        type: "pix",
+        identification: {
+          type: "pix_key",
+          number: organizerPixKey,
         },
-        additional_info: {
-          payer: {
-            first_name: "Revallo",
-            last_name: "Platform",
+        payment: {
+          type: "pix_transfer",
+          amount: organizerAmount,
+          destination: {
+            type: "pix",
+            key: organizerPixKey,
           },
         },
-        point_of_interaction: {
-          type: "PIX_TRANSFER",
-          transaction_data: {
-            pix_key: organizerPixKey,
-          },
-        },
+        description: `Repasse torneio: ${tournamentTitle.substring(0, 50)}`,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("PIX transfer error:", errorText);
-      return { success: false, error: `Transfer API error: ${response.status}` };
+      console.error("PIX transfer error response:", errorText);
+      
+      // Log transfer details for manual processing if API fails
+      console.log("=== TRANSFER REQUEST FOR MANUAL PROCESSING ===");
+      console.log(`Amount: R$${organizerAmount}`);
+      console.log(`PIX Key: ${organizerPixKey}`);
+      console.log(`Tournament: ${tournamentTitle}`);
+      console.log(`Payment Reference: ${paymentId}`);
+      console.log("===============================================");
+      
+      return { 
+        success: false, 
+        error: `Transfer API not available. Amount R$${organizerAmount} logged for manual transfer to ${organizerPixKey}` 
+      };
     }
 
     const data = await response.json();
@@ -65,7 +80,19 @@ async function transferToOrganizer(
     return { success: true, transferId: String(data.id) };
   } catch (error) {
     console.error("PIX transfer exception:", error);
-    return { success: false, error: String(error) };
+    
+    // Log for manual processing
+    console.log("=== TRANSFER REQUEST FOR MANUAL PROCESSING ===");
+    console.log(`Amount: R$${organizerAmount}`);
+    console.log(`PIX Key: ${organizerPixKey}`);
+    console.log(`Tournament: ${tournamentTitle}`);
+    console.log(`Payment Reference: ${paymentId}`);
+    console.log("===============================================");
+    
+    return { 
+      success: false, 
+      error: `Exception occurred. Amount R$${organizerAmount} logged for manual transfer.` 
+    };
   }
 }
 
