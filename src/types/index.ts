@@ -33,10 +33,17 @@ export interface Tournament {
   is_highlighted: boolean;
   highlighted_until: string | null;
   banner_url: string | null;
-  organizer_pix_key: string | null;
   created_at: string;
   updated_at: string;
   organizer?: Profile;
+}
+
+export interface OrganizerPaymentInfo {
+  id: string;
+  organizer_id: string;
+  pix_key: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface TournamentParticipant {

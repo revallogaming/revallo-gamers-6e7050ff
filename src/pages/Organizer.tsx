@@ -34,7 +34,6 @@ const Organizer = () => {
     start_date: "",
     registration_deadline: "",
     banner_url: null as string | null,
-    organizer_pix_key: "",
   });
 
   // Filter tournaments by organizer
@@ -87,7 +86,6 @@ const Organizer = () => {
         highlighted_until: null,
         end_date: null,
         banner_url: formData.banner_url,
-        organizer_pix_key: formData.organizer_pix_key || null,
       });
       
       setCreateDialogOpen(false);
@@ -102,7 +100,6 @@ const Organizer = () => {
         start_date: "",
         registration_deadline: "",
         banner_url: null,
-        organizer_pix_key: "",
       });
     } catch (error) {
       // Error handled by mutation
