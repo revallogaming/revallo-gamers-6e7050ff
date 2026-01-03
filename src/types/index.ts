@@ -89,11 +89,11 @@ export interface UserRole {
 }
 
 export const GAME_INFO: Record<GameType, { name: string; color: string; image: string }> = {
-  freefire: { name: 'Free Fire', color: 'freefire', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Garena_Free_Fire_Logo.png/600px-Garena_Free_Fire_Logo.png' },
-  fortnite: { name: 'Fortnite', color: 'fortnite', image: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Fortnite_F_letterance_logo.png' },
-  cod: { name: 'Call of Duty', color: 'cod', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Call_of_Duty_2019_logo.svg/512px-Call_of_Duty_2019_logo.svg.png' },
-  league_of_legends: { name: 'League of Legends', color: 'lol', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/League_of_Legends_2019_logo.svg/512px-League_of_Legends_2019_logo.svg.png' },
-  valorant: { name: 'Valorant', color: 'valorant', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/512px-Valorant_logo_-_pink_color_version.svg.png' },
+  freefire: { name: 'Free Fire', color: 'freefire', image: '/images/games/freefire.png' },
+  fortnite: { name: 'Fortnite', color: 'fortnite', image: '/images/games/fortnite.png' },
+  cod: { name: 'Call of Duty', color: 'cod', image: '/images/games/cod.png' },
+  league_of_legends: { name: 'League of Legends', color: 'lol', image: '/images/games/lol.png' },
+  valorant: { name: 'Valorant', color: 'valorant', image: '/images/games/valorant.png' },
 };
 
 export const STATUS_INFO: Record<TournamentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {
