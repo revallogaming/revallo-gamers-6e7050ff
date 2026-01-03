@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +24,51 @@ interface TournamentEmailRequest {
   pixKey: string;
 }
 
+async function sendEmailViaSMTP(
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  const smtpHost = Deno.env.get("SMTP_HOST");
+  const smtpPort = Deno.env.get("SMTP_PORT");
+  const smtpUser = Deno.env.get("SMTP_USER");
+  const smtpPass = Deno.env.get("SMTP_PASS");
+
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    console.log("SMTP credentials not configured");
+    return false;
+  }
+
+  try {
+    const client = new SMTPClient({
+      connection: {
+        hostname: smtpHost,
+        port: parseInt(smtpPort),
+        tls: true,
+        auth: {
+          username: smtpUser,
+          password: smtpPass,
+        },
+      },
+    });
+
+    await client.send({
+      from: smtpUser,
+      to: to,
+      subject: subject,
+      content: "auto",
+      html: html,
+    });
+
+    await client.close();
+    console.log("Email sent successfully via SMTP to:", to);
+    return true;
+  } catch (error) {
+    console.error("Error sending email via SMTP:", error);
+    return false;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -33,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Authentication check - require logged in user
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
         global: {
           headers: { Authorization: req.headers.get("Authorization")! },
@@ -180,32 +225,16 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    // Check if RESEND_API_KEY is available
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    
-    if (resendApiKey) {
-      const resend = new Resend(resendApiKey);
-      
-      const emailResponse = await resend.emails.send({
-        from: "Revallo <onboarding@resend.dev>",
-        to: [data.email],
-        subject: `✅ Torneio "${data.tournamentTitle}" criado com sucesso!`,
-        html: emailHtml,
-      });
+    const emailSent = await sendEmailViaSMTP(
+      data.email,
+      `✅ Torneio "${data.tournamentTitle}" criado com sucesso!`,
+      emailHtml
+    );
 
-      console.log("Email sent successfully:", emailResponse);
-      
-      return new Response(JSON.stringify({ success: true, emailSent: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    } else {
-      console.log("RESEND_API_KEY not configured, email not sent");
-      return new Response(JSON.stringify({ success: true, emailSent: false, message: "Email service not configured" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
+    return new Response(JSON.stringify({ success: true, emailSent }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   } catch (error: any) {
     console.error("Error in send-tournament-email function:", error);
     return new Response(
