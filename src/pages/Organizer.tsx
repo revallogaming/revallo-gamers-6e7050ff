@@ -86,6 +86,7 @@ const Organizer = () => {
         highlighted_until: null,
         end_date: null,
         banner_url: formData.banner_url,
+        tournament_link: null,
       });
       
       setCreateDialogOpen(false);

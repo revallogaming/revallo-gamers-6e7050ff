@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Coins, Trophy, Edit, Save, X, Gamepad2, Camera, Loader2 } from "lucide-react";
+import { User, Coins, Trophy, Edit, Save, X, Gamepad2, Camera, Loader2, Copy, CheckCircle } from "lucide-react";
 import { GAME_INFO, GameType } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +30,18 @@ const Profile = () => {
   const [mainGame, setMainGame] = useState<GameType | "">(profile?.main_game || "");
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const copyProfileLink = () => {
+    if (user) {
+      const url = `${window.location.origin}/profile/${user.id}`;
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast({ title: "Link do perfil copiado!" });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -228,6 +239,24 @@ const Profile = () => {
                     >
                       <Edit className="mr-2 h-4 w-4" />
                       Editar Perfil
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2"
+                      onClick={copyProfileLink}
+                    >
+                      {copied ? (
+                        <>
+                          <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                          Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copiar Link do Perfil
+                        </>
+                      )}
                     </Button>
                   </>
                 )}
