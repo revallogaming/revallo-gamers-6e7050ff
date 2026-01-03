@@ -138,6 +138,34 @@ const Auth = () => {
     );
   }
 
+  const handleResendConfirmation = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Email reenviado!",
+        description: "Verifique sua caixa de entrada e spam.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao reenviar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Email confirmation success screen
   if (showEmailConfirmation) {
     return (
@@ -174,17 +202,28 @@ const Auth = () => {
               </p>
             </div>
             
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setShowEmailConfirmation(false);
-                setMode("login");
-                setPassword("");
-              }}
-            >
-              Voltar para Login
-            </Button>
+            <div className="space-y-3">
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={handleResendConfirmation}
+                disabled={isLoading}
+              >
+                {isLoading ? "Reenviando..." : "Reenviar Email de Confirmação"}
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setShowEmailConfirmation(false);
+                  setMode("login");
+                  setPassword("");
+                }}
+              >
+                Voltar para Login
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
