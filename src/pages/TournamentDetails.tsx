@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, Navigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Navigate, Link, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useTournament, useTournamentParticipants } from "@/hooks/useTournaments";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,19 +23,37 @@ import { toast } from "sonner";
 
 const TournamentDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: tournament, isLoading } = useTournament(id || "");
   const { data: participants } = useTournamentParticipants(id || "");
   const { user } = useAuth();
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+
+  // Auto-open join dialog if ?join=true
+  useEffect(() => {
+    if (searchParams.get('join') === 'true' && tournament && user && !isLoading) {
+      const isRegistered = participants?.some((p) => p.player_id === user?.id);
+      const isRegistrationOpen = ['open', 'upcoming'].includes(tournament.status);
+      const hasVacancy = tournament.current_participants < tournament.max_participants;
+      const deadlineNotPassed = new Date(tournament.registration_deadline) > new Date();
+      
+      if (!isRegistered && isRegistrationOpen && hasVacancy && deadlineNotPassed) {
+        setJoinDialogOpen(true);
+      }
+      // Clear the query param
+      setSearchParams({});
+    }
+  }, [searchParams, tournament, user, participants, isLoading, setSearchParams]);
 
   if (!id) {
     return <Navigate to="/" replace />;
   }
 
   const isRegistered = participants?.some((p) => p.player_id === user?.id);
-  const canRegister = tournament?.status === "open" && 
-    !isRegistered && 
-    (tournament?.current_participants ?? 0) < (tournament?.max_participants ?? 0);
+  const isRegistrationOpen = tournament ? ['open', 'upcoming'].includes(tournament.status) : false;
+  const hasVacancy = (tournament?.current_participants ?? 0) < (tournament?.max_participants ?? 0);
+  const deadlineNotPassed = tournament ? new Date(tournament.registration_deadline) > new Date() : false;
+  const canRegister = isRegistrationOpen && !isRegistered && hasVacancy && deadlineNotPassed;
 
   const handleJoin = () => {
     if (!user) {
