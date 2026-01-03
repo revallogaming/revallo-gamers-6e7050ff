@@ -32,12 +32,12 @@ export const FollowersDialog = ({ open, onOpenChange, userId, type }: FollowersD
         
         if (error) throw error;
         
-        // Fetch profiles for each follower
+        // Fetch profiles for each follower using public view
         const userIds = data.map(f => f.follower_id);
         if (userIds.length === 0) return [];
         
         const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
+          .from("public_profiles")
           .select("id, nickname, avatar_url, is_highlighted")
           .in("id", userIds);
         
@@ -53,12 +53,12 @@ export const FollowersDialog = ({ open, onOpenChange, userId, type }: FollowersD
         
         if (error) throw error;
         
-        // Fetch profiles for each following
+        // Fetch profiles for each following using public view
         const userIds = data.map(f => f.following_id);
         if (userIds.length === 0) return [];
         
         const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
+          .from("public_profiles")
           .select("id, nickname, avatar_url, is_highlighted")
           .in("id", userIds);
         

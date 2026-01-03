@@ -24,15 +24,13 @@ const PublicProfile = () => {
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
 
-  // Fetch profile data
+  // Fetch profile data using secure RPC function
   const { data: profile, isLoading } = useQuery({
     queryKey: ["public-profile", id],
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", id)
+        .rpc("get_public_profile", { profile_id: id })
         .single();
       if (error) throw error;
       return data;
@@ -133,8 +131,8 @@ const PublicProfile = () => {
 
                 {profile.main_game && (
                   <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                    <GameIcon game={profile.main_game} className="h-4 w-4" />
-                    <span>{GAME_INFO[profile.main_game]?.name}</span>
+                    <GameIcon game={profile.main_game as keyof typeof GAME_INFO} className="h-4 w-4" />
+                    <span>{GAME_INFO[profile.main_game as keyof typeof GAME_INFO]?.name}</span>
                   </div>
                 )}
 
