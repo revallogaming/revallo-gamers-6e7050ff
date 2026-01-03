@@ -221,24 +221,6 @@ const Index = () => {
             </div>
           )}
 
-          {/* CTA Section - Only show for non-logged users */}
-          {!user && (
-            <section className="px-4 md:px-8 py-12 border-t border-border/50">
-              <div className="text-center max-w-2xl mx-auto">
-                <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
-                  Pronto para competir?
-                </h2>
-                <p className="text-muted-foreground mb-6">
-                  Crie sua conta e comece a participar dos melhores torneios de eSports do Brasil.
-                </p>
-                <Link to="/auth">
-                  <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold px-8">
-                    Criar Conta Grátis
-                  </Button>
-                </Link>
-              </div>
-            </section>
-          )}
         </main>
       </div>
       
