@@ -85,35 +85,39 @@ serve(async (req) => {
     }
     console.log("Webhook received:", JSON.stringify(body));
 
-    // Verify signature for security
+    // MANDATORY signature verification for security
     const signature = req.headers.get('x-signature');
     const requestId = req.headers.get('x-request-id');
     const secret = Deno.env.get('MERCADOPAGO_WEBHOOK_SECRET');
 
-    if (secret) {
-      // Only verify if secret is configured
-      if (!signature || !requestId) {
-        console.error('Missing signature headers');
-        return new Response(JSON.stringify({ error: 'Unauthorized - Missing headers' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      const dataId = body.data?.id ? String(body.data.id) : '';
-      const isValid = await verifySignature(signature, requestId, dataId, secret);
-      
-      if (!isValid) {
-        console.error('Invalid signature');
-        return new Response(JSON.stringify({ error: 'Unauthorized - Invalid signature' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-      console.log('Signature verified successfully');
-    } else {
-      console.warn('MERCADOPAGO_WEBHOOK_SECRET not configured - skipping signature verification');
+    // Signature verification is REQUIRED - reject if secret not configured
+    if (!secret) {
+      console.error('CRITICAL: MERCADOPAGO_WEBHOOK_SECRET not configured - rejecting request');
+      return new Response(
+        JSON.stringify({ error: 'Webhook security not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    if (!signature || !requestId) {
+      console.error('Missing signature headers');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Missing signature headers' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const dataId = body.data?.id ? String(body.data.id) : '';
+    const isValid = await verifySignature(signature, requestId, dataId, secret);
+    
+    if (!isValid) {
+      console.error('Invalid webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Invalid signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    console.log('Signature verified successfully');
 
     // Only process payment notifications
     if (body.type !== "payment" || body.action !== "payment.updated") {

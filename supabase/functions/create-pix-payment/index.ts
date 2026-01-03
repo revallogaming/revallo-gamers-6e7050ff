@@ -31,11 +31,28 @@ serve(async (req) => {
       );
     }
 
+    // Define valid credit packages - must match frontend CREDIT_PACKAGES
+    const VALID_PACKAGES = [
+      { brl: 10, credits: 100 },
+      { brl: 25, credits: 275 },
+      { brl: 50, credits: 600 },
+      { brl: 100, credits: 1300 }
+    ] as const;
+
     const { amount_brl, credits_amount } = await req.json();
     
-    if (!amount_brl || !credits_amount || amount_brl < 1) {
+    // Validate against valid packages only
+    const validPackage = VALID_PACKAGES.find(
+      pkg => pkg.brl === amount_brl && pkg.credits === credits_amount
+    );
+
+    if (!validPackage) {
+      console.error(`Invalid package: ${amount_brl} BRL = ${credits_amount} credits`);
       return new Response(
-        JSON.stringify({ error: "Valor inválido" }),
+        JSON.stringify({ 
+          error: "Pacote de créditos inválido",
+          valid_packages: VALID_PACKAGES 
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
