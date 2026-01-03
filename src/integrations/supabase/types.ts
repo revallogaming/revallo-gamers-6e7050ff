@@ -140,10 +140,13 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
+          banned_at: string | null
           bio: string | null
           created_at: string
           highlighted_until: string | null
           id: string
+          is_banned: boolean
           is_highlighted: boolean
           main_game: Database["public"]["Enums"]["game_type"] | null
           nickname: string
@@ -151,10 +154,13 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           bio?: string | null
           created_at?: string
           highlighted_until?: string | null
           id: string
+          is_banned?: boolean
           is_highlighted?: boolean
           main_game?: Database["public"]["Enums"]["game_type"] | null
           nickname: string
@@ -162,10 +168,13 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           bio?: string | null
           created_at?: string
           highlighted_until?: string | null
           id?: string
+          is_banned?: boolean
           is_highlighted?: boolean
           main_game?: Database["public"]["Enums"]["game_type"] | null
           nickname?: string
@@ -467,6 +476,15 @@ export type Database = {
       add_credits: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
+      }
+      admin_delete_user: { Args: { p_user_id: string }; Returns: boolean }
+      admin_set_credits: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: boolean
+      }
+      admin_toggle_ban: {
+        Args: { p_ban: boolean; p_reason?: string; p_user_id: string }
+        Returns: boolean
       }
       check_rate_limit: {
         Args: {
