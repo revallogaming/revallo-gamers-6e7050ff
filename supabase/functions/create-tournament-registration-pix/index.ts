@@ -197,8 +197,8 @@ serve(async (req) => {
     // Send email notification to organizer about PIX generated
     if (organizerEmail) {
       try {
-        const smtpUsername = Deno.env.get("SMTP_USERNAME");
-        const smtpPassword = Deno.env.get("SMTP_PASSWORD");
+        const smtpUsername = Deno.env.get("SMTP_USER") || "suporte.revallo@gmail.com";
+        const smtpPassword = Deno.env.get("SMTP_PASS");
         
         if (smtpUsername && smtpPassword) {
           const { SMTPClient } = await import("https://deno.land/x/denomailer@1.6.0/mod.ts");
