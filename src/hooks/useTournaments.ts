@@ -99,14 +99,27 @@ export function useTournamentParticipants(tournamentId: string) {
   return useQuery({
     queryKey: ['participants', tournamentId],
     queryFn: async () => {
+      // Use the secure RPC function that doesn't expose participant emails
       const { data, error } = await supabase
-        .from('tournament_participants')
-        .select('*, player:profiles(*)')
-        .eq('tournament_id', tournamentId)
-        .order('score', { ascending: false });
+        .rpc('get_tournament_participants', { p_tournament_id: tournamentId });
       
       if (error) throw error;
-      return data;
+      
+      // Transform the flat result to match expected format
+      return (data || []).map((p: any) => ({
+        id: p.id,
+        tournament_id: p.tournament_id,
+        player_id: p.player_id,
+        placement: p.placement,
+        score: p.score,
+        registered_at: p.registered_at,
+        player: {
+          id: p.player_id,
+          nickname: p.player_nickname,
+          avatar_url: p.player_avatar_url,
+          is_highlighted: p.player_is_highlighted,
+        },
+      }));
     },
     enabled: !!tournamentId,
   });
