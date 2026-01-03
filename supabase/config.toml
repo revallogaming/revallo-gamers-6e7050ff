@@ -3,5 +3,14 @@ project_id = "amufvgzrxeipylqmcfvx"
 [functions.create-pix-payment]
 verify_jwt = true
 
+[functions.create-tournament-registration-pix]
+verify_jwt = true
+
 [functions.mercadopago-webhook]
 verify_jwt = false
+
+[functions.send-tournament-email]
+verify_jwt = true
+
+[functions.send-mass-email]
+verify_jwt = true
