@@ -110,8 +110,8 @@ export function useCredits() {
     credits: profile?.credits ?? 0,
     createPixPayment,
     spendCredits,
-    transactions,
-    payments,
+    transactions: transactions.data,
+    payments: payments.data,
     refreshProfile,
   };
 }
