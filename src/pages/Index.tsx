@@ -217,18 +217,11 @@ const Index = () => {
               <p className="text-muted-foreground mb-6">
                 Crie sua conta e comece a participar dos melhores torneios de eSports do Brasil.
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <Link to="/auth">
-                  <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold px-8">
-                    Criar Conta Grátis
-                  </Button>
-                </Link>
-                <Link to="/credits">
-                  <Button variant="outline">
-                    Comprar Créditos
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/auth">
+                <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold px-8">
+                  Criar Conta Grátis
+                </Button>
+              </Link>
             </div>
           </section>
         </main>
@@ -250,7 +243,7 @@ const Index = () => {
               <span>Termos de Uso</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 Revallo. Todos os direitos reservados.
+              © 2026 Revallo. Todos os direitos reservados.
             </p>
           </div>
         </div>
