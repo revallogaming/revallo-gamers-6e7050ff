@@ -52,6 +52,30 @@ export type Database = {
           },
         ]
       }
+      organizer_payment_info: {
+        Row: {
+          created_at: string
+          id: string
+          organizer_id: string
+          pix_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organizer_id: string
+          pix_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organizer_id?: string
+          pix_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pix_payments: {
         Row: {
           amount_brl: number
@@ -194,7 +218,6 @@ export type Database = {
           is_highlighted: boolean
           max_participants: number
           organizer_id: string
-          organizer_pix_key: string | null
           prize_description: string | null
           registration_deadline: string
           rules: string | null
@@ -216,7 +239,6 @@ export type Database = {
           is_highlighted?: boolean
           max_participants?: number
           organizer_id: string
-          organizer_pix_key?: string | null
           prize_description?: string | null
           registration_deadline: string
           rules?: string | null
@@ -238,7 +260,6 @@ export type Database = {
           is_highlighted?: boolean
           max_participants?: number
           organizer_id?: string
-          organizer_pix_key?: string | null
           prize_description?: string | null
           registration_deadline?: string
           rules?: string | null
@@ -283,6 +304,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_profile: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          highlighted_until: string
+          id: string
+          is_highlighted: boolean
+          main_game: string
+          nickname: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -127,13 +127,24 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           end_date: formData.end_date || null,
           registration_deadline: formData.registration_deadline,
           banner_url: bannerUrl,
-          organizer_pix_key: formData.organizer_pix_key,
           status: "upcoming",
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Save PIX key in separate secure table
+      const { error: pixError } = await supabase
+        .from("organizer_payment_info")
+        .upsert({
+          organizer_id: user.id,
+          pix_key: formData.organizer_pix_key,
+        }, { onConflict: 'organizer_id' });
+
+      if (pixError) {
+        console.error("Error saving PIX key:", pixError);
+      }
 
       // Send confirmation email
       try {
