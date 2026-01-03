@@ -96,13 +96,33 @@ export function useCredits() {
     },
   });
 
+  // Query credits from user_credits table
+  const creditsQuery = useQuery({
+    queryKey: ['user_credits', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { data, error } = await supabase
+        .from('user_credits')
+        .select('balance')
+        .eq('user_id', profile.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data?.balance ?? 0;
+    },
+    enabled: !!profile?.id,
+  });
+
   return {
-    credits: profile?.credits ?? 0,
+    credits: creditsQuery.data ?? profile?.credits ?? 0,
     createPixPayment,
     spendCredits,
     transactions: transactions.data,
     payments: payments.data,
-    refreshProfile,
+    refreshProfile: () => {
+      refreshProfile();
+      queryClient.invalidateQueries({ queryKey: ['user_credits'] });
+    },
   };
 }
 

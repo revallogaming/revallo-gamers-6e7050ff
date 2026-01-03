@@ -26,14 +26,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
+    // Fetch profile data
+    const { data: profileData } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
     
-    if (data) {
-      setProfile(data as Profile);
+    // Fetch credits from separate table
+    const { data: creditsData } = await supabase
+      .from('user_credits')
+      .select('balance')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (profileData) {
+      setProfile({
+        ...profileData,
+        credits: creditsData?.balance ?? 0
+      } as Profile);
     }
   };
 

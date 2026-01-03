@@ -182,19 +182,16 @@ serve(async (req) => {
         .update({ status: "confirmed", paid_at: new Date().toISOString() })
         .eq("id", payment.id);
 
-      // Add credits to user
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("credits")
-        .eq("id", payment.user_id)
-        .single();
+      // Add credits using atomic function
+      const { error: addCreditsError } = await supabase.rpc('add_credits', {
+        p_user_id: payment.user_id,
+        p_amount: payment.credits_amount
+      });
 
-      const newCredits = (profile?.credits || 0) + payment.credits_amount;
-      
-      await supabase
-        .from("profiles")
-        .update({ credits: newCredits })
-        .eq("id", payment.user_id);
+      if (addCreditsError) {
+        console.error("Error adding credits:", addCreditsError);
+        throw addCreditsError;
+      }
 
       // Create transaction record
       await supabase.from("credit_transactions").insert({
