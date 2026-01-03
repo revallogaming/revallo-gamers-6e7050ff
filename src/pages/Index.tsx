@@ -45,7 +45,7 @@ const Index = () => {
       
       <div className="flex">
         {/* Sidebar - Games (Desktop) */}
-        <aside className="hidden lg:flex w-56 flex-col border-r border-border/50 bg-card/30 min-h-[calc(100vh-4rem)] sticky top-16">
+        <aside className="hidden md:flex w-48 lg:w-56 flex-col border-r border-border/50 bg-card/30 min-h-[calc(100vh-4rem)] sticky top-16">
           <div className="p-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
               Jogos
@@ -118,7 +118,7 @@ const Index = () => {
                   )}
                   
                   {/* Mobile Game Filter */}
-                  <div className="lg:hidden">
+                  <div className="md:hidden">
                     <GameFilter selected={selectedGame} onSelect={setSelectedGame} />
                   </div>
                 </div>

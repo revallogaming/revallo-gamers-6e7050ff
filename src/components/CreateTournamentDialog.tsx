@@ -380,13 +380,17 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent font-bold">R$</span>
                   <Input
                     id="entry_fee_brl"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={formData.entry_fee_brl}
-                    onChange={(e) => setFormData({ ...formData, entry_fee_brl: parseFloat(e.target.value) || 0 })}
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.entry_fee_brl === 0 ? "" : formData.entry_fee_brl.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(",", ".");
+                      if (value === "" || /^\d*\.?\d{0,2}$/.test(value)) {
+                        setFormData({ ...formData, entry_fee_brl: value === "" ? 0 : parseFloat(value) || 0 });
+                      }
+                    }}
+                    placeholder="0,00"
                     className="pl-10 h-12 bg-muted/30 border-border/50 focus:border-accent/50"
-                    required
                   />
                 </div>
                 <p className="text-xs text-muted-foreground/70">
@@ -396,16 +400,20 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               <div className="space-y-2">
                 <Label htmlFor="prize_amount" className="text-xs text-muted-foreground">Premiação Total</Label>
                 <div className="relative">
-                  <Trophy className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent font-bold">R$</span>
                   <Input
                     id="prize_amount"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={formData.prize_amount}
-                    onChange={(e) => setFormData({ ...formData, prize_amount: parseFloat(e.target.value) || 0 })}
-                    className="pl-10 h-12 bg-muted/30 border-border/50 focus:border-accent/50"
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.prize_amount === 0 ? "" : formData.prize_amount.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(",", ".");
+                      if (value === "" || /^\d*\.?\d{0,2}$/.test(value)) {
+                        setFormData({ ...formData, prize_amount: value === "" ? 0 : parseFloat(value) || 0 });
+                      }
+                    }}
                     placeholder="0,00"
+                    className="pl-10 h-12 bg-muted/30 border-border/50 focus:border-accent/50"
                   />
                 </div>
               </div>
@@ -415,12 +423,17 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                   <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
                   <Input
                     id="max_participants"
-                    type="number"
-                    min={2}
-                    value={formData.max_participants}
-                    onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) || 100 })}
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.max_participants === 0 ? "" : formData.max_participants.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || /^\d+$/.test(value)) {
+                        setFormData({ ...formData, max_participants: value === "" ? 0 : parseInt(value) || 0 });
+                      }
+                    }}
+                    placeholder="100"
                     className="pl-10 h-12 bg-muted/30 border-border/50 focus:border-secondary/50"
-                    required
                   />
                 </div>
               </div>
