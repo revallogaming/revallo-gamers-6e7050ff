@@ -6,6 +6,7 @@ import { TournamentCard } from "@/components/TournamentCard";
 import { CreateTournamentDialog } from "@/components/CreateTournamentDialog";
 import { GameIcon } from "@/components/GameIcon";
 import { HighlightedTournamentsBanner } from "@/components/HighlightedTournamentsBanner";
+import { SEO, getWebsiteStructuredData } from "@/components/SEO";
 import { useTournaments } from "@/hooks/useTournaments";
 import { useRealtimeTournaments } from "@/hooks/useRealtimeParticipants";
 import { useFollowingTournaments } from "@/hooks/useFollowingTournaments";
@@ -57,57 +58,62 @@ const Index = () => {
   } as Record<GameType, number>), [tournaments]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <div className="flex">
-        {/* Sidebar - Games (Desktop) */}
-        <aside className="hidden md:flex w-48 lg:w-56 flex-col border-r border-border/50 bg-card/30 min-h-[calc(100vh-4rem)] sticky top-16">
-          <div className="p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Jogos
-            </h3>
-            <nav className="space-y-0.5">
-              <button
-                onClick={() => setSelectedGame("all")}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
-                  selectedGame === "all"
-                    ? "bg-primary/20 text-primary"
-                    : "text-muted-foreground hover:bg-card hover:text-foreground"
-                }`}
-              >
-                <Gamepad2 className="h-4 w-4" />
-                <span className="font-medium flex-1 text-left">Todos</span>
-              </button>
-              {(Object.keys(GAME_INFO) as GameType[]).map((game) => {
-                const info = GAME_INFO[game];
-                const count = openTournamentsByGame[game];
-                return (
-                  <button
-                    key={game}
-                    onClick={() => setSelectedGame(game)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
-                      selectedGame === game
-                        ? "bg-primary/20 text-primary"
-                        : "text-muted-foreground hover:bg-card hover:text-foreground"
-                    }`}
-                  >
-                    <GameIcon game={game} className="h-4 w-4" />
-                    <span className="font-medium flex-1 text-left">{info.name}</span>
-                    {count > 0 && (
-                      <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </aside>
+    <>
+      <SEO 
+        structuredData={getWebsiteStructuredData()}
+        keywords="esports, torneios, campeonatos, free fire, fortnite, call of duty, valorant, league of legends, gaming, brasil, competição online, jogos competitivos"
+      />
+      <div className="min-h-screen bg-background">
+        <Header />
+        
+        <div className="flex">
+          {/* Sidebar - Games (Desktop) */}
+          <aside className="hidden md:flex w-48 lg:w-56 flex-col border-r border-border/50 bg-card/30 min-h-[calc(100vh-4rem)] sticky top-16">
+            <div className="p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                Jogos
+              </h3>
+              <nav className="space-y-0.5">
+                <button
+                  onClick={() => setSelectedGame("all")}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
+                    selectedGame === "all"
+                      ? "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:bg-card hover:text-foreground"
+                  }`}
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  <span className="font-medium flex-1 text-left">Todos</span>
+                </button>
+                {(Object.keys(GAME_INFO) as GameType[]).map((game) => {
+                  const info = GAME_INFO[game];
+                  const count = openTournamentsByGame[game];
+                  return (
+                    <button
+                      key={game}
+                      onClick={() => setSelectedGame(game)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        selectedGame === game
+                          ? "bg-primary/20 text-primary"
+                          : "text-muted-foreground hover:bg-card hover:text-foreground"
+                      }`}
+                    >
+                      <GameIcon game={game} className="h-4 w-4" />
+                      <span className="font-medium flex-1 text-left">{info.name}</span>
+                      {count > 0 && (
+                        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </aside>
 
-        {/* Main Content */}
-        <main className="flex-1">
+          {/* Main Content */}
+          <main className="flex-1">
           {/* Hero Banner */}
           <section className="relative overflow-hidden border-b border-border/50">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/10" />
@@ -279,32 +285,33 @@ const Index = () => {
           )}
 
         </main>
-      </div>
-      
-      {/* Footer */}
-      <footer className="border-t border-border/50 bg-card/30">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Gamepad2 className="h-5 w-5 text-primary" />
-              <span className="font-display text-lg font-bold text-foreground">REVALLO</span>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <Link to="/organizer" className="hover:text-foreground transition-colors">
-                Para Organizadores
-              </Link>
-              <span>Suporte</span>
-              <Link to="/termos-de-uso" className="hover:text-foreground transition-colors">
-                Termos de Uso
-              </Link>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              © 2026 Revallo. Todos os direitos reservados.
-            </p>
-          </div>
         </div>
-      </footer>
-    </div>
+        
+        {/* Footer */}
+        <footer className="border-t border-border/50 bg-card/30">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Gamepad2 className="h-5 w-5 text-primary" />
+                <span className="font-display text-lg font-bold text-foreground">REVALLO</span>
+              </div>
+              <nav className="flex items-center gap-4 text-xs text-muted-foreground" aria-label="Footer navigation">
+                <Link to="/organizer" className="hover:text-foreground transition-colors">
+                  Para Organizadores
+                </Link>
+                <span>Suporte</span>
+                <Link to="/termos-de-uso" className="hover:text-foreground transition-colors">
+                  Termos de Uso
+                </Link>
+              </nav>
+              <p className="text-xs text-muted-foreground">
+                © 2026 Revallo. Todos os direitos reservados.
+              </p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </>
   );
 };
 
