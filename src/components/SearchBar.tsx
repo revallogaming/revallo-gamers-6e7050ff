@@ -79,25 +79,25 @@ export const SearchBar = () => {
   const noResults = (query.length >= 2 || activeFiltersCount > 0) && !isLoading && data && data.tournaments.length === 0 && data.users.length === 0;
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-lg">
-      <div className="flex gap-2">
+    <div ref={containerRef} className="relative w-full max-w-lg mx-auto">
+      <div className="flex gap-1.5 sm:gap-2">
         {/* Search Input */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Buscar torneios ou jogadores..."
+            placeholder="Buscar..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => hasResults && setIsOpen(true)}
-            className="pl-9 pr-9 bg-card/50 border-border/50 focus:border-primary/50 h-9"
+            className="pl-8 sm:pl-9 pr-8 sm:pr-9 bg-card/50 border-border/50 focus:border-primary/50 h-9 sm:h-10 text-sm sm:text-base"
           />
           {query && (
             <Button
               variant="ghost"
               size="sm"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+              className="absolute right-0.5 sm:right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
               onClick={handleClear}
             >
               {isLoading ? (
@@ -115,18 +115,18 @@ export const SearchBar = () => {
             <Button
               variant="outline"
               size="sm"
-              className={`h-9 gap-2 shrink-0 ${activeFiltersCount > 0 ? "border-primary text-primary" : ""}`}
+              className={`h-9 sm:h-10 gap-1 sm:gap-2 shrink-0 px-2 sm:px-3 ${activeFiltersCount > 0 ? "border-primary text-primary" : ""}`}
             >
               <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden sm:inline">Filtros</span>
+              <span className="hidden sm:inline text-sm">Filtros</span>
               {activeFiltersCount > 0 && (
-                <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                <Badge variant="secondary" className="h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[9px] sm:text-[10px]">
                   {activeFiltersCount}
                 </Badge>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-4" align="end">
+          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 max-w-80 p-3 sm:p-4" align="end" sideOffset={8}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-sm">Filtros Avançados</h4>
@@ -281,52 +281,57 @@ export const SearchBar = () => {
 
       {/* Active Filters Pills */}
       {activeFiltersCount > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-2">
+        <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2">
           {(filters.prizeMin !== undefined || filters.prizeMax !== undefined) && (
-            <Badge variant="secondary" className="text-xs gap-1 pr-1">
-              Prêmio: {filters.prizeMin !== undefined ? `R$${filters.prizeMin}` : "0"} - {filters.prizeMax !== undefined ? `R$${filters.prizeMax}` : "∞"}
+            <Badge variant="secondary" className="text-[10px] sm:text-xs gap-0.5 sm:gap-1 pr-0.5 sm:pr-1 h-5 sm:h-6">
+              <span className="hidden sm:inline">Prêmio:</span>
+              <span className="sm:hidden">R$</span>
+              {filters.prizeMin !== undefined ? `${filters.prizeMin}` : "0"}-{filters.prizeMax !== undefined ? `${filters.prizeMax}` : "∞"}
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-4 w-4 p-0 ml-1"
+                className="h-3 w-3 sm:h-4 sm:w-4 p-0 ml-0.5 sm:ml-1"
                 onClick={() => {
                   updateFilter("prizeMin", undefined);
                   updateFilter("prizeMax", undefined);
                 }}
               >
-                <X className="h-3 w-3" />
+                <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               </Button>
             </Badge>
           )}
           {(filters.entryFeeMin !== undefined || filters.entryFeeMax !== undefined) && (
-            <Badge variant="secondary" className="text-xs gap-1 pr-1">
-              Inscrição: {filters.entryFeeMin ?? 0} - {filters.entryFeeMax ?? "∞"} créditos
+            <Badge variant="secondary" className="text-[10px] sm:text-xs gap-0.5 sm:gap-1 pr-0.5 sm:pr-1 h-5 sm:h-6">
+              <span className="hidden sm:inline">Inscrição:</span>
+              <span className="sm:hidden">Taxa:</span>
+              {filters.entryFeeMin ?? 0}-{filters.entryFeeMax ?? "∞"}
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-4 w-4 p-0 ml-1"
+                className="h-3 w-3 sm:h-4 sm:w-4 p-0 ml-0.5 sm:ml-1"
                 onClick={() => {
                   updateFilter("entryFeeMin", undefined);
                   updateFilter("entryFeeMax", undefined);
                 }}
               >
-                <X className="h-3 w-3" />
+                <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               </Button>
             </Badge>
           )}
           {(filters.dateFrom !== undefined || filters.dateTo !== undefined) && (
-            <Badge variant="secondary" className="text-xs gap-1 pr-1">
-              Data: {filters.dateFrom ? format(filters.dateFrom, "dd/MM", { locale: ptBR }) : "início"} - {filters.dateTo ? format(filters.dateTo, "dd/MM", { locale: ptBR }) : "fim"}
+            <Badge variant="secondary" className="text-[10px] sm:text-xs gap-0.5 sm:gap-1 pr-0.5 sm:pr-1 h-5 sm:h-6">
+              <span className="hidden sm:inline">Data:</span>
+              {filters.dateFrom ? format(filters.dateFrom, "dd/MM", { locale: ptBR }) : "..."}-{filters.dateTo ? format(filters.dateTo, "dd/MM", { locale: ptBR }) : "..."}
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-4 w-4 p-0 ml-1"
+                className="h-3 w-3 sm:h-4 sm:w-4 p-0 ml-0.5 sm:ml-1"
                 onClick={() => {
                   updateFilter("dateFrom", undefined);
                   updateFilter("dateTo", undefined);
                 }}
               >
-                <X className="h-3 w-3" />
+                <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               </Button>
             </Badge>
           )}
@@ -335,7 +340,7 @@ export const SearchBar = () => {
 
       {/* Results Dropdown */}
       {isOpen && (hasResults || noResults) && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden max-h-[60vh] sm:max-h-[70vh] overflow-y-auto">
           {noResults && (
             <div className="p-4 text-center text-muted-foreground text-sm">
               Nenhum resultado encontrado{query.length >= 2 ? ` para "${query}"` : ""}
