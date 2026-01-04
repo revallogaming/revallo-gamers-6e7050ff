@@ -8,10 +8,12 @@ import { GameIcon } from "@/components/GameIcon";
 import { HighlightedTournamentsBanner } from "@/components/HighlightedTournamentsBanner";
 import { useTournaments } from "@/hooks/useTournaments";
 import { useRealtimeTournaments } from "@/hooks/useRealtimeParticipants";
+import { useFollowingTournaments } from "@/hooks/useFollowingTournaments";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType, GAME_INFO } from "@/types";
-import { Gamepad2, Trophy, ChevronRight, Plus, ArrowRight } from "lucide-react";
+import { Gamepad2, Trophy, ChevronRight, Plus, ArrowRight, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 const MAX_HOME_TOURNAMENTS = 48; // Limit for home page
@@ -22,6 +24,7 @@ const Index = () => {
   const { data: tournaments, isLoading } = useTournaments(
     selectedGame === "all" ? undefined : selectedGame
   );
+  const { data: followingTournaments, isLoading: isLoadingFollowing } = useFollowingTournaments();
   
   // Enable realtime updates for tournaments list
   useRealtimeTournaments();
@@ -144,7 +147,46 @@ const Index = () => {
             <HighlightedTournamentsBanner tournaments={tournaments} />
           )}
 
-          {/* Tournament Categories */}
+          {/* Following Organizers Tournaments */}
+          {user && followingTournaments && followingTournaments.length > 0 && (
+            <section className="px-4 md:px-6 py-4 border-t border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
+                    Quem você segue
+                  </h2>
+                  <span className="text-xs text-muted-foreground">
+                    ({followingTournaments.length})
+                  </span>
+                </div>
+              </div>
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                {followingTournaments.slice(0, 8).map((tournament) => (
+                  <div key={tournament.id} className="relative">
+                    <TournamentCard tournament={tournament} />
+                    {tournament.organizer && (
+                      <Link 
+                        to={`/profile/${tournament.organizer.id}`}
+                        className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1 border border-border/50 hover:border-primary/50 transition-colors"
+                      >
+                        <Avatar className="h-4 w-4">
+                          <AvatarImage src={tournament.organizer.avatar_url || undefined} />
+                          <AvatarFallback className="text-[8px]">
+                            {tournament.organizer.nickname?.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-[10px] font-medium text-foreground truncate max-w-[60px]">
+                          {tournament.organizer.nickname}
+                        </span>
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {(Object.keys(GAME_INFO) as GameType[]).map((game) => {
             const gameTournaments = selectedGame === "all" 
               ? limitedTournaments.filter(t => t.game === game)
