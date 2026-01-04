@@ -10,7 +10,6 @@ import { ptBR } from "date-fns/locale";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -33,6 +32,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Plus, Loader2, Image as ImageIcon, Star, Coins, CalendarIcon, Trophy, Users, DollarSign, FileText, Key, Gamepad2, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -376,46 +376,24 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="entry_fee_brl" className="text-xs text-muted-foreground">Valor da Inscrição *</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent font-bold">R$</span>
-                  <Input
-                    id="entry_fee_brl"
-                    type="text"
-                    inputMode="decimal"
-                    value={formData.entry_fee_brl === 0 ? "" : formData.entry_fee_brl.toString()}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(",", ".");
-                      if (value === "" || /^\d*\.?\d{0,2}$/.test(value)) {
-                        setFormData({ ...formData, entry_fee_brl: value === "" ? 0 : parseFloat(value) || 0 });
-                      }
-                    }}
-                    placeholder="0,00"
-                    className="pl-10 h-12 bg-muted/30 border-border/50 focus:border-accent/50"
-                  />
-                </div>
+                <CurrencyInput
+                  id="entry_fee_brl"
+                  value={formData.entry_fee_brl}
+                  onChange={(value) => setFormData({ ...formData, entry_fee_brl: value })}
+                  className="bg-muted/30 border-border/50 focus:border-accent/50"
+                />
                 <p className="text-xs text-muted-foreground/70">
                   Taxa: 5% • Você recebe 95%
                 </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="prize_amount" className="text-xs text-muted-foreground">Premiação Total</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent font-bold">R$</span>
-                  <Input
-                    id="prize_amount"
-                    type="text"
-                    inputMode="decimal"
-                    value={formData.prize_amount === 0 ? "" : formData.prize_amount.toString()}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(",", ".");
-                      if (value === "" || /^\d*\.?\d{0,2}$/.test(value)) {
-                        setFormData({ ...formData, prize_amount: value === "" ? 0 : parseFloat(value) || 0 });
-                      }
-                    }}
-                    placeholder="0,00"
-                    className="pl-10 h-12 bg-muted/30 border-border/50 focus:border-accent/50"
-                  />
-                </div>
+                <CurrencyInput
+                  id="prize_amount"
+                  value={formData.prize_amount}
+                  onChange={(value) => setFormData({ ...formData, prize_amount: value })}
+                  className="bg-muted/30 border-border/50 focus:border-accent/50"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="max_participants" className="text-xs text-muted-foreground">Máx. Participantes *</Label>
