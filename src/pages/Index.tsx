@@ -15,6 +15,7 @@ import { Gamepad2, Trophy, ChevronRight, Plus, ArrowRight, Users } from "lucide-
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { SearchBar } from "@/components/SearchBar";
 
 const MAX_HOME_TOURNAMENTS = 48; // Limit for home page
 
@@ -113,30 +114,37 @@ const Index = () => {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/30 via-transparent to-transparent" />
             
             <div className="relative px-4 md:px-6 py-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1">
-                    Seu próximo <span className="text-gradient-primary">campeonato</span> começa aqui.
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Encontre torneios, desafie os melhores e prove que você é lenda.
-                  </p>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  {user && (
-                    <CreateTournamentDialog>
-                      <Button size="sm" className="bg-gradient-primary hover:opacity-90 font-semibold gap-2">
-                        <Plus className="h-4 w-4" />
-                        Criar Torneio
-                      </Button>
-                    </CreateTournamentDialog>
-                  )}
-                  
-                  {/* Mobile Game Filter */}
-                  <div className="md:hidden">
-                    <GameFilter selected={selectedGame} onSelect={setSelectedGame} />
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1">
+                      Seu próximo <span className="text-gradient-primary">campeonato</span> começa aqui.
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                      Encontre torneios, desafie os melhores e prove que você é lenda.
+                    </p>
                   </div>
+                  
+                  <div className="flex items-center gap-3">
+                    {user && (
+                      <CreateTournamentDialog>
+                        <Button size="sm" className="bg-gradient-primary hover:opacity-90 font-semibold gap-2">
+                          <Plus className="h-4 w-4" />
+                          Criar Torneio
+                        </Button>
+                      </CreateTournamentDialog>
+                    )}
+                    
+                    {/* Mobile Game Filter */}
+                    <div className="md:hidden">
+                      <GameFilter selected={selectedGame} onSelect={setSelectedGame} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Search Bar */}
+                <div className="flex justify-center md:justify-start">
+                  <SearchBar />
                 </div>
               </div>
             </div>
