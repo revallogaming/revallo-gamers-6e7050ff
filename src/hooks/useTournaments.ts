@@ -3,13 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tournament, GameType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
+// Cache durations for performance optimization
+const STALE_TIME = 1000 * 60 * 2; // 2 minutes - data considered fresh
+const CACHE_TIME = 1000 * 60 * 10; // 10 minutes - keep in cache
+
 export function useTournaments(game?: GameType) {
   return useQuery({
     queryKey: ['tournaments', game],
     queryFn: async () => {
       let query = supabase
         .from('tournaments')
-        .select('*, organizer:profiles(*)')
+        .select('*, organizer:profiles(id, nickname, avatar_url, is_highlighted)')
         .order('is_highlighted', { ascending: false })
         .order('start_date', { ascending: true });
       
@@ -21,6 +25,8 @@ export function useTournaments(game?: GameType) {
       if (error) throw error;
       return data as Tournament[];
     },
+    staleTime: STALE_TIME,
+    gcTime: CACHE_TIME,
   });
 }
 
@@ -30,7 +36,7 @@ export function useTournament(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tournaments')
-        .select('*, organizer:profiles(*)')
+        .select('*, organizer:profiles(id, nickname, avatar_url, is_highlighted, bio)')
         .eq('id', id)
         .maybeSingle();
       
@@ -38,6 +44,8 @@ export function useTournament(id: string) {
       return data as Tournament | null;
     },
     enabled: !!id,
+    staleTime: STALE_TIME,
+    gcTime: CACHE_TIME,
   });
 }
 
@@ -122,5 +130,7 @@ export function useTournamentParticipants(tournamentId: string) {
       }));
     },
     enabled: !!tournamentId,
+    staleTime: STALE_TIME,
+    gcTime: CACHE_TIME,
   });
 }

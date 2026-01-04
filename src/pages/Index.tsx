@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { GameFilter } from "@/components/GameFilter";
@@ -7,6 +7,7 @@ import { CreateTournamentDialog } from "@/components/CreateTournamentDialog";
 import { GameIcon } from "@/components/GameIcon";
 import { HighlightedTournamentsBanner } from "@/components/HighlightedTournamentsBanner";
 import { useTournaments } from "@/hooks/useTournaments";
+import { useRealtimeTournaments } from "@/hooks/useRealtimeParticipants";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType, GAME_INFO } from "@/types";
 import { Gamepad2, Trophy, ChevronRight, Plus, ArrowRight } from "lucide-react";
@@ -21,25 +22,35 @@ const Index = () => {
   const { data: tournaments, isLoading } = useTournaments(
     selectedGame === "all" ? undefined : selectedGame
   );
+  
+  // Enable realtime updates for tournaments list
+  useRealtimeTournaments();
 
-  // Limit tournaments on home page - prioritize highlighted first
-  const sortedTournaments = [...(tournaments || [])].sort((a, b) => {
-    if (a.is_highlighted && !b.is_highlighted) return -1;
-    if (!a.is_highlighted && b.is_highlighted) return 1;
-    return 0;
-  });
-  const limitedTournaments = sortedTournaments.slice(0, MAX_HOME_TOURNAMENTS);
-  const hasMoreTournaments = (tournaments?.length || 0) > MAX_HOME_TOURNAMENTS;
-  const totalCount = tournaments?.length || 0;
+  // Memoize sorted and limited tournaments to prevent recalculation on each render
+  const { limitedTournaments, hasMoreTournaments, totalCount } = useMemo(() => {
+    if (!tournaments) {
+      return { limitedTournaments: [], hasMoreTournaments: false, totalCount: 0 };
+    }
+    const sorted = [...tournaments].sort((a, b) => {
+      if (a.is_highlighted && !b.is_highlighted) return -1;
+      if (!a.is_highlighted && b.is_highlighted) return 1;
+      return 0;
+    });
+    return {
+      limitedTournaments: sorted.slice(0, MAX_HOME_TOURNAMENTS),
+      hasMoreTournaments: tournaments.length > MAX_HOME_TOURNAMENTS,
+      totalCount: tournaments.length,
+    };
+  }, [tournaments]);
 
-  // Get tournaments by game for sidebar
-  const openTournamentsByGame: Record<GameType, number> = {
+  // Memoize open tournaments count by game
+  const openTournamentsByGame = useMemo(() => ({
     freefire: tournaments?.filter(t => t.game === 'freefire' && t.status === 'open').length || 0,
     fortnite: tournaments?.filter(t => t.game === 'fortnite' && t.status === 'open').length || 0,
     cod: tournaments?.filter(t => t.game === 'cod' && t.status === 'open').length || 0,
     league_of_legends: tournaments?.filter(t => t.game === 'league_of_legends' && t.status === 'open').length || 0,
     valorant: tournaments?.filter(t => t.game === 'valorant' && t.status === 'open').length || 0,
-  };
+  } as Record<GameType, number>), [tournaments]);
 
   return (
     <div className="min-h-screen bg-background">

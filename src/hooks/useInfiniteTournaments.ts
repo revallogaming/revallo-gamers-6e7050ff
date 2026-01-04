@@ -12,10 +12,14 @@ export interface TournamentFilters {
 }
 
 const PAGE_SIZE = 24;
+const STALE_TIME = 1000 * 60 * 2; // 2 minutes
+const CACHE_TIME = 1000 * 60 * 10; // 10 minutes
 
 export function useInfiniteTournaments(filters: TournamentFilters = {}) {
   return useInfiniteQuery({
     queryKey: ['tournaments-infinite', filters],
+    staleTime: STALE_TIME,
+    gcTime: CACHE_TIME,
     queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('tournaments')
