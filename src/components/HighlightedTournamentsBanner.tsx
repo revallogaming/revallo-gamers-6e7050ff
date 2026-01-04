@@ -90,7 +90,7 @@ export const HighlightedTournamentsBanner = ({ tournaments }: HighlightedTournam
               )}
               <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground text-[9px] sm:text-[10px] font-medium">
                 <Sparkles className="h-2.5 w-2.5" />
-                Anúncio
+                Patrocinado
               </div>
             </div>
             
