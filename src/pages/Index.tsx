@@ -68,22 +68,22 @@ const Index = () => {
         
         <div className="flex">
           {/* Sidebar - Games (Desktop) */}
-          <aside className="hidden md:flex w-48 lg:w-52 flex-col border-r border-border/30 bg-card/20 min-h-[calc(100vh-3.5rem)] sticky top-14">
+          <aside className="hidden md:flex w-52 lg:w-56 flex-col border-r border-border bg-sidebar min-h-[calc(100vh-3.5rem)] sticky top-14">
             <div className="p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-4 px-2">
                 Jogos
               </h3>
-              <nav className="space-y-0.5">
+              <nav className="space-y-1">
                 <button
                   onClick={() => setSelectedGame("all")}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${
                     selectedGame === "all"
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:bg-card hover:text-foreground"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
                   <Gamepad2 className="h-4 w-4" />
-                  <span className="font-medium flex-1 text-left">Todos</span>
+                  <span className="font-medium flex-1 text-left">Todos os Jogos</span>
                 </button>
                 {(Object.keys(GAME_INFO) as GameType[]).map((game) => {
                   const info = GAME_INFO[game];
@@ -92,16 +92,20 @@ const Index = () => {
                     <button
                       key={game}
                       onClick={() => setSelectedGame(game)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${
                         selectedGame === game
-                          ? "bg-primary/20 text-primary"
-                          : "text-muted-foreground hover:bg-card hover:text-foreground"
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       }`}
                     >
                       <GameIcon game={game} className="h-4 w-4" />
                       <span className="font-medium flex-1 text-left">{info.name}</span>
                       {count > 0 && (
-                        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          selectedGame === game 
+                            ? "bg-primary-foreground/20 text-primary-foreground" 
+                            : "bg-primary/15 text-primary"
+                        }`}>
                           {count}
                         </span>
                       )}

@@ -6,63 +6,63 @@
 
 @layer base {
   :root {
-    --background: 225 25% 5%;
-    --foreground: 210 20% 95%;
+    --background: 230 20% 7%;
+    --foreground: 210 15% 93%;
     
-    --card: 225 20% 8%;
-    --card-foreground: 210 20% 95%;
+    --card: 230 18% 10%;
+    --card-foreground: 210 15% 93%;
     
-    --popover: 225 20% 8%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 230 18% 10%;
+    --popover-foreground: 210 15% 93%;
     
-    --primary: 250 65% 60%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 195 70% 45%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 199 89% 48%;
+    --secondary-foreground: 0 0% 100%;
     
-    --muted: 225 18% 12%;
-    --muted-foreground: 220 15% 55%;
+    --muted: 230 15% 14%;
+    --muted-foreground: 220 10% 50%;
     
-    --accent: 35 90% 55%;
-    --accent-foreground: 225 25% 5%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 230 20% 7%;
     
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 225 15% 15%;
-    --input: 225 18% 10%;
-    --ring: 250 65% 60%;
+    --border: 230 12% 18%;
+    --input: 230 15% 12%;
+    --ring: 262 83% 58%;
     
-    --radius: 0.625rem;
+    --radius: 0.5rem;
     
     /* Refined gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(250 65% 60%), hsl(195 70% 50%));
-    --gradient-secondary: linear-gradient(135deg, hsl(195 70% 50%), hsl(250 65% 60%));
-    --gradient-accent: linear-gradient(135deg, hsl(35 90% 55%), hsl(25 85% 50%));
-    --gradient-dark: linear-gradient(180deg, hsl(225 25% 5%), hsl(225 20% 8%));
-    --gradient-card: linear-gradient(145deg, hsl(225 20% 10%), hsl(225 20% 7%));
-    --gradient-subtle: linear-gradient(135deg, hsl(250 65% 60% / 0.08), hsl(195 70% 50% / 0.05));
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(199 89% 48%));
+    --gradient-secondary: linear-gradient(135deg, hsl(199 89% 48%), hsl(262 83% 58%));
+    --gradient-accent: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 53%));
+    --gradient-dark: linear-gradient(180deg, hsl(230 20% 7%), hsl(230 18% 10%));
+    --gradient-card: linear-gradient(145deg, hsl(230 18% 12%), hsl(230 18% 9%));
+    --gradient-subtle: linear-gradient(135deg, hsl(262 83% 58% / 0.06), hsl(199 89% 48% / 0.04));
     
-    /* Subtle shadows instead of glow */
-    --shadow-sm: 0 1px 2px hsl(225 25% 3% / 0.4);
-    --shadow-md: 0 4px 12px hsl(225 25% 3% / 0.5);
-    --shadow-lg: 0 8px 24px hsl(225 25% 3% / 0.6);
-    --shadow-primary: 0 4px 16px hsl(250 65% 60% / 0.2);
+    /* Shadows */
+    --shadow-sm: 0 1px 2px hsl(230 20% 3% / 0.4);
+    --shadow-md: 0 4px 12px hsl(230 20% 3% / 0.5);
+    --shadow-lg: 0 8px 24px hsl(230 20% 3% / 0.6);
+    --shadow-primary: 0 4px 16px hsl(262 83% 58% / 0.15);
     
-    /* Game colors - more refined */
-    --freefire: 0 70% 50%;
-    --fortnite: 195 80% 50%;
-    --cod: 30 75% 50%;
+    /* Game colors */
+    --freefire: 15 90% 55%;
+    --fortnite: 199 89% 48%;
+    --cod: 30 80% 50%;
     
-    --sidebar-background: 225 20% 7%;
-    --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 250 65% 60%;
-    --sidebar-primary-foreground: 210 20% 98%;
-    --sidebar-accent: 225 18% 12%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 225 15% 15%;
-    --sidebar-ring: 250 65% 60%;
+    --sidebar-background: 230 18% 9%;
+    --sidebar-foreground: 210 15% 93%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 230 15% 14%;
+    --sidebar-accent-foreground: 210 15% 93%;
+    --sidebar-border: 230 12% 18%;
+    --sidebar-ring: 262 83% 58%;
   }
 }
 
