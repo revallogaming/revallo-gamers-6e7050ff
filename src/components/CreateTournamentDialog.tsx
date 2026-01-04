@@ -368,10 +368,10 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           </div>
 
           {/* Financial Section */}
-          <div className="space-y-4 p-4 rounded-xl bg-accent/5 border border-accent/20">
-            <div className="flex items-center gap-2 text-sm font-display text-accent">
+          <div className="space-y-4 p-4 rounded-xl bg-muted/20 border border-border/30">
+            <div className="flex items-center gap-2 text-sm font-display text-muted-foreground">
               <DollarSign className="h-4 w-4" />
-              <span>Configurações Financeiras</span>
+              <span>Valores</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -440,11 +440,11 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             </div>
           </div>
 
-          {/* Dates - Styled Date Pickers */}
-          <div className="space-y-4 p-4 rounded-xl bg-secondary/5 border border-secondary/20">
-            <div className="flex items-center gap-2 text-sm font-display text-secondary">
+          {/* Dates */}
+          <div className="space-y-4 p-4 rounded-xl bg-muted/20 border border-border/30">
+            <div className="flex items-center gap-2 text-sm font-display text-muted-foreground">
               <CalendarIcon className="h-4 w-4" />
-              <span>Datas do Torneio</span>
+              <span>Datas</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -601,19 +601,16 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           </div>
 
           {/* Boost Section */}
-          <div className="space-y-4 p-4 rounded-xl border-2 border-accent/30 bg-gradient-to-br from-accent/10 to-transparent relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                  <Star className="h-5 w-5 text-accent" />
-                </div>
+          <div className="space-y-4 p-4 rounded-xl bg-muted/20 border border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-accent" />
                 <div>
-                  <Label htmlFor="boost-toggle" className="text-base font-display font-semibold cursor-pointer text-accent">
-                    Impulsionar Torneio
+                  <Label htmlFor="boost-toggle" className="text-sm font-medium cursor-pointer">
+                    Impulsionar
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Apareça na seção de destaque da página inicial
+                    Destaque na página inicial
                   </p>
                 </div>
               </div>
@@ -625,32 +622,27 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             </div>
 
             {enableBoost && (
-              <div className="space-y-4 pt-2 relative z-10">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-3 py-2 rounded-lg w-fit">
-                  <Coins className="h-4 w-4 text-accent" />
-                  <span>Seus créditos: <strong className="text-accent">{credits}</strong></span>
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Coins className="h-3 w-3" />
+                  <span>Créditos: <strong className="text-foreground">{credits}</strong></span>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 gap-2">
                   {BOOST_PACKAGES.map((pkg, index) => (
                     <button
                       key={index}
                       type="button"
                       onClick={() => setSelectedBoost(index)}
-                      className={`p-4 rounded-xl border-2 transition-all text-center relative overflow-hidden group ${
+                      className={`p-2 rounded-lg border transition-all text-center ${
                         selectedBoost === index
-                          ? "border-accent bg-accent/20 shadow-lg shadow-accent/20"
-                          : "border-border/50 hover:border-accent/50 bg-muted/20"
+                          ? "border-primary bg-primary/10"
+                          : "border-border/50 hover:border-primary/50 bg-muted/20"
                       } ${credits < pkg.credits ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
                       disabled={credits < pkg.credits}
                     >
-                      {selectedBoost === index && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent" />
-                      )}
-                      <div className="relative z-10">
-                        <div className="font-display font-bold text-foreground text-lg">{pkg.label}</div>
-                        <div className="text-sm text-accent font-medium">{pkg.credits} créditos</div>
-                      </div>
+                      <div className="font-medium text-xs">{pkg.label}</div>
+                      <div className="text-[10px] text-muted-foreground">{pkg.credits} cr</div>
                     </button>
                   ))}
                 </div>

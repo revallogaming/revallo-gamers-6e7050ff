@@ -8,7 +8,7 @@ import { GameIcon } from "@/components/GameIcon";
 import { useTournaments } from "@/hooks/useTournaments";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType, GAME_INFO } from "@/types";
-import { Gamepad2, Trophy, ChevronRight, Star, Plus, ArrowRight } from "lucide-react";
+import { Gamepad2, Trophy, ChevronRight, Plus, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
@@ -21,14 +21,15 @@ const Index = () => {
     selectedGame === "all" ? undefined : selectedGame
   );
 
-  // Limit tournaments on home page
-  const limitedTournaments = tournaments?.slice(0, MAX_HOME_TOURNAMENTS) || [];
+  // Limit tournaments on home page - prioritize highlighted first
+  const sortedTournaments = [...(tournaments || [])].sort((a, b) => {
+    if (a.is_highlighted && !b.is_highlighted) return -1;
+    if (!a.is_highlighted && b.is_highlighted) return 1;
+    return 0;
+  });
+  const limitedTournaments = sortedTournaments.slice(0, MAX_HOME_TOURNAMENTS);
   const hasMoreTournaments = (tournaments?.length || 0) > MAX_HOME_TOURNAMENTS;
   const totalCount = tournaments?.length || 0;
-
-  // Get highlighted tournaments
-  const highlightedTournaments = limitedTournaments.filter(t => t.is_highlighted);
-  const regularTournaments = limitedTournaments.filter(t => !t.is_highlighted);
 
   // Get tournaments by game for sidebar
   const openTournamentsByGame: Record<GameType, number> = {
@@ -126,27 +127,13 @@ const Index = () => {
             </div>
           </section>
 
-          {/* Highlighted Tournaments */}
-          {highlightedTournaments.length > 0 && (
-            <section className="px-4 md:px-6 py-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Star className="h-4 w-4 text-accent" />
-                <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">Em Destaque</h2>
-              </div>
-              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                {highlightedTournaments.map((tournament) => (
-                  <TournamentCard key={tournament.id} tournament={tournament} />
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* Tournament Categories */}
           {(Object.keys(GAME_INFO) as GameType[]).map((game) => {
             const gameTournaments = selectedGame === "all" 
-              ? regularTournaments.filter(t => t.game === game)
+              ? limitedTournaments.filter(t => t.game === game)
               : game === selectedGame 
-                ? regularTournaments
+                ? limitedTournaments
                 : [];
             
             if (gameTournaments.length === 0) return null;
