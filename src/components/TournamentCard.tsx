@@ -33,7 +33,7 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
   return (
     <Card 
       onClick={handleClick}
-      className="bg-card border-border/40 hover:border-primary/40 overflow-hidden group cursor-pointer transition-colors"
+      className="bg-card border-border/30 hover:border-border/60 overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-lg"
     >
       {/* Banner Image */}
       <div className="relative">
@@ -42,24 +42,23 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
             <img 
               src={tournament.banner_url} 
               alt={tournament.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
             />
           </div>
         ) : (
           <div 
-            className="aspect-[4/3] w-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${gameInfo.color}40 0%, hsl(var(--muted)) 100%)` }}
+            className="aspect-[4/3] w-full flex items-center justify-center bg-muted/50"
           >
-            <GameIcon game={tournament.game} className="h-12 w-12 opacity-50" />
+            <GameIcon game={tournament.game} className="h-10 w-10 opacity-30" />
           </div>
         )}
         
         {/* Game Badge Overlay */}
         <div className="absolute top-2 left-2">
           <Badge 
-            className="gap-1.5 text-xs px-2 py-1 backdrop-blur-sm font-medium bg-background/80 text-foreground border-0"
+            className="gap-1 text-[10px] px-1.5 py-0.5 backdrop-blur-sm font-medium bg-background/85 text-foreground border-0"
           >
-            <GameIcon game={tournament.game} className="h-3.5 w-3.5" />
+            <GameIcon game={tournament.game} className="h-3 w-3" />
             {gameInfo.name}
           </Badge>
         </div>
@@ -67,8 +66,8 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
         {/* Highlight Badge */}
         {tournament.is_highlighted && (
           <div className="absolute top-2 right-2">
-            <Badge className="bg-accent text-accent-foreground gap-1 text-xs px-2 py-1">
-              <Star className="h-3 w-3 fill-current" />
+            <Badge className="bg-accent/90 text-accent-foreground gap-0.5 text-[10px] px-1.5 py-0.5">
+              <Star className="h-2.5 w-2.5 fill-current" />
               Destaque
             </Badge>
           </div>
@@ -76,31 +75,31 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
 
         {/* Status Badge */}
         <div className="absolute bottom-2 left-2">
-          <Badge variant={statusInfo.variant} className="text-xs px-2 py-1 backdrop-blur-sm">
+          <Badge variant={statusInfo.variant} className="text-[10px] px-1.5 py-0.5 backdrop-blur-sm">
             {statusInfo.label}
           </Badge>
         </div>
       </div>
       
       {/* Content */}
-      <div className="p-3">
+      <div className="p-2.5">
         {/* Title */}
-        <h3 className="font-semibold text-sm text-foreground mb-2 line-clamp-1">
+        <h3 className="font-medium text-sm text-foreground mb-1.5 line-clamp-1">
           {tournament.title}
         </h3>
 
         {/* Info Row */}
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5" />
+            <Calendar className="h-3 w-3" />
             <span>{format(new Date(tournament.start_date), "dd/MM", { locale: ptBR })}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5" />
+            <Users className="h-3 w-3" />
             <span>{tournament.current_participants}/{tournament.max_participants}</span>
           </div>
           {tournament.entry_fee > 0 && (
-            <span className="text-primary font-semibold">R${(tournament.entry_fee / 100).toFixed(0)}</span>
+            <span className="text-primary font-medium ml-auto">R${(tournament.entry_fee / 100).toFixed(0)}</span>
           )}
         </div>
       </div>

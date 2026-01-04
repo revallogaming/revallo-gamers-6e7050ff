@@ -68,7 +68,7 @@ const Index = () => {
         
         <div className="flex">
           {/* Sidebar - Games (Desktop) */}
-          <aside className="hidden md:flex w-48 lg:w-56 flex-col border-r border-border/50 bg-card/30 min-h-[calc(100vh-4rem)] sticky top-16">
+          <aside className="hidden md:flex w-48 lg:w-52 flex-col border-r border-border/30 bg-card/20 min-h-[calc(100vh-3.5rem)] sticky top-14">
             <div className="p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                 Jogos
@@ -115,27 +115,26 @@ const Index = () => {
           {/* Main Content */}
           <main className="flex-1">
           {/* Hero Banner */}
-          <section className="relative overflow-hidden border-b border-border/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/10" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/30 via-transparent to-transparent" />
+          <section className="relative overflow-hidden border-b border-border/30">
+            <div className="absolute inset-0 bg-gradient-subtle" />
             
-            <div className="relative px-4 md:px-6 py-6">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative px-4 md:px-6 py-5">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div>
-                    <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1">
-                      Seu próximo <span className="text-gradient-primary">campeonato</span> começa aqui.
+                    <h1 className="font-display text-xl md:text-2xl font-semibold text-foreground mb-0.5">
+                      Seu próximo <span className="text-primary">campeonato</span> começa aqui.
                     </h1>
                     <p className="text-sm text-muted-foreground">
                       Encontre torneios, desafie os melhores e prove que você é lenda.
                     </p>
                   </div>
                   
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {user && (
                       <CreateTournamentDialog>
-                        <Button size="sm" className="bg-gradient-primary hover:opacity-90 font-semibold gap-2">
-                          <Plus className="h-4 w-4" />
+                        <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium gap-1.5">
+                          <Plus className="h-3.5 w-3.5" />
                           Criar Torneio
                         </Button>
                       </CreateTournamentDialog>
@@ -163,7 +162,7 @@ const Index = () => {
 
           {/* Following Organizers Tournaments */}
           {user && followingTournaments && followingTournaments.length > 0 && (
-            <section className="px-4 md:px-6 py-4 border-t border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
+            <section className="px-4 md:px-6 py-4 border-t border-border/20 bg-primary/3">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-primary" />
@@ -213,7 +212,7 @@ const Index = () => {
             const info = GAME_INFO[game];
             
             return (
-              <section key={game} className="px-4 md:px-6 py-4 border-t border-border/30">
+              <section key={game} className="px-4 md:px-6 py-4 border-t border-border/20">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <GameIcon game={game} className="h-5 w-5" />
@@ -256,7 +255,7 @@ const Index = () => {
 
           {/* View All Button - When there are more tournaments */}
           {hasMoreTournaments && (
-            <section className="px-4 md:px-6 py-6 border-t border-border/30">
+            <section className="px-4 md:px-6 py-5 border-t border-border/20">
               <div className="flex flex-col items-center justify-center text-center">
                 <p className="text-sm text-muted-foreground mb-3">
                   Exibindo {limitedTournaments.length} de {totalCount} torneios
@@ -288,12 +287,12 @@ const Index = () => {
         </div>
         
         {/* Footer */}
-        <footer className="border-t border-border/50 bg-card/30">
-          <div className="container mx-auto px-4 py-6">
+        <footer className="border-t border-border/30 bg-card/20">
+          <div className="container mx-auto px-4 py-5">
             <div className="flex flex-col md:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Gamepad2 className="h-5 w-5 text-primary" />
-                <span className="font-display text-lg font-bold text-foreground">REVALLO</span>
+                <Gamepad2 className="h-4 w-4 text-primary" />
+                <span className="font-display text-base font-semibold text-foreground">REVALLO</span>
               </div>
               <nav className="flex items-center gap-4 text-xs text-muted-foreground" aria-label="Footer navigation">
                 <Link to="/organizer" className="hover:text-foreground transition-colors">
