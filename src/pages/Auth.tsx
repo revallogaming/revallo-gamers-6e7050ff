@@ -239,7 +239,7 @@ const Auth = () => {
         
         <Card className="relative w-full max-w-md border-border/50 bg-card/80 backdrop-blur-xl">
           <CardHeader className="text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary glow-primary">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary">
               <Gamepad2 className="h-8 w-8 text-primary-foreground" />
             </div>
             <CardTitle className="font-display text-3xl">
@@ -270,7 +270,7 @@ const Auth = () => {
               
               <Button
                 type="submit"
-                className="w-full bg-gradient-primary hover:opacity-90 glow-primary font-semibold text-lg py-6"
+                className="w-full bg-gradient-primary hover:opacity-90 font-semibold text-lg py-6"
                 disabled={isLoading}
               >
                 {isLoading ? "Enviando..." : "Enviar Link de Recuperação"}
@@ -301,7 +301,7 @@ const Auth = () => {
       
       <Card className="relative w-full max-w-md border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary glow-primary">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary">
             <Gamepad2 className="h-8 w-8 text-primary-foreground" />
           </div>
           <CardTitle className="font-display text-3xl">
@@ -383,7 +383,7 @@ const Auth = () => {
             
             <Button
               type="submit"
-              className="w-full bg-gradient-primary hover:opacity-90 glow-primary font-semibold text-lg py-6"
+              className="w-full bg-gradient-primary hover:opacity-90 font-semibold text-lg py-6"
               disabled={isLoading}
             >
               {isLoading ? "Carregando..." : mode === "login" ? "Entrar" : "Criar Conta"}
