@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Gamepad2, Mail, Lock, User, Eye, EyeOff, CheckCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ const Auth = () => {
   const [nickname, setNickname] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [showPasswordResetSent, setShowPasswordResetSent] = useState(false);
   const { signIn, signUp } = useAuth();
@@ -48,6 +50,11 @@ const Auth = () => {
       } else if (mode === "signup") {
         if (!nickname.trim()) {
           toast({ title: "Digite um nickname", variant: "destructive" });
+          setIsLoading(false);
+          return;
+        }
+        if (!ageConfirmed) {
+          toast({ title: "Confirme que você tem 18 anos ou autorização do responsável", variant: "destructive" });
           setIsLoading(false);
           return;
         }
@@ -381,10 +388,30 @@ const Auth = () => {
               </div>
             </div>
             
+            {mode === "signup" && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+                <Checkbox
+                  id="age-confirmation"
+                  checked={ageConfirmed}
+                  onCheckedChange={(checked) => setAgeConfirmed(checked === true)}
+                  className="mt-0.5"
+                />
+                <label 
+                  htmlFor="age-confirmation" 
+                  className="text-sm text-muted-foreground cursor-pointer leading-relaxed"
+                >
+                  Declaro que tenho 18 anos ou mais, ou que possuo autorização do meu responsável legal para utilizar a Revallo. Ao criar minha conta, concordo com os{" "}
+                  <Link to="/termos-de-uso" className="text-primary hover:underline" target="_blank">
+                    Termos de Uso
+                  </Link>.
+                </label>
+              </div>
+            )}
+            
             <Button
               type="submit"
               className="w-full bg-gradient-primary hover:opacity-90 font-semibold text-lg py-6"
-              disabled={isLoading}
+              disabled={isLoading || (mode === "signup" && !ageConfirmed)}
             >
               {isLoading ? "Carregando..." : mode === "login" ? "Entrar" : "Criar Conta"}
             </Button>

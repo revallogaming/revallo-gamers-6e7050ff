@@ -34,7 +34,7 @@ const TournamentDetails = () => {
   // Enable realtime updates for participants
   useRealtimeParticipants(id);
   
-  const organizerId = (tournament as any)?.organizer?.id;
+  const organizerId = tournament ? (tournament as any)?.organizer?.id : undefined;
   const { isFollowing, toggleFollow, isToggling, followerCount } = useFollowers(organizerId);
 
   // Auto-open join dialog if ?join=true
