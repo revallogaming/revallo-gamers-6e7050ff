@@ -54,56 +54,52 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         )}
         
         {/* Game Badge Overlay */}
-        <div className="absolute top-1.5 left-1.5">
+        <div className="absolute top-2 left-2">
           <Badge 
-            className="gap-1 text-[9px] px-1.5 py-0.5 backdrop-blur-sm font-medium"
-            style={{ backgroundColor: `${gameInfo.color}cc` }}
+            className="gap-1.5 text-xs px-2 py-1 backdrop-blur-sm font-medium bg-background/80 text-foreground border-0"
           >
-            <GameIcon game={tournament.game} className="h-2.5 w-2.5" />
+            <GameIcon game={tournament.game} className="h-3.5 w-3.5" />
             {gameInfo.name}
           </Badge>
         </div>
 
         {/* Highlight Badge */}
         {tournament.is_highlighted && (
-          <div className="absolute top-1.5 right-1.5">
-            <Badge className="bg-accent/90 text-accent-foreground gap-0.5 text-[9px] px-1 py-0.5">
-              <Star className="h-2 w-2" />
+          <div className="absolute top-2 right-2">
+            <Badge className="bg-accent text-accent-foreground gap-1 text-xs px-2 py-1">
+              <Star className="h-3 w-3 fill-current" />
+              Destaque
             </Badge>
           </div>
         )}
 
         {/* Status Badge */}
-        <div className="absolute bottom-1.5 left-1.5">
-          <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0.5 backdrop-blur-sm">
+        <div className="absolute bottom-2 left-2">
+          <Badge variant={statusInfo.variant} className="text-xs px-2 py-1 backdrop-blur-sm">
             {statusInfo.label}
           </Badge>
         </div>
       </div>
       
       {/* Content */}
-      <div className="p-2.5">
+      <div className="p-3">
         {/* Title */}
-        <h3 className="font-medium text-xs text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-1">
+        <h3 className="font-semibold text-sm text-foreground mb-2 line-clamp-1">
           {tournament.title}
         </h3>
 
         {/* Info Row */}
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-          <div className="flex items-center gap-0.5">
-            <Calendar className="h-2.5 w-2.5" />
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5" />
             <span>{format(new Date(tournament.start_date), "dd/MM", { locale: ptBR })}</span>
           </div>
-          <span className="text-border/50">•</span>
-          <div className="flex items-center gap-0.5">
-            <Users className="h-2.5 w-2.5" />
+          <div className="flex items-center gap-1">
+            <Users className="h-3.5 w-3.5" />
             <span>{tournament.current_participants}/{tournament.max_participants}</span>
           </div>
           {tournament.entry_fee > 0 && (
-            <>
-              <span className="text-border/50">•</span>
-              <span className="text-primary font-medium">R${(tournament.entry_fee / 100).toFixed(0)}</span>
-            </>
+            <span className="text-primary font-semibold">R${(tournament.entry_fee / 100).toFixed(0)}</span>
           )}
         </div>
       </div>
