@@ -5,6 +5,7 @@ import { GameFilter } from "@/components/GameFilter";
 import { TournamentCard } from "@/components/TournamentCard";
 import { CreateTournamentDialog } from "@/components/CreateTournamentDialog";
 import { GameIcon } from "@/components/GameIcon";
+import { HighlightedTournamentsBanner } from "@/components/HighlightedTournamentsBanner";
 import { useTournaments } from "@/hooks/useTournaments";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType, GAME_INFO } from "@/types";
@@ -127,6 +128,10 @@ const Index = () => {
             </div>
           </section>
 
+          {/* Highlighted Tournaments Banner */}
+          {!isLoading && tournaments && tournaments.length > 0 && (
+            <HighlightedTournamentsBanner tournaments={tournaments} />
+          )}
 
           {/* Tournament Categories */}
           {(Object.keys(GAME_INFO) as GameType[]).map((game) => {
