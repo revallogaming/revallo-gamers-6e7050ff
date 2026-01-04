@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { SEO, getProfileStructuredData } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -101,8 +102,22 @@ const PublicProfile = () => {
   const isOwnProfile = user?.id === id;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <>
+      <SEO 
+        title={`${profile.nickname} - Perfil`}
+        description={profile.bio || `Perfil de ${profile.nickname} na Revallo. ${profile.main_game ? `Jogador de ${GAME_INFO[profile.main_game as keyof typeof GAME_INFO]?.name || profile.main_game}.` : 'Participe de torneios de eSports!'}`}
+        image={profile.avatar_url || undefined}
+        type="profile"
+        structuredData={getProfileStructuredData({ 
+          nickname: profile.nickname || 'Jogador', 
+          bio: profile.bio, 
+          avatar_url: profile.avatar_url, 
+          id: id || '' 
+        })}
+        keywords={`${profile.nickname}, jogador esports, gamer brasil${profile.main_game ? `, ${GAME_INFO[profile.main_game as keyof typeof GAME_INFO]?.name || ''}` : ''}`}
+      />
+      <div className="min-h-screen bg-background">
+        <Header />
 
       <div className="container mx-auto px-4 py-8">
         <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
@@ -308,6 +323,7 @@ const PublicProfile = () => {
         </>
       )}
     </div>
+    </>
   );
 };
 

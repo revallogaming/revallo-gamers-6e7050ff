@@ -1,3 +1,13 @@
+# Revallo - Plataforma de Torneios de eSports
+# https://revallo.com.br
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /reset-password
+
+# Specific bot permissions
 User-agent: Googlebot
 Allow: /
 
@@ -10,5 +20,12 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
+User-agent: LinkedInBot
 Allow: /
+
+# Sitemap location
+Sitemap: https://revallo.com.br/sitemap.xml
+
+# Crawl-delay for polite bots
+User-agent: *
+Crawl-delay: 1
