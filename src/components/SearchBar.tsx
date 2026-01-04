@@ -1,21 +1,38 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, X, Trophy, User, Loader2 } from "lucide-react";
+import { Search, X, Trophy, User, Loader2, SlidersHorizontal, Calendar, Coins, Award } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { GameIcon } from "@/components/GameIcon";
-import { useSearch } from "@/hooks/useSearch";
+import { useSearch, SearchFilters } from "@/hooks/useSearch";
 import { GAME_INFO } from "@/types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const SearchBar = () => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const { data, isLoading } = useSearch(query);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<SearchFilters>({});
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
+  
+  const { data, isLoading } = useSearch(query, filters);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Count active filters
+  const activeFiltersCount = [
+    filters.prizeMin !== undefined || filters.prizeMax !== undefined,
+    filters.entryFeeMin !== undefined || filters.entryFeeMax !== undefined,
+    filters.dateFrom !== undefined || filters.dateTo !== undefined,
+  ].filter(Boolean).length;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -42,49 +59,287 @@ export const SearchBar = () => {
     inputRef.current?.focus();
   };
 
+  const handleClearFilters = () => {
+    setFilters({});
+  };
+
   const handleResultClick = () => {
     setQuery("");
     setIsOpen(false);
   };
 
+  const updateFilter = (key: keyof SearchFilters, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value === "" ? undefined : value,
+    }));
+  };
+
   const hasResults = data && (data.tournaments.length > 0 || data.users.length > 0);
-  const noResults = query.length >= 2 && !isLoading && data && data.tournaments.length === 0 && data.users.length === 0;
+  const noResults = (query.length >= 2 || activeFiltersCount > 0) && !isLoading && data && data.tournaments.length === 0 && data.users.length === 0;
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          ref={inputRef}
-          type="text"
-          placeholder="Buscar torneios ou jogadores..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => hasResults && setIsOpen(true)}
-          className="pl-9 pr-9 bg-card/50 border-border/50 focus:border-primary/50 h-9"
-        />
-        {query && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-            onClick={handleClear}
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            ) : (
-              <X className="h-4 w-4 text-muted-foreground" />
-            )}
-          </Button>
-        )}
+    <div ref={containerRef} className="relative w-full max-w-lg">
+      <div className="flex gap-2">
+        {/* Search Input */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder="Buscar torneios ou jogadores..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => hasResults && setIsOpen(true)}
+            className="pl-9 pr-9 bg-card/50 border-border/50 focus:border-primary/50 h-9"
+          />
+          {query && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+              onClick={handleClear}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <X className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          )}
+        </div>
+
+        {/* Filters Button */}
+        <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`h-9 gap-2 shrink-0 ${activeFiltersCount > 0 ? "border-primary text-primary" : ""}`}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="hidden sm:inline">Filtros</span>
+              {activeFiltersCount > 0 && (
+                <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                  {activeFiltersCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-4" align="end">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-sm">Filtros Avançados</h4>
+                {activeFiltersCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground"
+                    onClick={handleClearFilters}
+                  >
+                    Limpar
+                  </Button>
+                )}
+              </div>
+
+              {/* Prize Range */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Award className="h-3 w-3" />
+                  Premiação (R$)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Mín"
+                    value={filters.prizeMin ?? ""}
+                    onChange={(e) => updateFilter("prizeMin", e.target.value ? Number(e.target.value) : undefined)}
+                    className="h-8 text-sm"
+                  />
+                  <span className="text-muted-foreground self-center">-</span>
+                  <Input
+                    type="number"
+                    placeholder="Máx"
+                    value={filters.prizeMax ?? ""}
+                    onChange={(e) => updateFilter("prizeMax", e.target.value ? Number(e.target.value) : undefined)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Entry Fee Range */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Coins className="h-3 w-3" />
+                  Taxa de Inscrição (créditos)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Mín"
+                    value={filters.entryFeeMin ?? ""}
+                    onChange={(e) => updateFilter("entryFeeMin", e.target.value ? Number(e.target.value) : undefined)}
+                    className="h-8 text-sm"
+                  />
+                  <span className="text-muted-foreground self-center">-</span>
+                  <Input
+                    type="number"
+                    placeholder="Máx"
+                    value={filters.entryFeeMax ?? ""}
+                    onChange={(e) => updateFilter("entryFeeMax", e.target.value ? Number(e.target.value) : undefined)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  Data do Torneio
+                </Label>
+                <div className="flex gap-2">
+                  <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-8 text-xs justify-start font-normal"
+                      >
+                        {filters.dateFrom
+                          ? format(filters.dateFrom, "dd/MM/yy", { locale: ptBR })
+                          : "De"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={filters.dateFrom}
+                        onSelect={(date) => {
+                          updateFilter("dateFrom", date);
+                          setDateFromOpen(false);
+                        }}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <span className="text-muted-foreground self-center">-</span>
+                  <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-8 text-xs justify-start font-normal"
+                      >
+                        {filters.dateTo
+                          ? format(filters.dateTo, "dd/MM/yy", { locale: ptBR })
+                          : "Até"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={filters.dateTo}
+                        onSelect={(date) => {
+                          updateFilter("dateTo", date);
+                          setDateToOpen(false);
+                        }}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                {(filters.dateFrom || filters.dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs text-muted-foreground w-full"
+                    onClick={() => {
+                      updateFilter("dateFrom", undefined);
+                      updateFilter("dateTo", undefined);
+                    }}
+                  >
+                    Limpar datas
+                  </Button>
+                )}
+              </div>
+
+              {/* Apply Button */}
+              <Button
+                className="w-full"
+                size="sm"
+                onClick={() => setFiltersOpen(false)}
+              >
+                Aplicar Filtros
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
+
+      {/* Active Filters Pills */}
+      {activeFiltersCount > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {(filters.prizeMin !== undefined || filters.prizeMax !== undefined) && (
+            <Badge variant="secondary" className="text-xs gap-1 pr-1">
+              Prêmio: {filters.prizeMin !== undefined ? `R$${filters.prizeMin}` : "0"} - {filters.prizeMax !== undefined ? `R$${filters.prizeMax}` : "∞"}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 ml-1"
+                onClick={() => {
+                  updateFilter("prizeMin", undefined);
+                  updateFilter("prizeMax", undefined);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          )}
+          {(filters.entryFeeMin !== undefined || filters.entryFeeMax !== undefined) && (
+            <Badge variant="secondary" className="text-xs gap-1 pr-1">
+              Inscrição: {filters.entryFeeMin ?? 0} - {filters.entryFeeMax ?? "∞"} créditos
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 ml-1"
+                onClick={() => {
+                  updateFilter("entryFeeMin", undefined);
+                  updateFilter("entryFeeMax", undefined);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          )}
+          {(filters.dateFrom !== undefined || filters.dateTo !== undefined) && (
+            <Badge variant="secondary" className="text-xs gap-1 pr-1">
+              Data: {filters.dateFrom ? format(filters.dateFrom, "dd/MM", { locale: ptBR }) : "início"} - {filters.dateTo ? format(filters.dateTo, "dd/MM", { locale: ptBR }) : "fim"}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 ml-1"
+                onClick={() => {
+                  updateFilter("dateFrom", undefined);
+                  updateFilter("dateTo", undefined);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Results Dropdown */}
       {isOpen && (hasResults || noResults) && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
           {noResults && (
             <div className="p-4 text-center text-muted-foreground text-sm">
-              Nenhum resultado encontrado para "{query}"
+              Nenhum resultado encontrado{query.length >= 2 ? ` para "${query}"` : ""}
+              {activeFiltersCount > 0 && " com os filtros selecionados"}
             </div>
           )}
 
@@ -214,11 +469,19 @@ export const SearchBar = () => {
                 size="sm"
                 className="w-full text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => {
-                  navigate(`/tournaments?search=${encodeURIComponent(query)}`);
+                  const params = new URLSearchParams();
+                  if (query) params.set("search", query);
+                  if (filters.prizeMin !== undefined) params.set("prizeMin", String(filters.prizeMin));
+                  if (filters.prizeMax !== undefined) params.set("prizeMax", String(filters.prizeMax));
+                  if (filters.entryFeeMin !== undefined) params.set("entryFeeMin", String(filters.entryFeeMin));
+                  if (filters.entryFeeMax !== undefined) params.set("entryFeeMax", String(filters.entryFeeMax));
+                  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom.toISOString());
+                  if (filters.dateTo) params.set("dateTo", filters.dateTo.toISOString());
+                  navigate(`/tournaments?${params.toString()}`);
                   handleResultClick();
                 }}
               >
-                Ver todos os resultados para "{query}"
+                Ver todos os resultados{query.length >= 2 ? ` para "${query}"` : ""}
               </Button>
             </div>
           )}
