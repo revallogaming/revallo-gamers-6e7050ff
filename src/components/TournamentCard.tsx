@@ -1,4 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { memo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, Users, Star } from 'lucide-react';
@@ -11,7 +12,7 @@ interface TournamentCardProps {
   tournament: Tournament;
 }
 
-export function TournamentCard({ tournament }: TournamentCardProps) {
+export const TournamentCard = memo(function TournamentCard({ tournament }: TournamentCardProps) {
   const navigate = useNavigate();
   const gameInfo = GAME_INFO[tournament.game];
   const statusInfo = STATUS_INFO[tournament.status];
@@ -21,13 +22,13 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
   const deadlineNotPassed = new Date(tournament.registration_deadline) > new Date();
   const canJoin = isRegistrationOpen && hasVacancy && deadlineNotPassed;
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (canJoin) {
       navigate(`/tournament/${tournament.id}?join=true`);
     } else {
       navigate(`/tournament/${tournament.id}`);
     }
-  };
+  }, [canJoin, navigate, tournament.id]);
 
   return (
     <Card 
@@ -105,4 +106,4 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
       </div>
     </Card>
   );
-}
+});

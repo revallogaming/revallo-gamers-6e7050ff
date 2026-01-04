@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Navigate, Link, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useTournament, useTournamentParticipants } from "@/hooks/useTournaments";
+import { useRealtimeParticipants } from "@/hooks/useRealtimeParticipants";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollowers } from "@/hooks/useFollowers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,9 @@ const TournamentDetails = () => {
   const { data: participants } = useTournamentParticipants(id || "");
   const { user } = useAuth();
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  
+  // Enable realtime updates for participants
+  useRealtimeParticipants(id);
   
   const organizerId = (tournament as any)?.organizer?.id;
   const { isFollowing, toggleFollow, isToggling, followerCount } = useFollowers(organizerId);

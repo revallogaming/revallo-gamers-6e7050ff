@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
+const STALE_TIME = 1000 * 60 * 5; // 5 minutes for follower data
+const CACHE_TIME = 1000 * 60 * 15; // 15 minutes
+
 export const useFollowers = (userId: string | undefined) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -22,6 +25,8 @@ export const useFollowers = (userId: string | undefined) => {
       return !!data;
     },
     enabled: !!user?.id && !!userId && user.id !== userId,
+    staleTime: STALE_TIME,
+    gcTime: CACHE_TIME,
   });
 
   // Get follower count
@@ -37,6 +42,8 @@ export const useFollowers = (userId: string | undefined) => {
       return count || 0;
     },
     enabled: !!userId,
+    staleTime: STALE_TIME,
+    gcTime: CACHE_TIME,
   });
 
   // Get following count
@@ -52,6 +59,8 @@ export const useFollowers = (userId: string | undefined) => {
       return count || 0;
     },
     enabled: !!userId,
+    staleTime: STALE_TIME,
+    gcTime: CACHE_TIME,
   });
 
   // Follow mutation

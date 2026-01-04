@@ -41,12 +41,15 @@ export function useCredits() {
         .from('credit_transactions')
         .select('*')
         .eq('user_id', profile.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50); // Limit to recent transactions
       
       if (error) throw error;
       return data as CreditTransaction[];
     },
     enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
   });
 
   const payments = useQuery({
@@ -57,12 +60,15 @@ export function useCredits() {
         .from('pix_payments')
         .select('*')
         .eq('user_id', profile.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20); // Limit to recent payments
       
       if (error) throw error;
       return data as PixPayment[];
     },
     enabled: !!profile?.id,
+    staleTime: 1000 * 30, // 30 seconds - payments need fresher data
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const spendCredits = useMutation({
@@ -111,6 +117,8 @@ export function useCredits() {
       return data?.balance ?? 0;
     },
     enabled: !!profile?.id,
+    staleTime: 1000 * 30, // 30 seconds
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 
   return {
