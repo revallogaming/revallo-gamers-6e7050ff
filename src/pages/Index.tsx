@@ -112,7 +112,7 @@ const Index = () => {
                 <div className="flex items-center gap-3">
                   {user && (
                     <CreateTournamentDialog>
-                      <Button size="sm" className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold gap-2">
+                      <Button size="sm" className="bg-gradient-primary hover:opacity-90 font-semibold gap-2">
                         <Plus className="h-4 w-4" />
                         Criar Torneio
                       </Button>

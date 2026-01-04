@@ -254,7 +254,7 @@ const MyTournaments = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-display text-3xl font-bold text-foreground">Meus Torneios</h1>
           <CreateTournamentDialog>
-            <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold gap-2">
+            <Button className="bg-gradient-primary hover:opacity-90 font-semibold gap-2">
               <Plus className="h-4 w-4" />
               Criar Torneio
             </Button>

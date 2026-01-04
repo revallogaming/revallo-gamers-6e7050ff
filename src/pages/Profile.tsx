@@ -284,7 +284,7 @@ const Profile = () => {
               <div className="flex flex-col items-center text-center">
                 {/* Avatar with upload button - Instagram resolution 320x320 display */}
                 <div className="relative">
-                  <Avatar className="h-40 w-40 border-4 border-primary/50 glow-primary">
+                  <Avatar className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-primary/30">
                     <AvatarImage 
                       src={profile?.avatar_url || undefined} 
                       className="object-cover"

@@ -112,7 +112,7 @@ const Organizer = () => {
           </div>
           
           <CreateTournamentDialog>
-            <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold gap-2">
+            <Button className="bg-gradient-primary hover:opacity-90 font-semibold gap-2">
               <Plus className="h-4 w-4" />
               Criar Torneio
             </Button>
