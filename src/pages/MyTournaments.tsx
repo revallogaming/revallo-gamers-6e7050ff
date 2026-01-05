@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,12 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Trophy, Calendar, Users, Coins, Edit, Trash2, 
-  ExternalLink, Copy, CheckCircle, Plus 
+  ExternalLink, Copy, CheckCircle, Plus, ArrowLeft 
 } from "lucide-react";
 import { GAME_INFO, STATUS_INFO } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Navigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -251,6 +250,11 @@ const MyTournaments = () => {
       <Header />
 
       <div className="container mx-auto px-4 py-8">
+        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Link>
+        
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-display text-3xl font-bold text-foreground">Meus Torneios</h1>
           <CreateTournamentDialog>

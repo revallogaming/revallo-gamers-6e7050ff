@@ -21,7 +21,7 @@ import { GAME_INFO, GameType, FORMAT_INFO, MiniTournament, MiniTournamentFormat 
 import { 
   Search, Plus, Trophy, Users, Calendar, Coins, Edit, 
   ExternalLink, Copy, CheckCircle, Bell, BellRing,
-  Trash2, CreditCard, X, Gamepad2
+  Trash2, CreditCard, X, Gamepad2, ArrowLeft
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -165,6 +165,11 @@ export default function Community() {
       />
 
       <div className="container py-8 space-y-6">
+        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Link>
+        
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
