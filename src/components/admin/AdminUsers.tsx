@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, 
   DialogHeader, DialogTitle 
 } from "@/components/ui/dialog";
 import { 
   Search, RefreshCw, Plus, Minus, Coins, Ban, Trash2, 
-  UserX, CheckCircle, Edit3, Crown, UserMinus, Users, Key 
+  UserX, CheckCircle, Edit3, Crown, UserMinus, Users, Key, Mail 
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,6 +47,7 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
   const [banReason, setBanReason] = useState("");
   const [newCreditAmount, setNewCreditAmount] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [sendPasswordEmail, setSendPasswordEmail] = useState(true);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const filteredUsers = users.filter(u =>
@@ -216,7 +218,7 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
 
     try {
       const { data, error } = await supabase.functions.invoke("admin-reset-password", {
-        body: { userId: selectedUser.id, newPassword },
+        body: { userId: selectedUser.id, newPassword, sendEmail: sendPasswordEmail },
       });
 
       if (error) throw error;
@@ -225,9 +227,14 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
         throw new Error(data.error);
       }
 
-      toast.success(`Senha de ${selectedUser.nickname} alterada com sucesso`);
+      const message = data.emailSent 
+        ? `Senha de ${selectedUser.nickname} alterada e enviada por email` 
+        : `Senha de ${selectedUser.nickname} alterada com sucesso`;
+      
+      toast.success(message);
       setResetPasswordDialogOpen(false);
       setNewPassword("");
+      setSendPasswordEmail(true);
       setSelectedUser(null);
     } catch (error: unknown) {
       console.error("Error resetting password:", error);
@@ -626,6 +633,18 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
               <p className="text-xs text-muted-foreground">
                 O usuário precisará fazer login novamente após a alteração.
               </p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="send-email" 
+                checked={sendPasswordEmail}
+                onCheckedChange={(checked) => setSendPasswordEmail(checked === true)}
+              />
+              <Label htmlFor="send-email" className="text-sm font-normal cursor-pointer flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                Enviar nova senha por email ao usuário
+              </Label>
             </div>
           </div>
 
