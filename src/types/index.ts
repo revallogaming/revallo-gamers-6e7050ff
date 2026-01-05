@@ -2,7 +2,7 @@ export type GameType = 'freefire' | 'fortnite' | 'cod' | 'league_of_legends' | '
 export type TournamentStatus = 'upcoming' | 'open' | 'in_progress' | 'completed' | 'cancelled';
 export type AppRole = 'admin' | 'organizer' | 'player';
 export type PixKeyType = 'cpf' | 'phone' | 'email' | 'random';
-export type MiniTournamentFormat = 'x1' | 'duo' | 'squad';
+export type MiniTournamentFormat = 'x1' | 'duo' | 'trio' | 'squad';
 export type MiniTournamentStatus = 'draft' | 'pending_deposit' | 'open' | 'in_progress' | 'awaiting_result' | 'completed' | 'cancelled';
 
 export interface Profile {
@@ -212,6 +212,7 @@ export const MINI_TOURNAMENT_STATUS_INFO: Record<MiniTournamentStatus, { label: 
 export const FORMAT_INFO: Record<MiniTournamentFormat, { label: string; players: number }> = {
   x1: { label: 'X1 (1v1)', players: 1 },
   duo: { label: 'Duo (2v2)', players: 2 },
+  trio: { label: 'Trio (3v3)', players: 3 },
   squad: { label: 'Squad (4v4)', players: 4 },
 };
 
