@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { 
   Plus, Trophy, Users, Calendar, Coins, Edit, Eye, 
-  Trash2, ChevronDown, ExternalLink, Copy, CheckCircle 
+  Trash2, ChevronDown, ExternalLink, Copy, CheckCircle, ArrowLeft 
 } from "lucide-react";
 import { GAME_INFO, GameType, STATUS_INFO, Tournament } from "@/types";
 import { format } from "date-fns";
@@ -100,6 +100,11 @@ const Organizer = () => {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
+        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Link>
+        
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>

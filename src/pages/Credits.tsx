@@ -1,10 +1,11 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { useCredits, CREDIT_PACKAGES } from "@/hooks/useCredits";
 import { BuyCreditsDialog } from "@/components/BuyCreditsDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Coins, Sparkles, TrendingUp, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Coins, Sparkles, TrendingUp, ArrowDownLeft, ArrowUpRight, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -27,6 +28,11 @@ const Credits = () => {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
+        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Link>
+        
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold text-foreground">
             Meus Créditos
