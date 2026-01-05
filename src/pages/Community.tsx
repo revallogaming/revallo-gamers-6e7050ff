@@ -11,13 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO } from '@/components/SEO';
-import { GAME_INFO, GameType } from '@/types';
+import { GAME_INFO, GameType, FORMAT_INFO, MiniTournamentFormat } from '@/types';
 import { Search, Plus, Trophy } from 'lucide-react';
 
 export default function Community() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [gameFilter, setGameFilter] = useState<GameType | 'all'>('all');
+  const [formatFilter, setFormatFilter] = useState<MiniTournamentFormat | 'all'>('all');
   const [statusTab, setStatusTab] = useState<'open' | 'all'>('open');
 
   const { tournaments, isLoading } = useMiniTournaments(
@@ -27,7 +28,8 @@ export default function Community() {
   const filteredTournaments = tournaments?.filter(t => {
     const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGame = gameFilter === 'all' || t.game === gameFilter;
-    return matchesSearch && matchesGame;
+    const matchesFormat = formatFilter === 'all' || t.format === formatFilter;
+    return matchesSearch && matchesGame && matchesFormat;
   });
 
   return (
@@ -74,7 +76,7 @@ export default function Community() {
         </Card>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -84,17 +86,30 @@ export default function Community() {
               className="pl-10"
             />
           </div>
-          <Select value={gameFilter} onValueChange={(v) => setGameFilter(v as GameType | 'all')}>
-            <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="Todos os jogos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Jogos</SelectItem>
-              {Object.entries(GAME_INFO).map(([key, info]) => (
-                <SelectItem key={key} value={key}>{info.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Select value={gameFilter} onValueChange={(v) => setGameFilter(v as GameType | 'all')}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Todos os jogos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Jogos</SelectItem>
+                {Object.entries(GAME_INFO).map(([key, info]) => (
+                  <SelectItem key={key} value={key}>{info.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={formatFilter} onValueChange={(v) => setFormatFilter(v as MiniTournamentFormat | 'all')}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Todos os modos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Modos</SelectItem>
+                {Object.entries(FORMAT_INFO).map(([key, info]) => (
+                  <SelectItem key={key} value={key}>{info.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Tabs */}
