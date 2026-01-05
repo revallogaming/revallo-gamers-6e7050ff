@@ -80,6 +80,157 @@ export type Database = {
         }
         Relationships: []
       }
+      mini_tournament_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          tournament_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          tournament_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          tournament_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mini_tournament_messages_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "mini_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mini_tournament_participants: {
+        Row: {
+          id: string
+          placement: number | null
+          player_id: string
+          prize_amount_brl: number | null
+          prize_paid: boolean
+          prize_paid_at: string | null
+          prize_transfer_id: string | null
+          registered_at: string
+          tournament_id: string
+        }
+        Insert: {
+          id?: string
+          placement?: number | null
+          player_id: string
+          prize_amount_brl?: number | null
+          prize_paid?: boolean
+          prize_paid_at?: string | null
+          prize_transfer_id?: string | null
+          registered_at?: string
+          tournament_id: string
+        }
+        Update: {
+          id?: string
+          placement?: number | null
+          player_id?: string
+          prize_amount_brl?: number | null
+          prize_paid?: boolean
+          prize_paid_at?: string | null
+          prize_transfer_id?: string | null
+          registered_at?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mini_tournament_participants_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "mini_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mini_tournaments: {
+        Row: {
+          created_at: string
+          current_participants: number
+          deposit_confirmed: boolean
+          deposit_confirmed_at: string | null
+          deposit_payment_id: string | null
+          description: string | null
+          entry_fee_credits: number
+          format: Database["public"]["Enums"]["mini_tournament_format"]
+          game: Database["public"]["Enums"]["game_type"]
+          id: string
+          max_participants: number
+          organizer_id: string
+          prize_distribution: Json
+          prize_pool_brl: number
+          prizes_distributed_at: string | null
+          registration_deadline: string
+          results_submitted_at: string | null
+          rules: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["mini_tournament_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_participants?: number
+          deposit_confirmed?: boolean
+          deposit_confirmed_at?: string | null
+          deposit_payment_id?: string | null
+          description?: string | null
+          entry_fee_credits?: number
+          format?: Database["public"]["Enums"]["mini_tournament_format"]
+          game?: Database["public"]["Enums"]["game_type"]
+          id?: string
+          max_participants?: number
+          organizer_id: string
+          prize_distribution?: Json
+          prize_pool_brl: number
+          prizes_distributed_at?: string | null
+          registration_deadline: string
+          results_submitted_at?: string | null
+          rules?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["mini_tournament_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_participants?: number
+          deposit_confirmed?: boolean
+          deposit_confirmed_at?: string | null
+          deposit_payment_id?: string | null
+          description?: string | null
+          entry_fee_credits?: number
+          format?: Database["public"]["Enums"]["mini_tournament_format"]
+          game?: Database["public"]["Enums"]["game_type"]
+          id?: string
+          max_participants?: number
+          organizer_id?: string
+          prize_distribution?: Json
+          prize_pool_brl?: number
+          prizes_distributed_at?: string | null
+          registration_deadline?: string
+          results_submitted_at?: string | null
+          rules?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["mini_tournament_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organizer_payment_info: {
         Row: {
           created_at: string
@@ -154,6 +305,116 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prize_deposits: {
+        Row: {
+          amount_brl: number
+          created_at: string
+          id: string
+          mercadopago_id: string | null
+          organizer_id: string
+          paid_at: string | null
+          qr_code: string | null
+          qr_code_base64: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          tournament_id: string
+        }
+        Insert: {
+          amount_brl: number
+          created_at?: string
+          id?: string
+          mercadopago_id?: string | null
+          organizer_id: string
+          paid_at?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          tournament_id: string
+        }
+        Update: {
+          amount_brl?: number
+          created_at?: string
+          id?: string
+          mercadopago_id?: string | null
+          organizer_id?: string
+          paid_at?: string | null
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prize_deposits_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "mini_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prize_distributions: {
+        Row: {
+          amount_brl: number
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          participant_id: string
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          placement: number
+          player_id: string
+          status: Database["public"]["Enums"]["payment_status"]
+          tournament_id: string
+          transfer_id: string | null
+        }
+        Insert: {
+          amount_brl: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          participant_id: string
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          placement: number
+          player_id: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          tournament_id: string
+          transfer_id?: string | null
+        }
+        Update: {
+          amount_brl?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          participant_id?: string
+          pix_key?: string
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"]
+          placement?: number
+          player_id?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          tournament_id?: string
+          transfer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prize_distributions_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "mini_tournament_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prize_distributions_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "mini_tournaments"
             referencedColumns: ["id"]
           },
         ]
@@ -387,6 +648,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_pix_keys: {
+        Row: {
+          created_at: string
+          id: string
+          is_verified: boolean
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          pix_key?: string
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -596,7 +887,17 @@ export type Database = {
         | "cod"
         | "league_of_legends"
         | "valorant"
+      mini_tournament_format: "x1" | "duo" | "squad"
+      mini_tournament_status:
+        | "draft"
+        | "pending_deposit"
+        | "open"
+        | "in_progress"
+        | "awaiting_result"
+        | "completed"
+        | "cancelled"
       payment_status: "pending" | "confirmed" | "failed" | "refunded"
+      pix_key_type: "cpf" | "phone" | "email" | "random"
       tournament_status:
         | "upcoming"
         | "open"
@@ -738,7 +1039,18 @@ export const Constants = {
         "league_of_legends",
         "valorant",
       ],
+      mini_tournament_format: ["x1", "duo", "squad"],
+      mini_tournament_status: [
+        "draft",
+        "pending_deposit",
+        "open",
+        "in_progress",
+        "awaiting_result",
+        "completed",
+        "cancelled",
+      ],
       payment_status: ["pending", "confirmed", "failed", "refunded"],
+      pix_key_type: ["cpf", "phone", "email", "random"],
       tournament_status: [
         "upcoming",
         "open",

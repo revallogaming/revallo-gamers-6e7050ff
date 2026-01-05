@@ -14,3 +14,12 @@ verify_jwt = true
 
 [functions.send-mass-email]
 verify_jwt = true
+
+[functions.create-prize-deposit]
+verify_jwt = true
+
+[functions.distribute-prizes]
+verify_jwt = true
+
+[functions.join-mini-tournament]
+verify_jwt = true
