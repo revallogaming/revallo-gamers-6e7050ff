@@ -9,6 +9,7 @@ import { PrizeDepositDialog } from '@/components/mini-tournaments/PrizeDepositDi
 import { EditMiniTournamentDialog } from '@/components/mini-tournaments/EditMiniTournamentDialog';
 import { DeleteMiniTournamentDialog } from '@/components/mini-tournaments/DeleteMiniTournamentDialog';
 import { ReportPlayerDialog } from '@/components/mini-tournaments/ReportPlayerDialog';
+import { SubmitResultsDialog } from '@/components/mini-tournaments/SubmitResultsDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,7 @@ import {
   Pencil,
   Trash2,
   Flag,
-  Settings,
+  Send,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -253,6 +254,27 @@ export default function MiniTournamentDetails() {
               ) : isOrganizer ? (
                 <div className="space-y-3">
                   <p className="text-center text-muted-foreground text-sm">Você é o organizador</p>
+                  
+                  {/* Submit Results - shown when deposit is confirmed and results not submitted */}
+                  {tournament.deposit_confirmed && !tournament.prizes_distributed_at && participants && participants.length > 0 && (
+                    <SubmitResultsDialog 
+                      tournament={tournament} 
+                      participants={participants}
+                      onSuccess={refetch}
+                    >
+                      <Button className="w-full gap-2">
+                        <Send className="h-4 w-4" />
+                        Submeter Resultados
+                      </Button>
+                    </SubmitResultsDialog>
+                  )}
+
+                  {tournament.prizes_distributed_at && (
+                    <div className="flex items-center justify-center gap-2 text-green-500 py-2">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="font-medium">Prêmios distribuídos</span>
+                    </div>
+                  )}
                   
                   {/* Organizer Controls */}
                   <div className="flex flex-col gap-2">
