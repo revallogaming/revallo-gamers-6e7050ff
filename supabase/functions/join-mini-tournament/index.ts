@@ -125,6 +125,21 @@ serve(async (req) => {
 
     console.log(`Successfully registered participant ${participant.id}`);
 
+    // Trigger email notification to organizer (fire and forget)
+    try {
+      const notifyUrl = `${supabaseUrl}/functions/v1/notify-mini-tournament-join`;
+      fetch(notifyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournament_id: tournament_id,
+          player_id: user.id,
+        }),
+      }).catch(err => console.error('Failed to send notification:', err));
+    } catch (notifyError) {
+      console.error('Error triggering notification:', notifyError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
