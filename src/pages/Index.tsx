@@ -137,17 +137,12 @@ const Index = () => {
                   <div className="flex items-center gap-2">
                     {user && (
                       <CreateTournamentDialog>
-                        <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium gap-1.5">
+                        <Button size="sm" className="hidden md:flex bg-primary hover:bg-primary/90 text-primary-foreground font-medium gap-1.5">
                           <Plus className="h-3.5 w-3.5" />
                           Criar Torneio
                         </Button>
                       </CreateTournamentDialog>
                     )}
-                    
-                    {/* Mobile Game Filter */}
-                    <div className="md:hidden">
-                      <GameFilter selected={selectedGame} onSelect={setSelectedGame} />
-                    </div>
                   </div>
                 </div>
 
@@ -155,9 +150,68 @@ const Index = () => {
                 <div className="flex justify-center md:justify-start">
                   <SearchBar />
                 </div>
+
+                {/* Mobile Game Filter - Grid Layout */}
+                <div className="md:hidden">
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setSelectedGame("all")}
+                      className={`flex flex-col items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg transition-all text-xs ${
+                        selectedGame === "all"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <Gamepad2 className="h-5 w-5" />
+                      <span className="font-medium">Todos</span>
+                    </button>
+                    {(Object.keys(GAME_INFO) as GameType[]).map((game) => {
+                      const info = GAME_INFO[game];
+                      const count = openTournamentsByGame[game];
+                      return (
+                        <button
+                          key={game}
+                          onClick={() => setSelectedGame(game)}
+                          className={`flex flex-col items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg transition-all text-xs relative ${
+                            selectedGame === game
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`}
+                        >
+                          <GameIcon game={game} className="h-5 w-5" />
+                          <span className="font-medium truncate">{info.name}</span>
+                          {count > 0 && (
+                            <span className={`absolute -top-1 -right-1 text-[9px] min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full font-semibold ${
+                              selectedGame === game 
+                                ? "bg-primary-foreground/20 text-primary-foreground" 
+                                : "bg-primary text-primary-foreground"
+                            }`}>
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </section>
+
+          {/* Floating Create Tournament Button - Mobile */}
+          {user && (
+            <div className="md:hidden fixed bottom-6 right-6 z-50">
+              <CreateTournamentDialog>
+                <Button 
+                  size="lg" 
+                  className="h-14 w-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
+                >
+                  <Plus className="h-6 w-6" />
+                  <span className="sr-only">Criar Torneio</span>
+                </Button>
+              </CreateTournamentDialog>
+            </div>
+          )}
 
           {/* Highlighted Tournaments Banner */}
           {!isLoading && tournaments && tournaments.length > 0 && (
