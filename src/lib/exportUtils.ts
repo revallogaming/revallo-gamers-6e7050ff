@@ -70,7 +70,8 @@ const getGameLabel = (game: string): string => {
     'fortnite': 'Fortnite',
     'cod': 'Call of Duty',
     'league_of_legends': 'League of Legends',
-    'valorant': 'Valorant'
+    'valorant': 'Valorant',
+    'blood_strike': 'Blood Strike'
   };
   return games[game] || game;
 };

@@ -56,6 +56,7 @@ const Index = () => {
     cod: tournaments?.filter(t => t.game === 'cod' && t.status === 'open').length || 0,
     league_of_legends: tournaments?.filter(t => t.game === 'league_of_legends' && t.status === 'open').length || 0,
     valorant: tournaments?.filter(t => t.game === 'valorant' && t.status === 'open').length || 0,
+    blood_strike: tournaments?.filter(t => t.game === 'blood_strike' && t.status === 'open').length || 0,
   } as Record<GameType, number>), [tournaments]);
 
   return (
