@@ -6,6 +6,9 @@ import { useUserPixKey } from '@/hooks/useUserPixKey';
 import { useAuth } from '@/hooks/useAuth';
 import { MiniTournamentChat } from '@/components/mini-tournaments/MiniTournamentChat';
 import { PrizeDepositDialog } from '@/components/mini-tournaments/PrizeDepositDialog';
+import { EditMiniTournamentDialog } from '@/components/mini-tournaments/EditMiniTournamentDialog';
+import { DeleteMiniTournamentDialog } from '@/components/mini-tournaments/DeleteMiniTournamentDialog';
+import { ReportPlayerDialog } from '@/components/mini-tournaments/ReportPlayerDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +31,10 @@ import {
   Loader2,
   Clock,
   Target,
+  Pencil,
+  Trash2,
+  Flag,
+  Settings,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -244,7 +251,35 @@ export default function MiniTournamentDetails() {
                   <Link to="/auth">Entrar para Participar</Link>
                 </Button>
               ) : isOrganizer ? (
-                <p className="text-center text-muted-foreground">Você é o organizador</p>
+                <div className="space-y-3">
+                  <p className="text-center text-muted-foreground text-sm">Você é o organizador</p>
+                  
+                  {/* Organizer Controls */}
+                  <div className="flex flex-col gap-2">
+                    <EditMiniTournamentDialog tournament={tournament} onSuccess={refetch}>
+                      <Button variant="outline" className="w-full gap-2">
+                        <Pencil className="h-4 w-4" />
+                        Editar Torneio
+                      </Button>
+                    </EditMiniTournamentDialog>
+
+                    {participants && participants.length > 0 && (
+                      <ReportPlayerDialog participants={participants} tournamentId={tournament.id}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Flag className="h-4 w-4" />
+                          Denunciar Jogador
+                        </Button>
+                      </ReportPlayerDialog>
+                    )}
+
+                    <DeleteMiniTournamentDialog tournament={tournament}>
+                      <Button variant="destructive" className="w-full gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Excluir Torneio
+                      </Button>
+                    </DeleteMiniTournamentDialog>
+                  </div>
+                </div>
               ) : isParticipant ? (
                 <Button 
                   variant="destructive" 
