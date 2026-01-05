@@ -7,6 +7,7 @@ import { CreateTournamentDialog } from "@/components/CreateTournamentDialog";
 import { GameIcon } from "@/components/GameIcon";
 import { HighlightedTournamentsBanner } from "@/components/HighlightedTournamentsBanner";
 import { SEO, getWebsiteStructuredData } from "@/components/SEO";
+import { RevalloLogo } from "@/components/RevalloLogo";
 import { useTournaments } from "@/hooks/useTournaments";
 import { useRealtimeTournaments } from "@/hooks/useRealtimeParticipants";
 import { useFollowingTournaments } from "@/hooks/useFollowingTournaments";
@@ -348,8 +349,8 @@ const Index = () => {
         <footer className="border-t border-border/30 bg-card/20">
           <div className="container mx-auto px-4 py-5">
             <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Gamepad2 className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-3">
+                <RevalloLogo size={32} />
                 <span className="font-display text-base font-semibold text-foreground">REVALLO</span>
               </div>
               <nav className="flex items-center gap-4 text-xs text-muted-foreground" aria-label="Footer navigation">
