@@ -20,10 +20,11 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   tournament: MiniTournament;
+  onSuccess?: () => void;
   children?: React.ReactNode;
 }
 
-export function DeleteMiniTournamentDialog({ tournament, children }: Props) {
+export function DeleteMiniTournamentDialog({ tournament, onSuccess, children }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -49,7 +50,8 @@ export function DeleteMiniTournamentDialog({ tournament, children }: Props) {
       toast.success('Torneio excluído com sucesso');
       queryClient.invalidateQueries({ queryKey: ['mini-tournaments'] });
       queryClient.invalidateQueries({ queryKey: ['my-mini-tournaments'] });
-      navigate('/comunidade');
+      onSuccess?.();
+      navigate('/meus-mini-torneios');
     } catch (error) {
       console.error('Error deleting tournament:', error);
       toast.error('Erro ao excluir torneio');
