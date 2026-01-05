@@ -5,12 +5,13 @@ import { Header } from '@/components/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { RefreshCw, Shield, Users, Trophy, Gamepad2, Coins, BarChart3, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Shield, Users, Trophy, Gamepad2, Coins, BarChart3, ArrowLeft, Flag } from 'lucide-react';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminUsers } from '@/components/admin/AdminUsers';
 import { AdminTournaments } from '@/components/admin/AdminTournaments';
 import { AdminMiniTournaments } from '@/components/admin/AdminMiniTournaments';
 import { AdminTransactions } from '@/components/admin/AdminTransactions';
+import { AdminReports } from '@/components/admin/AdminReports';
 
 interface UserWithCredits {
   id: string;
@@ -122,7 +123,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="stats" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
             <TabsTrigger value="stats" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Estatísticas</span>
@@ -142,6 +143,10 @@ export default function Admin() {
             <TabsTrigger value="transactions" className="gap-2">
               <Coins className="h-4 w-4" />
               <span className="hidden sm:inline">Transações</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="gap-2">
+              <Flag className="h-4 w-4" />
+              <span className="hidden sm:inline">Denúncias</span>
             </TabsTrigger>
           </TabsList>
 
@@ -167,6 +172,10 @@ export default function Admin() {
 
           <TabsContent value="transactions">
             <AdminTransactions />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <AdminReports />
           </TabsContent>
         </Tabs>
       </main>

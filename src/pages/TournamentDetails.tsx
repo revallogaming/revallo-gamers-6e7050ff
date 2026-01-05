@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Trophy, Calendar, Users, Coins, Clock, 
   ArrowLeft, Star, Medal, CheckCircle, AlertCircle,
-  ExternalLink, Copy, Link as LinkIcon, UserPlus, UserCheck
+  ExternalLink, Copy, Link as LinkIcon, UserPlus, UserCheck, Flag
 } from "lucide-react";
 import { GAME_INFO, STATUS_INFO } from "@/types";
 import { GameIcon } from "@/components/GameIcon";
@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { JoinTournamentDialog } from "@/components/JoinTournamentDialog";
+import { ReportDialog } from "@/components/ReportDialog";
 import { toast } from "sonner";
 
 const TournamentDetails = () => {
@@ -31,6 +32,7 @@ const TournamentDetails = () => {
   const { data: participants } = useTournamentParticipants(id || "");
   const { user } = useAuth();
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   
   // Enable realtime updates for participants
   useRealtimeParticipants(id);
@@ -233,10 +235,23 @@ const TournamentDetails = () => {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Link>
-          <Button variant="outline" size="sm" onClick={copyTournamentLink}>
-            <Copy className="h-4 w-4 mr-2" />
-            Copiar Link
-          </Button>
+          <div className="flex items-center gap-2">
+            {user && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setReportDialogOpen(true)}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <Flag className="h-4 w-4 mr-1" />
+                Denunciar
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={copyTournamentLink}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copiar Link
+            </Button>
+          </div>
         </div>
         
         <div className="grid gap-6 lg:grid-cols-3">
@@ -448,6 +463,17 @@ const TournamentDetails = () => {
           onOpenChange={setJoinDialogOpen}
           tournament={tournament}
           userId={user.id}
+        />
+      )}
+      
+      {/* Report Dialog */}
+      {tournament && id && (
+        <ReportDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          targetId={id}
+          targetType="tournament"
+          targetName={tournament.title}
         />
       )}
       </div>
