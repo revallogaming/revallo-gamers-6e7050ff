@@ -62,10 +62,12 @@ serve(async (req) => {
 
     // Define valid credit packages - must match frontend CREDIT_PACKAGES
     const VALID_PACKAGES = [
-      { brl: 10, credits: 100 },
-      { brl: 25, credits: 275 },
-      { brl: 50, credits: 600 },
-      { brl: 100, credits: 1300 }
+      { brl: 5, credits: 50 },
+      { brl: 10, credits: 110 },
+      { brl: 25, credits: 300 },
+      { brl: 50, credits: 650 },
+      { brl: 100, credits: 1400 },
+      { brl: 150, credits: 2250 },
     ] as const;
 
     const { amount_brl, credits_amount } = await req.json();
