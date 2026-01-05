@@ -18,6 +18,8 @@ import MyTournaments from "./pages/MyTournaments";
 import PublicProfile from "./pages/PublicProfile";
 import TermsOfUse from "./pages/TermsOfUse";
 import Tournaments from "./pages/Tournaments";
+import Community from "./pages/Community";
+import MiniTournamentDetails from "./pages/MiniTournamentDetails";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +44,8 @@ const App = () => (
               <Route path="/organizer" element={<Organizer />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/termos-de-uso" element={<TermsOfUse />} />
+              <Route path="/comunidade" element={<Community />} />
+              <Route path="/comunidade/:id" element={<MiniTournamentDetails />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

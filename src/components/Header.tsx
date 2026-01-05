@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, Coins, User, LogOut, Menu, X, Shield } from 'lucide-react';
+import { Trophy, Coins, User, LogOut, Menu, X, Shield, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RevalloLogo } from '@/components/RevalloLogo';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +28,10 @@ export function Header() {
                   <span className="font-medium">Admin</span>
                 </Link>
               )}
+              <Link to="/comunidade" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                <Users className="h-4 w-4" />
+                <span className="font-medium">Comunidade</span>
+              </Link>
               <Link to="/my-tournaments" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Trophy className="h-4 w-4" />
                 <span className="font-medium">Meus Torneios</span>
@@ -78,6 +82,14 @@ export function Header() {
                     <span className="font-medium">Admin</span>
                   </Link>
                 )}
+                <Link 
+                  to="/comunidade" 
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Users className="h-4 w-4" />
+                  <span className="font-medium">Comunidade</span>
+                </Link>
                 <Link 
                   to="/my-tournaments" 
                   className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
