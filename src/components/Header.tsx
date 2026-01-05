@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Gamepad2, Trophy, Coins, User, LogOut, Menu, X, Shield } from 'lucide-react';
+import { Trophy, Coins, User, LogOut, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RevalloLogo } from '@/components/RevalloLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 
@@ -13,9 +14,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/95 backdrop-blur-md">
       <div className="container flex h-14 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary">
-            <Gamepad2 className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <RevalloLogo size={32} />
           <span className="font-display text-lg font-semibold text-foreground">REVALLO</span>
         </Link>
 
