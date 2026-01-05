@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { 
   Search, RefreshCw, Plus, Minus, Coins, Ban, Trash2, 
-  UserX, CheckCircle, Edit3, Crown, UserMinus, Users 
+  UserX, CheckCircle, Edit3, Crown, UserMinus, Users, Key 
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,9 +41,12 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [setCreditsDialogOpen, setSetCreditsDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithCredits | null>(null);
   const [banReason, setBanReason] = useState("");
   const [newCreditAmount, setNewCreditAmount] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const filteredUsers = users.filter(u =>
     u.nickname.toLowerCase().includes(searchQuery.toLowerCase())
@@ -198,6 +201,40 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
       console.error("Error deleting user:", error);
       const errorMessage = error instanceof Error ? error.message : "Erro ao remover usuário";
       toast.error(errorMessage);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser) return;
+
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+
+    setIsResettingPassword(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: { userId: selectedUser.id, newPassword },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success(`Senha de ${selectedUser.nickname} alterada com sucesso`);
+      setResetPasswordDialogOpen(false);
+      setNewPassword("");
+      setSelectedUser(null);
+    } catch (error: unknown) {
+      console.error("Error resetting password:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro ao alterar senha";
+      toast.error(errorMessage);
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -381,7 +418,20 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setNewPassword("");
+                              setResetPasswordDialogOpen(true);
+                            }}
+                          >
+                            <Key className="h-4 w-4" />
+                            Senha
+                          </Button>
                           {u.is_banned ? (
                             <Button
                               size="sm"
@@ -544,6 +594,52 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
             <Button onClick={handleSetCredits} className="gap-2 bg-gradient-primary">
               <Coins className="h-4 w-4" />
               Definir Créditos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-500">
+              <Key className="h-5 w-5" />
+              Alterar Senha
+            </DialogTitle>
+            <DialogDescription>
+              Defina uma nova senha para <strong>{selectedUser?.nickname}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nova senha</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="text-lg"
+              />
+              <p className="text-xs text-muted-foreground">
+                O usuário precisará fazer login novamente após a alteração.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleResetPassword} 
+              className="gap-2"
+              disabled={isResettingPassword || !newPassword || newPassword.length < 6}
+            >
+              <Key className="h-4 w-4" />
+              {isResettingPassword ? "Alterando..." : "Alterar Senha"}
             </Button>
           </DialogFooter>
         </DialogContent>

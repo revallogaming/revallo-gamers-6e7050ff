@@ -23,3 +23,6 @@ verify_jwt = true
 
 [functions.join-mini-tournament]
 verify_jwt = true
+
+[functions.admin-reset-password]
+verify_jwt = true
