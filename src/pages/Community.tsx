@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO } from '@/components/SEO';
 import { GAME_INFO, GameType } from '@/types';
-import { Search, Plus, Trophy, Users, Gamepad2 } from 'lucide-react';
+import { Search, Plus, Trophy } from 'lucide-react';
 
 export default function Community() {
   const { user } = useAuth();
@@ -61,45 +61,17 @@ export default function Community() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6 flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Trophy className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{tournaments?.length || 0}</p>
-                <p className="text-sm text-muted-foreground">Torneios Ativos</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 flex items-center gap-4">
-              <div className="p-3 bg-green-500/10 rounded-lg">
-                <Users className="h-6 w-6 text-green-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {tournaments?.reduce((sum, t) => sum + t.current_participants, 0) || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">Participantes</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 flex items-center gap-4">
-              <div className="p-3 bg-yellow-500/10 rounded-lg">
-                <Gamepad2 className="h-6 w-6 text-yellow-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  R$ {tournaments?.reduce((sum, t) => sum + (t.deposit_confirmed ? t.prize_pool_brl : 0), 0).toFixed(0) || 0}
-                </p>
-                <p className="text-sm text-muted-foreground">Em Prêmios Garantidos</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="w-full sm:w-auto sm:max-w-xs">
+          <CardContent className="pt-6 flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-lg">
+              <Trophy className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{tournaments?.length || 0}</p>
+              <p className="text-sm text-muted-foreground">Torneios Ativos</p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4">
