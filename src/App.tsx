@@ -20,7 +20,7 @@ import TermsOfUse from "./pages/TermsOfUse";
 import Tournaments from "./pages/Tournaments";
 import Community from "./pages/Community";
 import MiniTournamentDetails from "./pages/MiniTournamentDetails";
-import MiniTournamentOrganizer from "./pages/MiniTournamentOrganizer";
+
 
 const queryClient = new QueryClient();
 
@@ -47,7 +47,7 @@ const App = () => (
               <Route path="/termos-de-uso" element={<TermsOfUse />} />
               <Route path="/comunidade" element={<Community />} />
               <Route path="/comunidade/:id" element={<MiniTournamentDetails />} />
-              <Route path="/meus-mini-torneios" element={<MiniTournamentOrganizer />} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
