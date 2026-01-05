@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trophy, Star, Gamepad2, Calendar, UserPlus, UserCheck, Users, Flag } from "lucide-react";
+import { ArrowLeft, Trophy, Star, Gamepad2, Calendar, UserPlus, UserCheck, Users, Flag, Share2, Copy } from "lucide-react";
 import { GAME_INFO, STATUS_INFO } from "@/types";
 import { GameIcon } from "@/components/GameIcon";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFollowers } from "@/hooks/useFollowers";
 import { FollowersDialog } from "@/components/FollowersDialog";
 import { ReportDialog } from "@/components/ReportDialog";
-
+import { toast } from "sonner";
 const PublicProfile = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -127,17 +127,31 @@ const PublicProfile = () => {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Link>
-          {user && !isOwnProfile && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setReportDialogOpen(true)}
-              className="text-muted-foreground hover:text-destructive"
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = `${window.location.origin}/profile/${id}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Link do perfil copiado!");
+              }}
             >
-              <Flag className="h-4 w-4 mr-1" />
-              Denunciar
+              <Copy className="h-4 w-4 mr-1" />
+              Compartilhar
             </Button>
-          )}
+            {user && !isOwnProfile && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setReportDialogOpen(true)}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <Flag className="h-4 w-4 mr-1" />
+                Denunciar
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
