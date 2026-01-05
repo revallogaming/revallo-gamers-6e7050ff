@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { GameType, GAME_INFO } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { normalizeExternalUrl } from "@/lib/links";
 import {
   Dialog,
   DialogContent,
@@ -160,6 +161,13 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
         ? `Premiação total: R$ ${formData.prize_amount.toFixed(2).replace('.', ',')}`
         : null;
 
+      const tournamentLink = normalizeExternalUrl(formData.tournament_link);
+      if (formData.tournament_link.trim() && !tournamentLink) {
+        toast.error("Link do torneio inválido. Use um link completo (https://...)");
+        setLoading(false);
+        return;
+      }
+
       // Create tournament
       const { data: tournament, error } = await supabase
         .from("tournaments")
@@ -179,11 +187,10 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           status: "upcoming",
           is_highlighted: isHighlighted,
           highlighted_until: highlightedUntil,
-          tournament_link: formData.tournament_link || null,
+          tournament_link: tournamentLink,
         })
         .select()
         .single();
-
       if (error) throw error;
 
       // Spend credits for boost if enabled

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { GameType, GAME_INFO } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { normalizeExternalUrl } from "@/lib/links";
 import {
   Dialog,
   DialogContent,
@@ -82,6 +83,12 @@ export function EditTournamentDialog({ tournament, children }: EditTournamentDia
       return;
     }
 
+    const tournamentLink = normalizeExternalUrl(formData.tournament_link);
+    if (formData.tournament_link.trim() && !tournamentLink) {
+      toast.error("Link do torneio inválido. Use um link completo (https://...)");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -98,7 +105,7 @@ export function EditTournamentDialog({ tournament, children }: EditTournamentDia
           start_date: formData.start_date?.toISOString() || "",
           end_date: formData.end_date?.toISOString() || null,
           registration_deadline: formData.registration_deadline?.toISOString() || "",
-          tournament_link: formData.tournament_link || null,
+          tournament_link: tournamentLink,
         })
         .eq("id", tournament.id);
 

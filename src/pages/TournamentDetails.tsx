@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Trophy, Calendar, Users, Coins, Clock, 
+import {
+  Trophy, Calendar, Users, Coins, Clock,
   ArrowLeft, Star, Medal, CheckCircle, AlertCircle,
   ExternalLink, Copy, Link as LinkIcon, UserPlus, UserCheck, Flag
 } from "lucide-react";
@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { JoinTournamentDialog } from "@/components/JoinTournamentDialog";
 import { ReportDialog } from "@/components/ReportDialog";
 import { toast } from "sonner";
+import { normalizeExternalUrl } from "@/lib/links";
 
 const TournamentDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -310,15 +311,35 @@ const TournamentDetails = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <a 
-                    href={tournament.tournament_link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-primary hover:underline"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Acessar link do torneio
-                  </a>
+                  {(() => {
+                    const safeLink = normalizeExternalUrl(tournament.tournament_link);
+                    if (!safeLink) {
+                      return (
+                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <AlertCircle className="h-4 w-4 mt-0.5" />
+                          <span>
+                            Link inválido. Edite o torneio e informe um link completo (https://...)
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <a
+                        href={safeLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-primary hover:underline"
+                        onClick={(e) => {
+                          // Prevent SPA navigation if the link somehow becomes relative
+                          e.stopPropagation();
+                        }}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Acessar link do torneio
+                      </a>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             )}
