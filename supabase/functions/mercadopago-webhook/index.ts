@@ -362,6 +362,69 @@ serve(async (req) => {
     // Check if this is a tournament registration payment (via metadata)
     const metadata = mpPayment.metadata;
     const isTournamentRegistration = metadata?.type === "tournament_registration";
+    const isPrizeDeposit = metadata?.type === "prize_deposit";
+
+    // Handle prize deposit payment for mini tournaments
+    if (isPrizeDeposit) {
+      console.log('Processing prize deposit payment');
+      
+      const tournamentId = metadata.tournament_id;
+      const organizerId = metadata.organizer_id;
+
+      if (!tournamentId || !organizerId) {
+        console.error("Missing tournament_id or organizer_id in prize deposit metadata");
+        return new Response(JSON.stringify({ error: "Invalid metadata" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (mpPayment.status === "approved") {
+        // Update prize deposit status
+        const { error: depositUpdateError } = await supabase
+          .from("prize_deposits")
+          .update({ 
+            status: "confirmed", 
+            paid_at: new Date().toISOString() 
+          })
+          .eq("tournament_id", tournamentId)
+          .eq("organizer_id", organizerId)
+          .eq("status", "pending");
+
+        if (depositUpdateError) {
+          console.error("Error updating prize deposit:", depositUpdateError);
+        }
+
+        // Update mini tournament status to open
+        const { error: tournamentUpdateError } = await supabase
+          .from("mini_tournaments")
+          .update({ 
+            status: "open",
+            deposit_confirmed: true,
+            deposit_confirmed_at: new Date().toISOString()
+          })
+          .eq("id", tournamentId)
+          .eq("organizer_id", organizerId);
+
+        if (tournamentUpdateError) {
+          console.error("Error updating mini tournament:", tournamentUpdateError);
+        } else {
+          console.log(`Mini tournament ${tournamentId} activated with confirmed deposit`);
+        }
+      } else if (mpPayment.status === "rejected" || mpPayment.status === "cancelled") {
+        await supabase
+          .from("prize_deposits")
+          .update({ status: "failed" })
+          .eq("tournament_id", tournamentId)
+          .eq("organizer_id", organizerId);
+        
+        console.log("Prize deposit payment rejected/cancelled");
+      }
+
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (isTournamentRegistration) {
       // Handle tournament registration payment
