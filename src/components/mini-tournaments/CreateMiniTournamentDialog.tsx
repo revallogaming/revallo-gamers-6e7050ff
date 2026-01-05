@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { useMiniTournaments } from '@/hooks/useMiniTournaments';
 import { useUserPixKey } from '@/hooks/useUserPixKey';
+import { useCredits, MINI_TOURNAMENT_CREATION_FEE } from '@/hooks/useCredits';
 import { GameType, MiniTournamentFormat, FORMAT_INFO, GAME_INFO, PrizeDistributionConfig } from '@/types';
-import { Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Loader2, AlertCircle, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 
 const createSchema = z.object({
@@ -21,7 +22,6 @@ const createSchema = z.object({
   game: z.enum(['freefire', 'fortnite', 'cod', 'league_of_legends', 'valorant']),
   format: z.enum(['x1', 'duo', 'trio', 'squad']),
   max_participants: z.number().min(2).max(100),
-  entry_fee_credits: z.number().min(0),
   prize_pool_brl: z.number().min(1, 'Premiação mínima de R$ 1,00'),
   rules: z.string().optional(),
   start_date: z.string().min(1, 'Data de início obrigatória'),
@@ -41,6 +41,7 @@ export function CreateMiniTournamentDialog({ children }: Props) {
   ]);
   const { createTournament } = useMiniTournaments();
   const { hasPixKey } = useUserPixKey();
+  const { credits, spendCredits } = useCredits();
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<CreateFormData>({
     resolver: zodResolver(createSchema),
@@ -48,10 +49,11 @@ export function CreateMiniTournamentDialog({ children }: Props) {
       game: 'freefire',
       format: 'x1',
       max_participants: 2,
-      entry_fee_credits: 0,
       prize_pool_brl: 10,
     },
   });
+
+  const hasEnoughCredits = credits >= MINI_TOURNAMENT_CREATION_FEE;
 
   const format = watch('format');
 
@@ -82,19 +84,32 @@ export function CreateMiniTournamentDialog({ children }: Props) {
       return;
     }
 
+    if (!hasEnoughCredits) {
+      toast.error(`Você precisa de ${MINI_TOURNAMENT_CREATION_FEE} créditos para criar um torneio`);
+      return;
+    }
+
     if (totalPercentage !== 100) {
       toast.error('A distribuição de prêmios deve somar 100%');
       return;
     }
 
     try {
+      // First spend credits
+      await spendCredits.mutateAsync({
+        amount: MINI_TOURNAMENT_CREATION_FEE,
+        type: 'mini_tournament_creation',
+        description: `Criação do mini torneio: ${data.title}`,
+      });
+
+      // Then create tournament
       await createTournament.mutateAsync({
         title: data.title,
         description: data.description,
         game: data.game,
         format: data.format,
         max_participants: data.max_participants,
-        entry_fee_credits: data.entry_fee_credits,
+        entry_fee_credits: 0, // Always free for players
         prize_pool_brl: data.prize_pool_brl,
         rules: data.rules,
         start_date: data.start_date,
@@ -122,10 +137,26 @@ export function CreateMiniTournamentDialog({ children }: Props) {
           <DialogTitle>Criar Mini Torneio</DialogTitle>
         </DialogHeader>
 
+        {/* Creation fee info */}
+        <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm">
+          <Coins className="h-4 w-4 shrink-0 text-primary" />
+          <span>
+            Taxa de criação: <strong>{MINI_TOURNAMENT_CREATION_FEE} créditos</strong>
+            {' '}(você tem {credits} créditos)
+          </span>
+        </div>
+
         {!hasPixKey && (
           <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>Você precisa cadastrar uma chave PIX no seu perfil antes de criar torneios.</span>
+          </div>
+        )}
+
+        {!hasEnoughCredits && (
+          <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>Você precisa de {MINI_TOURNAMENT_CREATION_FEE} créditos para criar um torneio.</span>
           </div>
         )}
 
@@ -174,16 +205,6 @@ export function CreateMiniTournamentDialog({ children }: Props) {
                 {...register('max_participants', { valueAsNumber: true })}
               />
               {errors.max_participants && <p className="text-sm text-destructive">{errors.max_participants.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Taxa de Entrada (Créditos)</Label>
-              <Input
-                type="number"
-                min={0}
-                {...register('entry_fee_credits', { valueAsNumber: true })}
-              />
-              <p className="text-xs text-muted-foreground">0 para entrada gratuita</p>
             </div>
 
             <div className="space-y-2">
@@ -265,10 +286,10 @@ export function CreateMiniTournamentDialog({ children }: Props) {
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={createTournament.isPending || !hasPixKey}
+            disabled={createTournament.isPending || spendCredits.isPending || !hasPixKey || !hasEnoughCredits}
           >
-            {createTournament.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Criar Torneio
+            {(createTournament.isPending || spendCredits.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Criar Torneio ({MINI_TOURNAMENT_CREATION_FEE} créditos)
           </Button>
         </form>
       </DialogContent>

@@ -135,8 +135,12 @@ export function useCredits() {
 }
 
 export const CREDIT_PACKAGES = [
-  { brl: 10, credits: 100, bonus: 0 },
-  { brl: 25, credits: 275, bonus: 25 },
-  { brl: 50, credits: 600, bonus: 100 },
-  { brl: 100, credits: 1300, bonus: 300 },
+  { brl: 5, credits: 50, bonus: 0 },
+  { brl: 10, credits: 110, bonus: 10 },
+  { brl: 25, credits: 300, bonus: 50 },
+  { brl: 50, credits: 650, bonus: 150 },
+  { brl: 100, credits: 1400, bonus: 400 },
+  { brl: 150, credits: 2250, bonus: 750 },
 ];
+
+export const MINI_TOURNAMENT_CREATION_FEE = 15;
