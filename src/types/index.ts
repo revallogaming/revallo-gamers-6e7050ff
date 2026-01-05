@@ -1,4 +1,4 @@
-export type GameType = 'freefire' | 'fortnite' | 'cod' | 'league_of_legends' | 'valorant';
+export type GameType = 'freefire' | 'fortnite' | 'cod' | 'league_of_legends' | 'valorant' | 'blood_strike';
 export type TournamentStatus = 'upcoming' | 'open' | 'in_progress' | 'completed' | 'cancelled';
 export type AppRole = 'admin' | 'organizer' | 'player';
 export type PixKeyType = 'cpf' | 'phone' | 'email' | 'random';
@@ -189,6 +189,7 @@ export const GAME_INFO: Record<GameType, { name: string; color: string }> = {
   cod: { name: 'Call of Duty', color: 'cod' },
   league_of_legends: { name: 'League of Legends', color: 'lol' },
   valorant: { name: 'Valorant', color: 'valorant' },
+  blood_strike: { name: 'Blood Strike', color: 'bloodstrike' },
 };
 
 export const STATUS_INFO: Record<TournamentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {

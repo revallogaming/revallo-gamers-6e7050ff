@@ -69,6 +69,9 @@ export default {
         freefire: "hsl(var(--freefire))",
         fortnite: "hsl(var(--fortnite))",
         cod: "hsl(var(--cod))",
+        lol: "hsl(var(--lol))",
+        valorant: "hsl(var(--valorant))",
+        bloodstrike: "hsl(var(--bloodstrike))",
       },
       borderRadius: {
         lg: "var(--radius)",
