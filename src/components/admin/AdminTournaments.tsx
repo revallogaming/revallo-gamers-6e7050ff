@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Search, RefreshCw, Trophy, Edit, Trash2, Star, Users } from "lucide-react";
+import { Search, RefreshCw, Trophy, Edit, Trash2, Star, Users, FileDown, FileSpreadsheet } from "lucide-react";
+import { exportTournamentsToPDF, exportTournamentsToExcel } from "@/lib/exportUtils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -134,21 +135,39 @@ export function AdminTournaments() {
                 Edite, destaque ou remova torneios
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-64"
-                />
-              </div>
-              <Button variant="outline" size="icon" onClick={() => refetch()}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-48"
+              />
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => exportTournamentsToPDF(filteredTournaments)}
+              disabled={filteredTournaments.length === 0}
+            >
+              <FileDown className="h-4 w-4 mr-1" />
+              PDF
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => exportTournamentsToExcel(filteredTournaments)}
+              disabled={filteredTournaments.length === 0}
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-1" />
+              Excel
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </div>
+        </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-border overflow-hidden max-h-[500px] overflow-y-auto">

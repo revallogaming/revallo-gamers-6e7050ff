@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, RefreshCw, ArrowUpRight, ArrowDownLeft, Coins } from "lucide-react";
+import { Search, RefreshCw, ArrowUpRight, ArrowDownLeft, Coins, FileDown, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
+import { exportTransactionsToPDF, exportTransactionsToExcel } from "@/lib/exportUtils";
 import { ptBR } from "date-fns/locale";
 
 interface Transaction {
@@ -88,16 +89,34 @@ export function AdminTransactions() {
               Histórico de todas as transações de créditos
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-64"
+                className="pl-9 w-48"
               />
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => exportTransactionsToPDF(filteredTransactions)}
+              disabled={filteredTransactions.length === 0}
+            >
+              <FileDown className="h-4 w-4 mr-1" />
+              PDF
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => exportTransactionsToExcel(filteredTransactions)}
+              disabled={filteredTransactions.length === 0}
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-1" />
+              Excel
+            </Button>
             <Button variant="outline" size="icon" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4" />
             </Button>

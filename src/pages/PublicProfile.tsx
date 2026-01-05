@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trophy, Star, Gamepad2, Calendar, UserPlus, UserCheck, Users } from "lucide-react";
+import { ArrowLeft, Trophy, Star, Gamepad2, Calendar, UserPlus, UserCheck, Users, Flag } from "lucide-react";
 import { GAME_INFO, STATUS_INFO } from "@/types";
 import { GameIcon } from "@/components/GameIcon";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollowers } from "@/hooks/useFollowers";
 import { FollowersDialog } from "@/components/FollowersDialog";
+import { ReportDialog } from "@/components/ReportDialog";
 
 const PublicProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,7 @@ const PublicProfile = () => {
   const { isFollowing, toggleFollow, isToggling, followerCount, followingCount } = useFollowers(id);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   // Fetch profile data using secure RPC function
   const { data: profile, isLoading } = useQuery({
@@ -120,10 +122,23 @@ const PublicProfile = () => {
         <Header />
 
       <div className="container mx-auto px-4 py-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
-        </Link>
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Link>
+          {user && !isOwnProfile && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setReportDialogOpen(true)}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Flag className="h-4 w-4 mr-1" />
+              Denunciar
+            </Button>
+          )}
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Profile Card */}
@@ -319,6 +334,14 @@ const PublicProfile = () => {
             onOpenChange={setFollowingDialogOpen}
             userId={id}
             type="following"
+          />
+          {/* Report Dialog */}
+          <ReportDialog
+            open={reportDialogOpen}
+            onOpenChange={setReportDialogOpen}
+            targetId={id}
+            targetType="user"
+            targetName={profile?.nickname || 'Usuário'}
           />
         </>
       )}
