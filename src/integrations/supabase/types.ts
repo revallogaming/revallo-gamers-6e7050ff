@@ -887,7 +887,7 @@ export type Database = {
         | "cod"
         | "league_of_legends"
         | "valorant"
-      mini_tournament_format: "x1" | "duo" | "squad"
+      mini_tournament_format: "x1" | "duo" | "squad" | "trio"
       mini_tournament_status:
         | "draft"
         | "pending_deposit"
@@ -1039,7 +1039,7 @@ export const Constants = {
         "league_of_legends",
         "valorant",
       ],
-      mini_tournament_format: ["x1", "duo", "squad"],
+      mini_tournament_format: ["x1", "duo", "squad", "trio"],
       mini_tournament_status: [
         "draft",
         "pending_deposit",
