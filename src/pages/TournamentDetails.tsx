@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, Navigate, Link, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { SEO, getTournamentStructuredData } from "@/components/SEO";
+import { SEO, getTournamentStructuredData, getBreadcrumbStructuredData } from "@/components/SEO";
 import { useTournament, useTournamentParticipants } from "@/hooks/useTournaments";
 import { useRealtimeParticipants } from "@/hooks/useRealtimeParticipants";
 import { useAuth } from "@/hooks/useAuth";
@@ -124,7 +124,14 @@ const TournamentDetails = () => {
         description={tournament.description || `Torneio de ${gameInfo.name} na Revallo. ${tournament.max_participants} vagas, inscrição ${tournament.entry_fee > 0 ? `R$ ${(tournament.entry_fee / 100).toFixed(2).replace('.', ',')}` : 'grátis'}.`}
         image={tournament.banner_url || undefined}
         type="website"
-        structuredData={getTournamentStructuredData(tournament)}
+        structuredData={[
+          getTournamentStructuredData(tournament),
+          getBreadcrumbStructuredData([
+            { name: "Início", url: "https://revallo.com.br" },
+            { name: "Torneios", url: "https://revallo.com.br/tournaments" },
+            { name: tournament.title, url: `https://revallo.com.br/tournament/${tournament.id}` }
+          ])
+        ]}
         keywords={`torneio ${gameInfo.name.toLowerCase()}, ${tournament.title.toLowerCase()}, campeonato esports, competição gaming`}
       />
       <div className="min-h-screen bg-background">

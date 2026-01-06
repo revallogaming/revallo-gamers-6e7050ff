@@ -6,7 +6,7 @@ import { TournamentCard } from "@/components/TournamentCard";
 import { CreateTournamentDialog } from "@/components/CreateTournamentDialog";
 import { GameIcon } from "@/components/GameIcon";
 import { HighlightedTournamentsBanner } from "@/components/HighlightedTournamentsBanner";
-import { SEO, getWebsiteStructuredData } from "@/components/SEO";
+import { SEO, getWebsiteStructuredData, getFAQStructuredData, getDefaultFAQs } from "@/components/SEO";
 import { RevalloLogo } from "@/components/RevalloLogo";
 import { useTournaments } from "@/hooks/useTournaments";
 import { useRealtimeTournaments } from "@/hooks/useRealtimeParticipants";
@@ -62,7 +62,10 @@ const Index = () => {
   return (
     <>
       <SEO 
-        structuredData={getWebsiteStructuredData()}
+        structuredData={[
+          getWebsiteStructuredData(),
+          getFAQStructuredData(getDefaultFAQs())
+        ]}
         keywords="esports, torneios, campeonatos, free fire, fortnite, call of duty, valorant, league of legends, gaming, brasil, competição online, jogos competitivos"
       />
       <div className="min-h-screen bg-background">
