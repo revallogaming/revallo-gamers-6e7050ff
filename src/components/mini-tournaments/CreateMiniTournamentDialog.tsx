@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 const createSchema = z.object({
   title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres').max(100),
   description: z.string().optional(),
-  game: z.enum(['freefire', 'valorant', 'blood_strike']),
+  game: z.enum(['freefire', 'valorant', 'blood_strike', 'cod']),
   format: z.enum(['x1', 'duo', 'trio', 'squad']),
   max_participants: z.number().min(2).max(100),
   prize_pool_brl: z.number().min(1, 'Premiação mínima de R$ 1,00'),

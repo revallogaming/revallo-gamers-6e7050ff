@@ -54,6 +54,7 @@ const Index = () => {
     freefire: tournaments?.filter(t => t.game === 'freefire' && t.status === 'open').length || 0,
     valorant: tournaments?.filter(t => t.game === 'valorant' && t.status === 'open').length || 0,
     blood_strike: tournaments?.filter(t => t.game === 'blood_strike' && t.status === 'open').length || 0,
+    cod: tournaments?.filter(t => t.game === 'cod' && t.status === 'open').length || 0,
   } as Record<GameType, number>), [tournaments]);
 
   return (
