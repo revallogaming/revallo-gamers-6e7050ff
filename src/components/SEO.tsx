@@ -14,7 +14,7 @@ interface SEOProps {
 const DEFAULT_TITLE = "Revallo - Plataforma de Torneios de eSports";
 const DEFAULT_DESCRIPTION = "Revallo é a plataforma brasileira de torneios de eSports. Participe de campeonatos de Free Fire, Valorant, Blood Strike, COD Warzone e muito mais!";
 const DEFAULT_KEYWORDS = "esports, torneios, campeonatos, free fire, valorant, blood strike, cod warzone, gaming, brasil, competição, jogos, gamers";
-const DEFAULT_IMAGE = "https://revallo.com.br/og-image.png";
+const DEFAULT_IMAGE = "https://revallo.com.br/og-image-new.png";
 const SITE_NAME = "Revallo";
 const TWITTER_HANDLE = "@Revallo";
 const SITE_URL = "https://revallo.com.br";
