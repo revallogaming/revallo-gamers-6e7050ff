@@ -12,8 +12,8 @@ interface SEOProps {
 }
 
 const DEFAULT_TITLE = "Revallo - Plataforma de Torneios de eSports";
-const DEFAULT_DESCRIPTION = "Revallo é a plataforma brasileira de torneios de eSports. Participe de campeonatos de Free Fire, Fortnite, Call of Duty, Valorant, League of Legends e muito mais!";
-const DEFAULT_KEYWORDS = "esports, torneios, campeonatos, free fire, fortnite, call of duty, valorant, league of legends, gaming, brasil, competição, jogos, gamers";
+const DEFAULT_DESCRIPTION = "Revallo é a plataforma brasileira de torneios de eSports. Participe de campeonatos de Free Fire, Valorant, Blood Strike e muito mais!";
+const DEFAULT_KEYWORDS = "esports, torneios, campeonatos, free fire, valorant, blood strike, gaming, brasil, competição, jogos, gamers";
 const DEFAULT_IMAGE = "https://revallo.com.br/og-image.png";
 const SITE_NAME = "Revallo";
 const TWITTER_HANDLE = "@Revallo";
@@ -225,7 +225,7 @@ export const getBreadcrumbStructuredData = (items: { name: string; url: string }
 export const getDefaultFAQs = () => [
   {
     question: "O que é a Revallo?",
-    answer: "A Revallo é uma plataforma brasileira de torneios de eSports onde você pode participar de campeonatos de Free Fire, Fortnite, Call of Duty, Valorant, League of Legends e Blood Strike."
+    answer: "A Revallo é uma plataforma brasileira de torneios de eSports onde você pode participar de campeonatos de Free Fire, Valorant e Blood Strike."
   },
   {
     question: "Como me inscrever em um torneio?",
@@ -241,7 +241,7 @@ export const getDefaultFAQs = () => [
   },
   {
     question: "Quais jogos estão disponíveis na Revallo?",
-    answer: "Atualmente oferecemos torneios de Free Fire, Fortnite, Call of Duty, Valorant, League of Legends e Blood Strike. Novos jogos são adicionados regularmente."
+    answer: "Atualmente oferecemos torneios de Free Fire, Valorant e Blood Strike. Novos jogos são adicionados regularmente."
   }
 ];
 

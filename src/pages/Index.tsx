@@ -52,9 +52,6 @@ const Index = () => {
   // Memoize open tournaments count by game
   const openTournamentsByGame = useMemo(() => ({
     freefire: tournaments?.filter(t => t.game === 'freefire' && t.status === 'open').length || 0,
-    fortnite: tournaments?.filter(t => t.game === 'fortnite' && t.status === 'open').length || 0,
-    cod: tournaments?.filter(t => t.game === 'cod' && t.status === 'open').length || 0,
-    league_of_legends: tournaments?.filter(t => t.game === 'league_of_legends' && t.status === 'open').length || 0,
     valorant: tournaments?.filter(t => t.game === 'valorant' && t.status === 'open').length || 0,
     blood_strike: tournaments?.filter(t => t.game === 'blood_strike' && t.status === 'open').length || 0,
   } as Record<GameType, number>), [tournaments]);
@@ -66,7 +63,7 @@ const Index = () => {
           getWebsiteStructuredData(),
           getFAQStructuredData(getDefaultFAQs())
         ]}
-        keywords="esports, torneios, campeonatos, free fire, fortnite, call of duty, valorant, league of legends, gaming, brasil, competição online, jogos competitivos"
+        keywords="esports, torneios, campeonatos, free fire, valorant, blood strike, gaming, brasil, competição online, jogos competitivos"
       />
       <div className="min-h-screen bg-background">
         <Header />
