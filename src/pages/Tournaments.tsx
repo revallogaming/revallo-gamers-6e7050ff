@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { TournamentCard } from "@/components/TournamentCard";
 import { TournamentFilters } from "@/components/TournamentFilters";
 import { GameIcon } from "@/components/GameIcon";
-import { SEO } from "@/components/SEO";
+import { SEO, getBreadcrumbStructuredData } from "@/components/SEO";
 import { useInfiniteTournaments, TournamentFilters as FilterType } from "@/hooks/useInfiniteTournaments";
 import { GameType, GAME_INFO } from "@/types";
 import { Gamepad2, Trophy, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
@@ -108,6 +108,10 @@ const Tournaments = () => {
           : "Explore todos os torneios de eSports disponíveis na Revallo. Free Fire, Fortnite, Call of Duty, Valorant, League of Legends e mais!"
         }
         keywords={`torneios${gameTitle ? ` ${gameTitle.toLowerCase()}` : ''}, campeonatos esports, competições gaming brasil`}
+        structuredData={getBreadcrumbStructuredData([
+          { name: "Início", url: "https://revallo.com.br" },
+          { name: gameTitle ? `Torneios de ${gameTitle}` : "Torneios", url: `https://revallo.com.br/tournaments${filters.game !== 'all' ? `?game=${filters.game}` : ''}` }
+        ])}
       />
       <div className="min-h-screen bg-background">
         <Header />
