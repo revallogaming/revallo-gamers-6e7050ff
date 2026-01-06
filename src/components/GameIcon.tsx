@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Flame, Shield, Zap } from 'lucide-react';
+import { Flame, Shield, Zap, Crosshair } from 'lucide-react';
 
 interface GameIconProps {
   game: string;
@@ -16,6 +16,9 @@ export function GameIcon({ game, className }: GameIconProps) {
       return <Shield className={cn(iconClass, "text-red-500")} />;
     case 'blood_strike':
       return <Zap className={cn(iconClass, "text-cyan-500")} />;
+    case 'cod':
+      return <Crosshair className={cn(iconClass, "text-green-500")} />;
+      return <Crosshair className={cn(iconClass, "text-green-500")} />;
     default:
       return <Flame className={iconClass} />;
   }
