@@ -128,17 +128,17 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
             </div>
           </div>
           
-          {/* Prize or Entry Fee - simplified */}
-          {tournament.prize_description ? (
-            <div className="flex items-center gap-1 text-primary font-semibold">
-              <Trophy className="h-3 w-3" />
-              <span className="truncate max-w-[70px]">{tournament.prize_description}</span>
-            </div>
-          ) : tournament.entry_fee > 0 ? (
-            <span className="text-primary font-medium">R${(tournament.entry_fee / 100).toFixed(0)}</span>
-          ) : (
-            <span className="text-green-500 font-medium">Grátis</span>
-          )}
+          {/* Prize or Entry Fee */}
+          <div className="flex items-center gap-1 text-primary font-semibold">
+            <Trophy className="h-3 w-3" />
+            {tournament.prize_description ? (
+              <span>{tournament.prize_description.match(/R\$[\s]?[\d.,]+/)?.[0] || tournament.prize_description}</span>
+            ) : tournament.entry_fee > 0 ? (
+              <span>R$ {(tournament.entry_fee / 100).toFixed(0)}</span>
+            ) : (
+              <span className="text-green-500">Grátis</span>
+            )}
+          </div>
         </div>
       </div>
     </Card>
