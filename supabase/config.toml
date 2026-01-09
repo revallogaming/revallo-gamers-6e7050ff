@@ -10,10 +10,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-tournament-email]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-mass-email]
-verify_jwt = true
+verify_jwt = false
 
 [functions.create-prize-deposit]
 verify_jwt = true
@@ -25,4 +25,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.admin-reset-password]
-verify_jwt = true
+verify_jwt = false
+
+[functions.notify-mini-tournament-join]
+verify_jwt = false
