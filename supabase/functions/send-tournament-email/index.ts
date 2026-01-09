@@ -263,23 +263,47 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    // Send email via Resend
-    const { data: emailResponse, error: emailError } = await resend.emails.send({
+    // Send email via Resend - try with custom domain first, fallback to Resend default
+    let emailResponse;
+    let emailError;
+    let usedFallback = false;
+
+    // First attempt: send with custom domain
+    const primaryResult = await resend.emails.send({
       from: "Revallo <noreply@revallo.com.br>",
       to: [data.email],
       subject: subject,
       html: emailHtml,
     });
 
+    emailResponse = primaryResult.data;
+    emailError = primaryResult.error;
+
+    // If primary domain fails (e.g., domain not verified), try fallback
     if (emailError) {
-      console.error("Error sending email via Resend:", emailError);
-      return new Response(
-        JSON.stringify({ success: false, error: emailError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.warn("Primary domain failed, trying fallback:", emailError.message);
+      
+      const fallbackResult = await resend.emails.send({
+        from: "Revallo <onboarding@resend.dev>",
+        to: [data.email],
+        subject: subject,
+        html: emailHtml,
+      });
+
+      emailResponse = fallbackResult.data;
+      emailError = fallbackResult.error;
+      usedFallback = true;
+
+      if (emailError) {
+        console.error("Fallback email also failed:", emailError);
+        return new Response(
+          JSON.stringify({ success: false, error: emailError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
-    console.log("Email sent successfully via Resend:", emailResponse);
+    console.log(`Email sent successfully via Resend ${usedFallback ? '(fallback domain)' : '(primary domain)'}:`, emailResponse);
 
     return new Response(JSON.stringify({ success: true, emailSent: true }), {
       status: 200,
