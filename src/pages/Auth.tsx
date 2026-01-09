@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,18 +32,19 @@ const GoogleIcon = () => (
   </svg>
 );
 
-type AuthMode = "login" | "signup" | "forgot-password";
+type AuthMode = "login" | "signup" | "forgot-password" | "verify-otp" | "new-password";
 
 const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [nickname, setNickname] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
-  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
-  const [showPasswordResetSent, setShowPasswordResetSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [passwordResetSuccess, setPasswordResetSuccess] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -73,15 +75,7 @@ const Auth = () => {
       if (mode === "login") {
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes("Email not confirmed")) {
-            toast({ 
-              title: "Email não confirmado", 
-              description: "Por favor, verifique seu email e clique no link de confirmação.",
-              variant: "destructive" 
-            });
-          } else {
-            throw error;
-          }
+          throw error;
         } else {
           toast({ title: "Bem-vindo de volta!" });
           navigate("/");
@@ -100,15 +94,27 @@ const Auth = () => {
         const { error } = await signUp(email, password, nickname);
         if (error) throw error;
         
-        setShowEmailConfirmation(true);
+        // With auto-confirm enabled, user is logged in immediately
+        toast({ title: "Conta criada com sucesso!", description: "Bem-vindo à Revallo!" });
+        navigate("/");
       } else if (mode === "forgot-password") {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+        // Send OTP code for password recovery
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: false,
+          },
         });
         
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes("User not found") || error.message.includes("Email not found")) {
+            throw new Error("Email não encontrado. Verifique se digitou corretamente.");
+          }
+          throw error;
+        }
         
-        setShowPasswordResetSent(true);
+        toast({ title: "Código enviado!", description: "Verifique seu email." });
+        setMode("verify-otp");
       }
     } catch (error: any) {
       let errorMessage = error.message;
@@ -122,7 +128,7 @@ const Auth = () => {
       }
       
       toast({ 
-        title: mode === "login" ? "Erro ao entrar" : mode === "signup" ? "Erro ao criar conta" : "Erro ao enviar email", 
+        title: mode === "login" ? "Erro ao entrar" : mode === "signup" ? "Erro ao criar conta" : "Erro ao enviar código", 
         description: errorMessage,
         variant: "destructive" 
       });
@@ -131,76 +137,84 @@ const Auth = () => {
     }
   };
 
-  // Password reset email sent screen
-  if (showPasswordResetSent) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/5" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent opacity-50" />
-        
-        <Card className="relative w-full max-w-md border-border/50 bg-card/80 backdrop-blur-xl">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/20">
-              <CheckCircle className="h-10 w-10 text-green-500" />
-            </div>
-            <CardTitle className="font-display text-2xl text-foreground">
-              Email Enviado!
-            </CardTitle>
-          </CardHeader>
-          
-          <CardContent className="space-y-6 text-center">
-            <div className="space-y-2">
-              <p className="text-muted-foreground">
-                Enviamos um link de recuperação para:
-              </p>
-              <p className="font-semibold text-foreground text-lg">
-                {email}
-              </p>
-            </div>
-            
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm text-muted-foreground">
-                📧 Clique no link enviado para redefinir sua senha.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Não recebeu? Verifique a pasta de spam.
-              </p>
-            </div>
-            
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setShowPasswordResetSent(false);
-                setMode("login");
-                setPassword("");
-              }}
-            >
-              Voltar para Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) {
+      toast({ title: "Digite o código completo", variant: "destructive" });
+      return;
+    }
 
-  const handleResendConfirmation = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: 'email',
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Código verificado!" });
+      setMode("new-password");
+    } catch (error: any) {
+      toast({
+        title: "Código inválido",
+        description: "Verifique o código e tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSetNewPassword = async () => {
+    if (password.length < 6) {
+      toast({ title: "A senha deve ter pelo menos 6 caracteres", variant: "destructive" });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({ title: "As senhas não coincidem", variant: "destructive" });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password,
+      });
+
+      if (error) throw error;
+
+      setPasswordResetSuccess(true);
+      toast({ title: "Senha alterada com sucesso!" });
+      
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          shouldCreateUser: false,
         },
       });
       
       if (error) throw error;
       
-      toast({
-        title: "Email reenviado!",
-        description: "Verifique sua caixa de entrada e spam.",
-      });
+      toast({ title: "Código reenviado!", description: "Verifique seu email." });
     } catch (error: any) {
       toast({
         title: "Erro ao reenviar",
@@ -212,8 +226,8 @@ const Auth = () => {
     }
   };
 
-  // Email confirmation success screen
-  if (showEmailConfirmation) {
+  // Password reset success screen
+  if (passwordResetSuccess) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/5" />
@@ -225,51 +239,165 @@ const Auth = () => {
               <CheckCircle className="h-10 w-10 text-green-500" />
             </div>
             <CardTitle className="font-display text-2xl text-foreground">
-              Verifique seu Email
+              Senha Alterada!
             </CardTitle>
           </CardHeader>
           
-          <CardContent className="space-y-6 text-center">
-            <div className="space-y-2">
-              <p className="text-muted-foreground">
-                Enviamos um link de confirmação para:
-              </p>
-              <p className="font-semibold text-foreground text-lg">
-                {email}
-              </p>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">
+              Sua senha foi alterada com sucesso. Você será redirecionado...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // OTP verification screen
+  if (mode === "verify-otp") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/5" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent opacity-50" />
+        
+        <Card className="relative w-full max-w-md border-border/50 bg-card/80 backdrop-blur-xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary">
+              <Mail className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <CardTitle className="font-display text-2xl text-foreground">
+              Digite o Código
+            </CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Enviamos um código de 6 dígitos para<br />
+              <span className="font-semibold text-foreground">{email}</span>
+            </p>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <div className="flex justify-center">
+              <InputOTP
+                maxLength={6}
+                value={otpCode}
+                onChange={(value) => setOtpCode(value)}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
             </div>
             
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm text-muted-foreground">
-                📧 Clique no link enviado para seu email para ativar sua conta.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Não recebeu? Verifique a pasta de spam.
-              </p>
-            </div>
+            <Button
+              className="w-full bg-gradient-primary hover:opacity-90 font-semibold text-lg py-6"
+              onClick={handleVerifyOtp}
+              disabled={isLoading || otpCode.length !== 6}
+            >
+              {isLoading ? "Verificando..." : "Verificar Código"}
+            </Button>
             
-            <div className="space-y-3">
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={handleResendConfirmation}
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Não recebeu o código?
+              </p>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                className="text-primary hover:underline font-medium text-sm"
                 disabled={isLoading}
               >
-                {isLoading ? "Reenviando..." : "Reenviar Email de Confirmação"}
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setShowEmailConfirmation(false);
-                  setMode("login");
-                  setPassword("");
-                }}
-              >
-                Voltar para Login
-              </Button>
+                Reenviar código
+              </button>
             </div>
+            
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setMode("forgot-password");
+                setOtpCode("");
+              }}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // New password screen
+  if (mode === "new-password") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/5" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent opacity-50" />
+        
+        <Card className="relative w-full max-w-md border-border/50 bg-card/80 backdrop-blur-xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary">
+              <Lock className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <CardTitle className="font-display text-2xl text-foreground">
+              Nova Senha
+            </CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Digite sua nova senha
+            </p>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-foreground">Nova Senha</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-10 bg-background/50 border-border"
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-foreground">Confirmar Senha</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10 bg-background/50 border-border"
+                  minLength={6}
+                />
+              </div>
+            </div>
+            
+            <Button
+              className="w-full bg-gradient-primary hover:opacity-90 font-semibold text-lg py-6"
+              onClick={handleSetNewPassword}
+              disabled={isLoading}
+            >
+              {isLoading ? "Alterando..." : "Alterar Senha"}
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -314,12 +442,18 @@ const Auth = () => {
                 </div>
               </div>
               
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm text-muted-foreground">
+                  📧 Enviaremos um código de 6 dígitos para o seu email.
+                </p>
+              </div>
+              
               <Button
                 type="submit"
                 className="w-full bg-gradient-primary hover:opacity-90 font-semibold text-lg py-6"
                 disabled={isLoading}
               >
-                {isLoading ? "Enviando..." : "Enviar Link de Recuperação"}
+                {isLoading ? "Enviando..." : "Enviar Código"}
               </Button>
             </form>
             
