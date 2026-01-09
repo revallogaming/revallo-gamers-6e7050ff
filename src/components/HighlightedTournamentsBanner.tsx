@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Trophy, Users, Calendar, Clock, ArrowRight } from "lucide-react";
+import { format, differenceInHours, differenceInDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Tournament } from "@/types";
 import { GameIcon } from "@/components/GameIcon";
 import { Button } from "@/components/ui/button";
-import { GAME_INFO } from "@/types";
+import { Badge } from "@/components/ui/badge";
+import { GAME_INFO, STATUS_INFO } from "@/types";
 
 interface HighlightedTournamentsBannerProps {
   tournaments: Tournament[];
@@ -34,7 +37,7 @@ export const HighlightedTournamentsBanner = ({ tournaments }: HighlightedTournam
     
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % highlightedTournaments.length);
-    }, 5000);
+    }, 6000);
     
     return () => clearInterval(interval);
   }, [highlightedTournaments.length]);
@@ -43,6 +46,23 @@ export const HighlightedTournamentsBanner = ({ tournaments }: HighlightedTournam
   
   const currentTournament = highlightedTournaments[currentIndex];
   const gameInfo = GAME_INFO[currentTournament.game];
+  const statusInfo = STATUS_INFO[currentTournament.status];
+  
+  // Calculate countdown
+  const now = new Date();
+  const startDate = new Date(currentTournament.start_date);
+  const hoursLeft = differenceInHours(startDate, now);
+  const daysLeft = differenceInDays(startDate, now);
+  
+  let countdownText = "";
+  let isUrgent = false;
+  if (hoursLeft > 0 && hoursLeft < 24) {
+    countdownText = `Começa em ${hoursLeft}h`;
+    isUrgent = true;
+  } else if (daysLeft > 0 && daysLeft <= 7) {
+    countdownText = `Começa em ${daysLeft} dia${daysLeft > 1 ? 's' : ''}`;
+    isUrgent = daysLeft <= 2;
+  }
   
   const goToPrevious = () => {
     setCurrentIndex((prev) => 
@@ -55,82 +75,155 @@ export const HighlightedTournamentsBanner = ({ tournaments }: HighlightedTournam
   };
   
   return (
-    <section className="px-4 md:px-6 py-4">
-      <div className="relative overflow-hidden rounded-lg border border-border/50 bg-card">
-        {/* Navigation Arrows - Always visible */}
-        <button
-          onClick={goToPrevious}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-1.5 sm:p-2 rounded-full bg-background/90 border border-border/50 text-foreground hover:bg-background transition-colors"
-          aria-label="Anterior"
-        >
-          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-        </button>
-        <button
-          onClick={goToNext}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-1.5 sm:p-2 rounded-full bg-background/90 border border-border/50 text-foreground hover:bg-background transition-colors"
-          aria-label="Próximo"
-        >
-          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-        </button>
+    <section className="px-4 md:px-6 py-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="h-5 w-5 text-primary" />
+        <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
+          Torneios em Destaque
+        </h2>
+      </div>
+      
+      <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 shadow-2xl shadow-primary/10">
+        {/* Navigation Arrows */}
+        {highlightedTournaments.length > 1 && (
+          <>
+            <button
+              onClick={goToPrevious}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 rounded-full bg-background/95 border border-border/50 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all shadow-lg"
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              onClick={goToNext}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-3 rounded-full bg-background/95 border border-border/50 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all shadow-lg"
+              aria-label="Próximo"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </>
+        )}
         
         <Link to={`/tournament/${currentTournament.id}`} className="block">
-          <div className="flex flex-col sm:flex-row items-center gap-3 p-3 sm:p-4">
-            {/* Banner Image */}
-            <div className="relative w-full sm:w-32 md:w-40 lg:w-48 aspect-video sm:aspect-square rounded-md overflow-hidden flex-shrink-0">
-              {currentTournament.banner_url ? (
-                <img
-                  src={currentTournament.banner_url}
-                  alt={currentTournament.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted/50 flex items-center justify-center">
-                  <GameIcon game={currentTournament.game} className="h-8 w-8 opacity-50" />
+          <div className="flex flex-col lg:flex-row">
+            {/* Banner Image - Large */}
+            <div className="relative w-full lg:w-1/2 xl:w-2/5">
+              <div className="aspect-video lg:aspect-[4/3] w-full overflow-hidden">
+                {currentTournament.banner_url ? (
+                  <img
+                    src={currentTournament.banner_url}
+                    alt={currentTournament.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-muted/80 to-muted/30 flex items-center justify-center">
+                    <GameIcon game={currentTournament.game} className="h-20 w-20 opacity-30" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Overlay badges on image */}
+              <div className="absolute top-3 left-3 flex items-center gap-2">
+                <Badge className="gap-1.5 px-2.5 py-1 bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Patrocinado
+                </Badge>
+              </div>
+              
+              {countdownText && (
+                <div className="absolute top-3 right-3">
+                  <Badge 
+                    className={`gap-1.5 px-2.5 py-1 text-xs font-bold shadow-lg ${
+                      isUrgent 
+                        ? "bg-destructive text-destructive-foreground animate-pulse" 
+                        : "bg-accent text-accent-foreground"
+                    }`}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    {countdownText}
+                  </Badge>
                 </div>
               )}
-              <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground text-[9px] sm:text-[10px] font-medium">
-                <Sparkles className="h-2.5 w-2.5" />
-                Patrocinado
-              </div>
             </div>
             
             {/* Content */}
-            <div className="flex-1 text-center sm:text-left min-w-0 px-6 sm:px-0">
-              <div className="flex items-center justify-center sm:justify-start gap-1.5 mb-1">
-                <GameIcon game={currentTournament.game} className="h-3.5 w-3.5" />
-                <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">{gameInfo.name}</span>
+            <div className="flex-1 p-5 lg:p-8 flex flex-col justify-center">
+              {/* Game & Status */}
+              <div className="flex items-center gap-2 mb-3">
+                <Badge className="gap-1.5 text-xs px-2.5 py-1 bg-muted/80 text-foreground border-0">
+                  <GameIcon game={currentTournament.game} className="h-4 w-4" />
+                  {gameInfo.name}
+                </Badge>
+                <Badge variant={statusInfo.variant} className="text-xs px-2.5 py-1">
+                  {statusInfo.label}
+                </Badge>
               </div>
               
-              <h3 className="font-display text-sm sm:text-base md:text-lg font-bold text-foreground mb-1 line-clamp-1">
+              {/* Title */}
+              <h3 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-3 line-clamp-2">
                 {currentTournament.title}
               </h3>
               
+              {/* Description */}
               {currentTournament.description && (
-                <p className="hidden sm:block text-xs text-muted-foreground line-clamp-1 mb-2">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                   {currentTournament.description}
                 </p>
               )}
               
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
-                <span className="px-1.5 py-0.5 rounded bg-muted/50">
-                  {currentTournament.current_participants}/{currentTournament.max_participants}
-                </span>
-                {currentTournament.entry_fee > 0 ? (
-                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                    R$ {currentTournament.entry_fee.toFixed(2)}
-                  </span>
-                ) : (
-                  <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 font-medium">
-                    Grátis
-                  </span>
+              {/* Stats Row */}
+              <div className="flex flex-wrap items-center gap-3 mb-5">
+                {/* Prize */}
+                {currentTournament.prize_description && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                    <Trophy className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Prêmio</p>
+                      <p className="text-sm font-bold text-primary">{currentTournament.prize_description}</p>
+                    </div>
+                  </div>
                 )}
+                
+                {/* Participants */}
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+                  <Users className="h-5 w-5 text-foreground" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Vagas</p>
+                    <p className="text-sm font-bold text-foreground">
+                      {currentTournament.current_participants}/{currentTournament.max_participants}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Date */}
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+                  <Calendar className="h-5 w-5 text-foreground" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Início</p>
+                    <p className="text-sm font-bold text-foreground">
+                      {format(startDate, "dd MMM, HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Entry Fee */}
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Inscrição</p>
+                    <p className="text-sm font-bold text-foreground">
+                      {currentTournament.entry_fee > 0 
+                        ? `R$ ${currentTournament.entry_fee.toFixed(2)}` 
+                        : "Grátis"
+                      }
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            {/* CTA Button - Hidden on mobile, visible on larger screens */}
-            <div className="hidden md:block flex-shrink-0">
-              <Button size="sm" variant="outline" className="text-xs">
+              
+              {/* CTA */}
+              <Button size="lg" className="w-full sm:w-auto gap-2 font-bold">
                 Ver Torneio
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -138,7 +231,7 @@ export const HighlightedTournamentsBanner = ({ tournaments }: HighlightedTournam
         
         {/* Dots Indicator */}
         {highlightedTournaments.length > 1 && (
-          <div className="flex items-center justify-center gap-1 pb-2">
+          <div className="flex items-center justify-center gap-1.5 py-3 bg-background/50">
             {highlightedTournaments.map((_, index) => (
               <button
                 key={index}
@@ -146,10 +239,10 @@ export const HighlightedTournamentsBanner = ({ tournaments }: HighlightedTournam
                   e.preventDefault();
                   setCurrentIndex(index);
                 }}
-                className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-all ${
+                className={`h-2 rounded-full transition-all ${
                   index === currentIndex
-                    ? "bg-primary w-3 sm:w-4"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                    ? "bg-primary w-6"
+                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-2"
                 }`}
                 aria-label={`Ir para torneio ${index + 1}`}
               />
