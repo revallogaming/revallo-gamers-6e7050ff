@@ -158,7 +158,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
 
       // Format prize description from amount
       const prizeDescription = formData.prize_amount > 0 
-        ? `Premiação total: R$ ${formData.prize_amount.toFixed(2).replace('.', ',')}`
+        ? `R$ ${formData.prize_amount.toFixed(2).replace('.', ',')}`
         : null;
 
       const tournamentLink = normalizeExternalUrl(formData.tournament_link);
