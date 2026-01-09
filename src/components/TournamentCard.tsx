@@ -51,7 +51,7 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
   return (
     <Card 
       onClick={handleClick}
-      className="bg-card border-border/30 hover:border-primary/50 overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1"
+      className="bg-card border-border/20 hover:border-border/50 overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-lg"
     >
       {/* Banner Image */}
       <div className="relative">
@@ -60,41 +60,32 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
             <img 
               src={tournament.banner_url} 
               alt={tournament.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
             />
           </div>
         ) : (
           <div 
-            className="aspect-[16/10] w-full flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted/30"
+            className="aspect-[16/10] w-full flex items-center justify-center bg-muted/50"
           >
-            <GameIcon game={tournament.game} className="h-12 w-12 opacity-40" />
+            <GameIcon game={tournament.game} className="h-10 w-10 opacity-30" />
           </div>
         )}
         
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
-        
-        {/* Game Badge Overlay */}
+        {/* Game Badge */}
         <div className="absolute top-2 left-2">
           <Badge 
-            className="gap-1.5 text-[11px] px-2 py-1 backdrop-blur-md font-semibold bg-background/90 text-foreground border-0 shadow-lg"
+            className="gap-1 text-[10px] px-1.5 py-0.5 backdrop-blur-sm font-medium bg-background/85 text-foreground border-0"
           >
-            <GameIcon game={tournament.game} className="h-3.5 w-3.5" />
+            <GameIcon game={tournament.game} className="h-3 w-3" />
             {gameInfo.name}
           </Badge>
         </div>
 
-        {/* Countdown Badge */}
-        {countdown && isRegistrationOpen && (
+        {/* Countdown Badge - only when urgent */}
+        {countdown && countdown.urgent && isRegistrationOpen && (
           <div className="absolute top-2 right-2">
-            <Badge 
-              className={`gap-1 text-[10px] px-2 py-1 backdrop-blur-md font-bold shadow-lg ${
-                countdown.urgent 
-                  ? "bg-destructive/90 text-destructive-foreground animate-pulse" 
-                  : "bg-accent/90 text-accent-foreground"
-              }`}
-            >
-              <Clock className="h-3 w-3" />
+            <Badge className="gap-1 text-[10px] px-1.5 py-0.5 bg-destructive text-destructive-foreground font-semibold">
+              <Clock className="h-2.5 w-2.5" />
               {countdown.text}
             </Badge>
           </div>
@@ -102,71 +93,52 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
 
         {/* Highlight Badge */}
         {tournament.is_highlighted && (
-          <div className="absolute bottom-12 right-2">
-            <Badge className="bg-yellow-500/90 text-yellow-950 gap-1 text-[10px] px-2 py-1 font-bold shadow-lg">
-              <Star className="h-3 w-3 fill-current" />
-              Destaque
+          <div className="absolute top-2 right-2">
+            <Badge className="bg-primary text-primary-foreground gap-0.5 text-[10px] px-1.5 py-0.5">
+              <Star className="h-2.5 w-2.5 fill-current" />
             </Badge>
           </div>
         )}
 
-        {/* Status & Participants Row */}
-        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-          <Badge variant={statusInfo.variant} className="text-[11px] px-2 py-1 backdrop-blur-md font-semibold">
+        {/* Status Badge */}
+        <div className="absolute bottom-2 left-2">
+          <Badge variant={statusInfo.variant} className="text-[10px] px-1.5 py-0.5 backdrop-blur-sm">
             {statusInfo.label}
           </Badge>
-          
-          {/* Participants with fill indicator */}
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background/90 backdrop-blur-md">
-            <Users className="h-3.5 w-3.5 text-primary" />
-            <span className={`text-[11px] font-bold ${
-              fillPercentage >= 80 ? 'text-destructive' : 
-              fillPercentage >= 50 ? 'text-yellow-500' : 'text-foreground'
-            }`}>
-              {tournament.current_participants}/{tournament.max_participants}
-            </span>
-            {fillPercentage >= 80 && <Flame className="h-3 w-3 text-destructive animate-pulse" />}
-          </div>
         </div>
       </div>
       
       {/* Content */}
-      <div className="p-3">
+      <div className="p-2.5">
         {/* Title */}
-        <h3 className="font-display font-bold text-sm md:text-base text-foreground mb-2 line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+        <h3 className="font-medium text-sm text-foreground mb-2 line-clamp-1">
           {tournament.title}
         </h3>
 
         {/* Info Row */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
-              <span className="font-medium">{format(new Date(tournament.start_date), "dd MMM", { locale: ptBR })}</span>
+              <Calendar className="h-3 w-3" />
+              <span>{format(new Date(tournament.start_date), "dd/MM", { locale: ptBR })}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              <span>{tournament.current_participants}/{tournament.max_participants}</span>
             </div>
           </div>
           
-          {/* Prize / Entry Fee */}
-          <div className="flex items-center gap-1.5">
-            {tournament.prize_description && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
-                <Trophy className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-bold text-primary truncate max-w-[80px]">
-                  {tournament.prize_description}
-                </span>
-              </div>
-            )}
-            {!tournament.prize_description && tournament.entry_fee > 0 && (
-              <span className="text-sm font-bold text-primary">
-                R${(tournament.entry_fee / 100).toFixed(0)}
-              </span>
-            )}
-            {!tournament.prize_description && tournament.entry_fee === 0 && (
-              <Badge variant="secondary" className="text-[10px] bg-green-500/10 text-green-500 border-green-500/20">
-                Grátis
-              </Badge>
-            )}
-          </div>
+          {/* Prize or Entry Fee - simplified */}
+          {tournament.prize_description ? (
+            <div className="flex items-center gap-1 text-primary font-semibold">
+              <Trophy className="h-3 w-3" />
+              <span className="truncate max-w-[70px]">{tournament.prize_description}</span>
+            </div>
+          ) : tournament.entry_fee > 0 ? (
+            <span className="text-primary font-medium">R${(tournament.entry_fee / 100).toFixed(0)}</span>
+          ) : (
+            <span className="text-green-500 font-medium">Grátis</span>
+          )}
         </div>
       </div>
     </Card>
