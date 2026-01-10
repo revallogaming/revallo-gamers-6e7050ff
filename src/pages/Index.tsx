@@ -13,7 +13,7 @@ import { useRealtimeTournaments } from "@/hooks/useRealtimeParticipants";
 import { useFollowingTournaments } from "@/hooks/useFollowingTournaments";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType, GAME_INFO } from "@/types";
-import { Gamepad2, Trophy, ChevronRight, Plus, ArrowRight, Users } from "lucide-react";
+import { Gamepad2, Trophy, ChevronRight, Plus, ArrowRight, Users, Flame, Download, Smartphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -138,6 +138,12 @@ const Index = () => {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    <Link to="/comunidade">
+                      <Button size="sm" className="hidden md:flex bg-orange-500 hover:bg-orange-600 text-white font-medium gap-1.5">
+                        <Flame className="h-3.5 w-3.5" />
+                        Criar Apostado FF
+                      </Button>
+                    </Link>
                     {user && (
                       <CreateTournamentDialog>
                         <Button size="sm" className="hidden md:flex bg-primary hover:bg-primary/90 text-primary-foreground font-medium gap-1.5">
@@ -347,6 +353,38 @@ const Index = () => {
         </main>
         </div>
         
+        {/* App Download Section */}
+        <section className="border-t border-border/30 bg-gradient-to-br from-orange-500/10 via-background to-primary/10">
+          <div className="container mx-auto px-4 py-8 md:py-12">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                <div className="h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-gradient-to-br from-orange-500 to-primary flex items-center justify-center shadow-lg">
+                  <Smartphone className="h-8 w-8 md:h-10 md:w-10 text-white" />
+                </div>
+                <div className="text-center md:text-left">
+                  <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                    <h3 className="text-lg md:text-xl font-bold text-foreground">Revallo App</h3>
+                    <span className="px-2 py-0.5 bg-orange-500/20 text-orange-500 text-[10px] font-bold rounded-full uppercase">Beta</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Baixe o app beta para Android e tenha acesso aos torneios na palma da sua mão!
+                  </p>
+                </div>
+              </div>
+              <a 
+                href="/downloads/app-revallo-beta.apk" 
+                download="Revallo-Beta.apk"
+                className="w-full md:w-auto"
+              >
+                <Button size="lg" className="w-full md:w-auto gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg shadow-orange-500/25">
+                  <Download className="h-5 w-5" />
+                  Baixar para Android
+                </Button>
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* Footer */}
         <footer className="border-t border-border/30 bg-card/20">
           <div className="container mx-auto px-4 py-5">
