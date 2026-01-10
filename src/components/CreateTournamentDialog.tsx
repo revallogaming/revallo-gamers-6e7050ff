@@ -57,6 +57,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
   const [loading, setLoading] = useState(false);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [enableBoost, setEnableBoost] = useState(false);
   const [selectedBoost, setSelectedBoost] = useState(0);
   
@@ -78,15 +79,48 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
   const selectedBoostPackage = BOOST_PACKAGES[selectedBoost];
   const hasEnoughCredits = credits >= (selectedBoostPackage?.credits || 0);
 
+  const processFile = (file: File) => {
+    // Validate file type
+    if (!file.type.match(/^image\/(jpeg|jpg)$/)) {
+      toast.error("Formato inválido. Use apenas JPG/JPEG");
+      return;
+    }
+    
+    setBannerFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBannerPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setBannerFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBannerPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
     }
   };
 
@@ -290,8 +324,16 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               <span>Banner do Torneio</span>
             </div>
             <div 
-              className="relative border-2 border-dashed border-border/50 rounded-xl p-4 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group"
+              className={cn(
+                "relative border-2 border-dashed rounded-xl p-4 transition-all cursor-pointer group",
+                isDragging 
+                  ? "border-primary bg-primary/10 scale-[1.02]" 
+                  : "border-border/50 hover:border-primary/50 hover:bg-primary/5"
+              )}
               onClick={() => document.getElementById("banner-upload")?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
             >
               {bannerPreview ? (
                 <div className="relative aspect-square rounded-lg overflow-hidden max-w-[300px] mx-auto">
@@ -306,10 +348,15 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <ImageIcon className="h-8 w-8 text-primary" />
+                  <div className={cn(
+                    "w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors",
+                    isDragging ? "bg-primary/30" : "bg-primary/10 group-hover:bg-primary/20"
+                  )}>
+                    <ImageIcon className={cn("h-8 w-8", isDragging ? "text-primary animate-pulse" : "text-primary")} />
                   </div>
-                  <span className="text-sm font-medium">Clique para adicionar banner</span>
+                  <span className="text-sm font-medium">
+                    {isDragging ? "Solte a imagem aqui" : "Clique ou arraste para adicionar banner"}
+                  </span>
                   <span className="text-xs mt-1 text-muted-foreground/70">Formato: 1080x1080 (1:1) • JPG/JPEG</span>
                 </div>
               )}
