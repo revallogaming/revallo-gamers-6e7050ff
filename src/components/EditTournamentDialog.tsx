@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { GameType, GAME_INFO } from "@/types";
 import { format } from "date-fns";
@@ -31,7 +32,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, Save, Link as LinkIcon } from "lucide-react";
+import { Loader2, CalendarIcon, Save, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EditTournamentDialogProps {
@@ -40,9 +41,12 @@ interface EditTournamentDialogProps {
 }
 
 export function EditTournamentDialog({ tournament, children }: EditTournamentDialogProps) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -56,6 +60,7 @@ export function EditTournamentDialog({ tournament, children }: EditTournamentDia
     end_date: null as Date | null,
     registration_deadline: null as Date | null,
     tournament_link: "",
+    banner_url: null as string | null,
   });
 
   useEffect(() => {
@@ -72,9 +77,47 @@ export function EditTournamentDialog({ tournament, children }: EditTournamentDia
         end_date: tournament.end_date ? new Date(tournament.end_date) : null,
         registration_deadline: tournament.registration_deadline ? new Date(tournament.registration_deadline) : null,
         tournament_link: tournament.tournament_link || "",
+        banner_url: tournament.banner_url || null,
       });
+      setBannerPreview(tournament.banner_url || null);
+      setBannerFile(null);
     }
   }, [tournament, open]);
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBannerPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadBanner = async (): Promise<string | null> => {
+    if (!bannerFile || !user) return null;
+
+    const fileExt = bannerFile.name.split(".").pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    
+    const { error } = await supabase.storage
+      .from("tournament-banners")
+      .upload(fileName, bannerFile);
+
+    if (error) {
+      console.error("Error uploading banner:", error);
+      toast.error("Erro ao fazer upload do banner");
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("tournament-banners")
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +135,15 @@ export function EditTournamentDialog({ tournament, children }: EditTournamentDia
     setLoading(true);
 
     try {
+      // Upload new banner if file was selected
+      let bannerUrl = formData.banner_url;
+      if (bannerFile) {
+        const uploadedUrl = await uploadBanner();
+        if (uploadedUrl) {
+          bannerUrl = uploadedUrl;
+        }
+      }
+
       const { error } = await supabase
         .from("tournaments")
         .update({
@@ -106,6 +158,7 @@ export function EditTournamentDialog({ tournament, children }: EditTournamentDia
           end_date: formData.end_date?.toISOString() || null,
           registration_deadline: formData.registration_deadline?.toISOString() || "",
           tournament_link: tournamentLink,
+          banner_url: bannerUrl,
         })
         .eq("id", tournament.id);
 
@@ -136,6 +189,46 @@ export function EditTournamentDialog({ tournament, children }: EditTournamentDia
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+          {/* Banner Upload */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-display text-secondary">
+              <ImageIcon className="h-4 w-4" />
+              <span>Banner do Torneio</span>
+            </div>
+            <div 
+              className="relative border-2 border-dashed border-border/50 rounded-xl p-4 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group"
+              onClick={() => document.getElementById("edit-banner-upload")?.click()}
+            >
+              {bannerPreview ? (
+                <div className="relative aspect-square rounded-lg overflow-hidden max-w-[300px] mx-auto">
+                  <img 
+                    src={bannerPreview} 
+                    alt="Banner preview" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-white text-sm font-medium bg-primary/80 px-4 py-2 rounded-full">Alterar Banner</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <ImageIcon className="h-8 w-8 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium">Clique para adicionar banner</span>
+                  <span className="text-xs mt-1 text-muted-foreground/70">Formato: 1080x1080 (1:1) • JPG/JPEG</span>
+                </div>
+              )}
+              <input
+                id="edit-banner-upload"
+                type="file"
+                accept=".jpg,.jpeg,image/jpeg"
+                onChange={handleBannerChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+
           {/* Basic Info */}
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
