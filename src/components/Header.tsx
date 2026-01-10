@@ -28,9 +28,9 @@ export function Header() {
                   <span className="font-medium">Admin</span>
                 </Link>
               )}
-              <Link to="/comunidade" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/Apostados" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Users className="h-4 w-4" />
-                <span className="font-medium">Comunidade</span>
+                <span className="font-medium">Apostados</span>
               </Link>
               <Link to="/my-tournaments" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Trophy className="h-4 w-4" />
@@ -83,12 +83,12 @@ export function Header() {
                   </Link>
                 )}
                 <Link 
-                  to="/comunidade" 
+                  to="/Apostados" 
                   className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Users className="h-4 w-4" />
-                  <span className="font-medium">Comunidade</span>
+                  <span className="font-medium">Apostados</span>
                 </Link>
                 <Link 
                   to="/my-tournaments" 

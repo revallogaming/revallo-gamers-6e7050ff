@@ -86,7 +86,7 @@ serve(async (req) => {
       },
     });
 
-    const tournamentUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}/comunidade/${tournament_id}`;
+    const tournamentUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}/Apostados/${tournament_id}`;
 
     await client.send({
       from: smtpUser,

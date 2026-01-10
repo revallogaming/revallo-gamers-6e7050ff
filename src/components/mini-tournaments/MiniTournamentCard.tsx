@@ -17,7 +17,7 @@ export function MiniTournamentCard({ tournament }: Props) {
   const formatInfo = FORMAT_INFO[tournament.format];
 
   return (
-    <Link to={`/comunidade/${tournament.id}`}>
+    <Link to={`/Apostados/${tournament.id}`}>
       <Card className="h-full transition-all hover:shadow-lg hover:border-primary/50 overflow-hidden group">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">

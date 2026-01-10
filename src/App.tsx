@@ -45,8 +45,8 @@ const App = () => (
               <Route path="/organizer" element={<Organizer />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/termos-de-uso" element={<TermsOfUse />} />
-              <Route path="/comunidade" element={<Community />} />
-              <Route path="/comunidade/:id" element={<MiniTournamentDetails />} />
+              <Route path="/Apostados" element={<Community />} />
+              <Route path="/Apostados/:id" element={<MiniTournamentDetails />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

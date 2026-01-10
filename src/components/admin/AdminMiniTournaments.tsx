@@ -135,7 +135,7 @@ export function AdminMiniTournaments() {
                 Gerenciar Mini Torneios
               </CardTitle>
               <CardDescription>
-                Edite ou remova mini torneios da comunidade
+                Edite ou remova mini torneios da Apostados
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">

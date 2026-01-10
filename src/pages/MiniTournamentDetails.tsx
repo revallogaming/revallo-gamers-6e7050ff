@@ -78,7 +78,7 @@ export default function MiniTournamentDetails() {
             <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-lg font-medium">Torneio não encontrado</p>
             <Button asChild className="mt-4">
-              <Link to="/comunidade">Voltar para Comunidade</Link>
+              <Link to="/Apostados">Voltar para Apostados</Link>
             </Button>
           </CardContent>
         </Card>

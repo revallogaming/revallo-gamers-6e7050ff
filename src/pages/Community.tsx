@@ -131,7 +131,7 @@ export default function Community() {
   });
 
   const copyTournamentLink = (id: string) => {
-    const url = `${window.location.origin}/comunidade/${id}`;
+    const url = `${window.location.origin}/Apostados/${id}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     toast.success("Link copiado!");
@@ -160,7 +160,7 @@ export default function Community() {
   return (
     <>
       <SEO 
-        title="Comunidade - Mini Torneios"
+        title="Apostados - Mini Torneios"
         description="Participe de mini torneios comunitários com premiação em dinheiro real via PIX"
       />
 
@@ -175,7 +175,7 @@ export default function Community() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Trophy className="h-8 w-8 text-primary" />
-              Comunidade
+              Apostados
             </h1>
             <p className="text-muted-foreground mt-1">
               Mini torneios com premiação garantida em R$
@@ -231,7 +231,7 @@ export default function Community() {
                           {notifications.map((notification) => (
                             <Link
                               key={notification.id}
-                              to={`/comunidade/${notification.tournamentId}`}
+                              to={`/Apostados/${notification.tournamentId}`}
                               className={`block p-4 hover:bg-muted/50 transition-colors ${!notification.read ? 'bg-accent/5' : ''}`}
                               onClick={() => {
                                 setNotifications(prev =>
@@ -642,7 +642,7 @@ function MyTournamentsList({ tournaments, isLoading, onCopyLink, copiedId, onRef
                   )}
                 </Button>
                 
-                <Link to={`/comunidade/${tournament.id}`}>
+                <Link to={`/Apostados/${tournament.id}`}>
                   <Button variant="ghost" size="sm" className="h-8">
                     <ExternalLink className="h-4 w-4" />
                   </Button>
