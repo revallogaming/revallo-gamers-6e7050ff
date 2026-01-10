@@ -141,7 +141,7 @@ const Index = () => {
                     <Link to="/comunidade">
                       <Button size="sm" className="hidden md:flex bg-orange-500 hover:bg-orange-600 text-white font-medium gap-1.5">
                         <Flame className="h-3.5 w-3.5" />
-                        Criar Apostado FF
+                        Criar Apostado
                       </Button>
                     </Link>
                     {user && (
