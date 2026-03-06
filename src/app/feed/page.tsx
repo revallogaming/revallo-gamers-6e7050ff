@@ -202,9 +202,9 @@ export default function FeedPage() {
                         <Trophy size={18} className="text-primary fill-primary/20" />
                         {featuredTournament.prize_amount > 0
                           ? `R$ ${featuredTournament.prize_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                          : (featuredTournament.prize_description && featuredTournament.prize_description !== "Premiação a definir" 
+                          : (featuredTournament.prize_description && featuredTournament.prize_description.trim() !== ""
                               ? featuredTournament.prize_description 
-                              : "Premiação a definir")}
+                              : "Sem premiação")}
                       </p>
                       <button
                         className="flex items-center gap-2 px-6 h-9 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95"

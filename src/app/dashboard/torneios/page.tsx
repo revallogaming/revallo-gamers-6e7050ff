@@ -339,7 +339,7 @@ function TournamentManagementCard({ tournament, isOwner, onAction, onDelete }: {
                 <Trophy className="h-3 w-3 text-amber-500" />
                 {tournament.prize_amount && tournament.prize_amount > 0
                   ? `R$ ${tournament.prize_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  : tournament.prize_description || "Premiação a definir"}
+                  : tournament.prize_description || "Sem premiação"}
              </div>
          </div>
 
