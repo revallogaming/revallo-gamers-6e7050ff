@@ -16,8 +16,9 @@ import {
 } from "@/components/ui/dialog";
 import { 
   Search, RefreshCw, Plus, Minus, Coins, Ban, Trash2, 
-  UserX, CheckCircle, Edit3, Crown, UserMinus, Users, Key, Mail 
+  UserX, CheckCircle, Edit3, Crown, UserMinus, Users, Key, Mail, ShieldCheck 
 } from "lucide-react";
+import { VerificationBadge } from "@/components/VerificationBadge";
 import { toast } from "sonner";
 
 interface UserWithCredits {
@@ -28,6 +29,7 @@ interface UserWithCredits {
   roles: string[];
   is_banned: boolean;
   ban_reason: string | null;
+  verification_type?: "none" | "admin" | "influencer" | "verified";
 }
 
 interface AdminUsersProps {
@@ -271,7 +273,6 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                 <TableRow>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Admin</TableHead>
                   <TableHead className="text-right">Créditos</TableHead>
                   <TableHead className="text-center">Gerenciar Créditos</TableHead>
                   <TableHead className="text-center">Ações</TableHead>
@@ -303,7 +304,10 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                             {u.nickname.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium text-foreground">{u.nickname}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-foreground">{u.nickname}</p>
+                              <VerificationBadge type={u.verification_type} size="xs" />
+                            </div>
                             <p className="text-xs text-muted-foreground truncate max-w-[150px]">
                               {u.id}
                             </p>
@@ -313,45 +317,35 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
                           {u.is_banned ? (
-                            <Badge variant="destructive" className="gap-1">
+                            <Badge variant="destructive" className="gap-1 animate-pulse">
                               <Ban className="h-3 w-3" />
                               Banido
                             </Badge>
                           ) : (
-                            u.roles.map((role) => (
-                              <Badge
-                                key={role}
-                                variant={role === "admin" ? "default" : "secondary"}
-                                className={role === "admin" ? "bg-primary" : ""}
-                              >
-                                {role}
-                              </Badge>
-                            ))
+                            <>
+                              {u.roles.includes("admin") && (
+                                <Badge className="bg-purple-500 hover:bg-purple-600 gap-1">
+                                  <ShieldCheck className="h-3 w-3" />
+                                  Staff
+                                </Badge>
+                              )}
+                              {u.roles.filter(r => r !== "admin").map((role) => (
+                                <Badge
+                                  key={role}
+                                  variant="secondary"
+                                  className="capitalize"
+                                >
+                                  {role}
+                                </Badge>
+                              ))}
+                              {u.roles.length === 0 && (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  Jogador
+                                </Badge>
+                              )}
+                            </>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {u.roles.includes("admin") ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-500/10"
-                            onClick={() => handleRemoveAdminRole(u.id, u.nickname)}
-                          >
-                            <UserMinus className="h-4 w-4" />
-                            Remover Admin
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
-                            onClick={() => handleAddAdminRole(u.id, u.nickname)}
-                          >
-                            <Crown className="h-4 w-4" />
-                            Tornar Admin
-                          </Button>
-                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -447,7 +441,6 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                                 setSelectedUser(u);
                                 setBanDialogOpen(true);
                               }}
-                              disabled={u.roles.includes("admin")}
                             >
                               <Ban className="h-4 w-4" />
                               Banir
@@ -461,7 +454,6 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                               setSelectedUser(u);
                               setDeleteDialogOpen(true);
                             }}
-                            disabled={u.roles.includes("admin")}
                           >
                             <Trash2 className="h-4 w-4" />
                             Remover

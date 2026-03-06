@@ -20,35 +20,49 @@ export function AdminStats() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async (): Promise<Stats> => {
-      const [
-        profilesSn,
-        tournamentsSn,
-        miniTournamentsSn,
-        creditsSn,
-        transactionsSn
-      ] = await Promise.all([
-        getDocs(collection(db, 'profiles')),
-        getDocs(collection(db, 'tournaments')),
-        getDocs(collection(db, 'mini_tournaments')),
-        getDocs(collection(db, 'user_credits')),
-        getDocs(collection(db, 'credit_transactions')),
-      ]);
+      try {
+        const [
+          profilesSn,
+          tournamentsSn,
+          miniTournamentsSn,
+          creditsSn,
+          transactionsSn
+        ] = await Promise.all([
+          getDocs(collection(db, 'profiles')),
+          getDocs(collection(db, 'tournaments')),
+          getDocs(collection(db, 'mini_tournaments')),
+          getDocs(collection(db, 'user_credits')),
+          getDocs(collection(db, 'credit_transactions')),
+        ]);
 
-      const profiles = profilesSn.docs.map(d => d.data());
-      const tournaments = tournamentsSn.docs.map(d => d.data());
-      const miniTournaments = miniTournamentsSn.docs.map(d => d.data());
-      const credits = creditsSn.docs.map(d => d.data());
+        const profiles = profilesSn.docs.map(d => d.data());
+        const tournaments = tournamentsSn.docs.map(d => d.data());
+        const miniTournaments = miniTournamentsSn.docs.map(d => d.data());
+        const credits = creditsSn.docs.map(d => d.data());
 
-      return {
-        totalUsers: profiles.length,
-        bannedUsers: profiles.filter(p => p.is_banned).length,
-        totalTournaments: tournaments.length,
-        activeTournaments: tournaments.filter(t => ['open', 'in_progress'].includes(t.status as string)).length,
-        totalMiniTournaments: miniTournaments.length,
-        activeMiniTournaments: miniTournaments.filter(t => ['open', 'in_progress', 'awaiting_result'].includes(t.status as string)).length,
-        totalCreditsInCirculation: credits.reduce((sum, c) => sum + (c.balance || 0), 0),
-        totalTransactions: transactionsSn.size || 0
-      };
+        return {
+          totalUsers: profiles.length,
+          bannedUsers: profiles.filter(p => p.is_banned).length,
+          totalTournaments: tournaments.length,
+          activeTournaments: tournaments.filter(t => ['open', 'in_progress'].includes(t.status as string)).length,
+          totalMiniTournaments: miniTournaments.length,
+          activeMiniTournaments: miniTournaments.filter(t => ['open', 'in_progress', 'awaiting_result'].includes(t.status as string)).length,
+          totalCreditsInCirculation: credits.reduce((sum, c) => sum + (c.balance || 0), 0),
+          totalTransactions: transactionsSn.size || 0
+        };
+      } catch (error) {
+        console.error("Error fetching admin stats:", error);
+        return {
+          totalUsers: 0,
+          bannedUsers: 0,
+          totalTournaments: 0,
+          activeTournaments: 0,
+          totalMiniTournaments: 0,
+          activeMiniTournaments: 0,
+          totalCreditsInCirculation: 0,
+          totalTransactions: 0
+        };
+      }
     }
   });
 

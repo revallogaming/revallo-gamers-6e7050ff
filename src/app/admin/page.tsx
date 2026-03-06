@@ -78,10 +78,10 @@ export default function Admin() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (user && (hasRole("admin") || isAuthorized)) {
+    if (user && isAuthorized) {
       fetchUsers();
     }
-  }, [user, hasRole, isAuthorized]);
+  }, [user, isAuthorized]);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -222,7 +222,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="stats" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
             <TabsTrigger value="stats" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Estatísticas</span>

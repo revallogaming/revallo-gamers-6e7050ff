@@ -88,13 +88,14 @@ export function ReportDialog({
     mutationFn: async () => {
       if (!user) throw new Error("Você precisa estar logado para denunciar");
       if (!reason) throw new Error("Selecione um motivo");
+      if (!description.trim()) throw new Error("A descrição é obrigatória");
 
       await addDoc(collection(db, "reports"), {
         reporter_id: user.uid,
         report_type: targetType,
         target_id: targetId,
         reason,
-        description: description.trim() || null,
+        description: description.trim(),
         created_at: serverTimestamp(),
         status: "pending",
       });
@@ -145,9 +146,9 @@ export function ReportDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Descrição adicional (opcional)</Label>
+            <Label>Descrição detalhada *</Label>
             <Textarea
-              placeholder="Descreva o problema em detalhes..."
+              placeholder="Descreva o problema em detalhes para que possamos analisar..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[100px]"
@@ -162,7 +163,7 @@ export function ReportDialog({
           <Button
             variant="destructive"
             onClick={handleSubmit}
-            disabled={!reason || reportMutation.isPending}
+            disabled={!reason || !description.trim() || reportMutation.isPending}
           >
             {reportMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

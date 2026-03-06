@@ -244,6 +244,7 @@ export function AdminReports() {
                   <TableHead>Alvo</TableHead>
                   <TableHead>Denunciante</TableHead>
                   <TableHead>Motivo</TableHead>
+                  <TableHead>Descrição</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-center">Ações</TableHead>
@@ -275,6 +276,9 @@ export function AdminReports() {
                         <TableCell>{r.reporter_nickname}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{REASON_LABELS[r.reason] || r.reason}</Badge>
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
+                          {r.description || "Nenhuma descrição"}
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusInfo?.variant}>{statusInfo?.label || r.status}</Badge>
