@@ -9,6 +9,7 @@ import {
   useMessages,
   useCommunityActions,
   useCommunityMembers,
+  useMemberCount,
 } from "@/hooks/useCommunities";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -91,6 +92,7 @@ export default function CommunityDetailPage({ params }: PageProps) {
   const { data: community, isLoading: loadingCommunity } = useCommunity(id);
   const { data: channels, isLoading: loadingChannels } = useChannels(id);
   const { data: members } = useCommunityMembers(id);
+  const { data: memberCount } = useMemberCount(id);
 
   const isOwner = community?.owner_id === user?.uid;
   const currentMember = members?.find(m => m.user_id === user?.uid);
@@ -376,15 +378,15 @@ export default function CommunityDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="h-screen bg-[#0A0A0C] text-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-transparent text-white flex flex-col overflow-hidden">
       <SEO title={`${community?.name} - Hub Revallo`} />
       <Header />
 
       <div className="flex-1 flex overflow-hidden relative">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/2 cursor-default blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-        <aside className="w-80 bg-[#0D0D0F] border-r border-white/5 hidden md:flex flex-col shrink-0 relative z-10 transition-all duration-500">
-          <div className="p-6 border-b border-white/5 bg-[#0D0D0F]/50 backdrop-blur-md">
+        <aside className="w-80 bg-black/20 backdrop-blur-xl border-r border-white/5 hidden md:flex flex-col shrink-0 relative z-10 transition-all duration-500">
+          <div className="p-6 border-b border-white/5 bg-black/10 backdrop-blur-md">
             <Link
               href="/communities"
               className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white mb-6 transition-colors italic"
@@ -565,8 +567,8 @@ export default function CommunityDetailPage({ params }: PageProps) {
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-col bg-[#0A0A0C] min-w-0 relative z-20">
-          <header className="h-20 border-b border-white/5 flex items-center px-8 justify-between bg-[#0D0D0F]/80 backdrop-blur-xl shrink-0">
+        <main className="flex-1 flex flex-col bg-transparent min-w-0 relative z-20">
+          <header className="h-20 border-b border-white/5 flex items-center px-8 justify-between bg-black/20 backdrop-blur-xl shrink-0">
             <div className="flex items-center gap-4">
               <div className="h-10 w-10 rounded-xl bg-primary/20 border border-primary/20 flex items-center justify-center">
                 {currentChannel?.type === 'announcement' ? <Megaphone className="h-5 w-5 text-primary" /> : <Hash className="h-5 w-5 text-primary" />}
@@ -604,8 +606,8 @@ export default function CommunityDetailPage({ params }: PageProps) {
               <button onClick={() => setShowMembers(true)} className="flex items-center gap-3 bg-white/2 border border-white/5 px-4 h-10 rounded-xl">
                 <Users className="h-4 w-4 text-gray-600" />
                 <span className="text-[10px] font-black uppercase tracking-widest italic text-gray-500">
-                  {/* Always count at least 1 if there's an owner (community exists) */}
-                  {Math.max(members?.length ?? 0, community ? 1 : 0)} Membros
+                  {/* Accurate count from Firestore server */}
+                  {memberCount ?? (members?.length) ?? (community?.member_count || 0)} Membros
                 </span>
               </button>
             </div>
@@ -708,6 +710,12 @@ export default function CommunityDetailPage({ params }: PageProps) {
               <div className="h-16 flex items-center justify-center bg-white/2 border border-dashed border-white/5 rounded-2xl">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 italic">É necessário estar autenticado para interagir.</p>
               </div>
+            ) : (!isMember) ? (
+              <div className="h-16 flex items-center justify-center bg-primary/5 border border-dashed border-primary/20 rounded-2xl">
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary italic flex items-center gap-2">
+                  <Shield size={14} /> Você precisa entrar no Hub para participar do chat.
+                </p>
+              </div>
             ) : !canType ? (
               <div className="h-16 flex items-center justify-center bg-white/1 border border-white/5 rounded-2xl">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 italic flex items-center gap-2">
@@ -782,7 +790,7 @@ export default function CommunityDetailPage({ params }: PageProps) {
               Players do <span className="text-primary">Hub</span>
             </SheetTitle>
             <p className="text-[10px] uppercase font-black tracking-widest text-gray-700 italic">
-              {Math.max(members?.length ?? 0, community ? 1 : 0)} membros
+              {memberCount ?? (members?.length) ?? (community?.member_count || 0)} membros
             </p>
           </SheetHeader>
 

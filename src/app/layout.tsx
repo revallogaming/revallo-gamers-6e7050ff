@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
       <body
-        className={`${inter.className} min-h-screen bg-[#0A0A0A] text-white selection:bg-primary/30`}
+        className={`${inter.className} min-h-screen text-white selection:bg-primary/30`}
         suppressHydrationWarning
       >
         <ClientLayout>{children}</ClientLayout>

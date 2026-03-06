@@ -183,7 +183,7 @@ export default function ProfilePage() {
                 <AccessMenuItem
                   icon={Zap}
                   label="FINANCEIRO"
-                  onClick={() => router.push("/dashboard/financeiro")}
+                  onClick={() => router.push("/financeiro")}
                 />
               </div>
             </section>

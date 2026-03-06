@@ -204,7 +204,8 @@ export default function CommunitiesPage() {
                   <img
                     src={
                       community.banner_url ||
-                      "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800"
+                      community.icon_url ||
+                      "/fictitious-community.png"
                     }
                     className="absolute inset-0 w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000"
                     alt={community.name}

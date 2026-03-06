@@ -53,21 +53,20 @@ export function AppSidebar() {
 
   return (
     <aside
-      className="hidden lg:flex w-[130px] flex-col h-screen sticky top-0 shrink-0 z-40 select-none"
+      className="hidden lg:flex w-[130px] flex-col h-screen sticky top-0 shrink-0 z-40 select-none bg-black/40 backdrop-blur-3xl"
       style={{
-        background: "#080710",
-        borderRight: "1px solid rgba(255,255,255,0.05)",
+        borderRight: "1px solid hsl(var(--border) / 0.5)",
       }}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center justify-center shrink-0">
+      <div className="flex items-center justify-center shrink-0 pt-4 pb-2">
         <Link href="/" className="flex items-center gap-2 group">
           <img src="/revallo-logo-hd.svg" alt="Revallo" className="h-8 w-auto" />
         </Link>
       </div>
 
       {/* Nav Items */}
-      <nav className="flex-1 px-2 pt-10 space-y-2">
+      <nav className="flex-1 px-2 pt-6 space-y-2">
         {NAV_ITEMS.map(({ href, label, icon }) => {
           const active = isActive(href);
           return (
@@ -83,8 +82,8 @@ export function AppSidebar() {
                 <div
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
                   style={{
-                    background: "#7C3AED",
-                    boxShadow: "0 0 15px #7C3AED",
+                    background: "hsl(var(--primary))",
+                    boxShadow: "0 0 15px hsl(var(--primary) / 0.5)",
                   }}
                 />
               )}
@@ -120,8 +119,8 @@ export function AppSidebar() {
               <div
                 className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
                 style={{
-                  background: "#7C3AED",
-                  boxShadow: "0 0 15px #7C3AED",
+                  background: "hsl(var(--primary))",
+                  boxShadow: "var(--shadow-primary)",
                 }}
               />
             )}
@@ -198,8 +197,8 @@ export function AppSidebar() {
             href="/auth"
             className="flex flex-col items-center justify-center gap-2 rounded-2xl py-6 text-[10px] font-black text-white transition-all hover:opacity-90 relative overflow-hidden group"
             style={{
-              background: "linear-gradient(135deg, #7C3AED, #4F46E5)",
-              boxShadow: "0 0 20px rgba(124, 58, 237, 0.2)",
+              background: "var(--gradient-primary)",
+              boxShadow: "var(--shadow-primary)",
             }}
           >
             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />

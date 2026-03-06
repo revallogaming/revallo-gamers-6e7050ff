@@ -36,10 +36,13 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0A0A0C]">
+    <div className="flex min-h-screen bg-transparent">
       <AppSidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {children}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <div className="absolute inset-0 bg-[#010001]/995 pointer-events-none z-0" />
+        <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   );

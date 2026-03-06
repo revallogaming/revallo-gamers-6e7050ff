@@ -12,6 +12,7 @@ import {
 import {
   useTournament,
   useTournamentParticipants,
+  useDeleteTournament,
 } from "@/hooks/useTournaments";
 import { useMatches } from "@/hooks/useMatches";
 import { useRealtimeParticipants } from "@/hooks/useRealtimeParticipants";
@@ -42,6 +43,7 @@ import {
   Flag,
   MessageSquare,
   Settings,
+  Trash2,
 } from "lucide-react";
 import { GAME_INFO, STATUS_INFO, TournamentParticipant } from "@/types";
 import { GameIcon } from "@/components/GameIcon";
@@ -64,9 +66,12 @@ export default function TournamentDetailsPage() {
   const { user } = useAuth();
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "about" | "participants"
   >("about");
+
+  const deleteTournament = useDeleteTournament();
 
   const { data: matches } = useMatches(id || "");
 
@@ -77,41 +82,33 @@ export default function TournamentDetailsPage() {
   const { isFollowing, toggleFollow, isToggling, followerCount } =
     useFollowers(organizerId);
 
-  // Use a ref to prevent double-processing and infinite navigation loops
-  const joinProcessed = useRef(false);
+  // Use sessionStorage so it persists across React Strict Mode double-renders
+  // Key is unique per tournament so navigating between tournaments works correctly
+  const joinSessionKey = `join_processed_${id}`;
 
-  // Auto-open join dialog if ?join=true
+  // Auto-open join dialog if ?join=true — wait for ALL data to be ready first
   useEffect(() => {
-    if (joinProcessed.current) return;
-
     const joinParam = searchParams?.get("join");
-    if (joinParam === "true" && tournament && user && !isLoading) {
-      const isRegistered = participants?.some((p: any) => p.player_id === user?.uid);
-      const isRegistrationOpen = ["open", "upcoming"].includes(
-        tournament.status,
-      );
-      const hasVacancy =
-        tournament.current_participants < tournament.max_participants;
-      const deadlineNotPassed =
-        new Date(tournament.registration_deadline) > new Date();
+    // Only proceed if the param is explicitly set
+    if (!joinParam || joinParam !== "true") return;
+    // Wait until tournament, user AND participants are all loaded
+    if (isLoading || !tournament || !user || participants === undefined) return;
+    // Only process once per page visit (survives Strict Mode remount)
+    if (typeof window !== "undefined" && sessionStorage.getItem(joinSessionKey)) return;
+    if (typeof window !== "undefined") sessionStorage.setItem(joinSessionKey, "1");
 
-      if (
-        !isRegistered &&
-        isRegistrationOpen &&
-        hasVacancy &&
-        deadlineNotPassed
-      ) {
-        setJoinDialogOpen(true);
-      }
+    const isRegisteredNow = participants?.some((p: any) => p.player_id === user?.uid);
+    const isRegistrationOpen = ["open", "upcoming"].includes(tournament.status);
+    const hasVacancyNow = tournament.current_participants < tournament.max_participants;
+    const deadlineNotPassed = new Date(tournament.registration_deadline) > new Date();
 
-      // Mark as processed BEFORE calling replace to prevent race conditions
-      joinProcessed.current = true;
-
-      // Clear the query param by pushing back to the same URL without it
-      const newPath = window.location.pathname;
-      router.replace(newPath);
+    if (!isRegisteredNow && isRegistrationOpen && hasVacancyNow && deadlineNotPassed) {
+      setJoinDialogOpen(true);
     }
-  }, [searchParams, tournament, user, participants, isLoading, router]);
+
+    // Strip the ?join=true param from the URL cleanly
+    router.replace(window.location.pathname);
+  }, [searchParams, tournament, user, participants, isLoading, router, joinSessionKey]);
 
   if (!id) {
     return null;
@@ -144,6 +141,17 @@ export default function TournamentDetailsPage() {
       navigator.clipboard.writeText(url);
       toast.success("Link do torneio copiado!");
     }
+  };
+
+  const handleDeleteTournament = async () => {
+    if (!deleteConfirm) {
+      setDeleteConfirm(true);
+      // Auto-reset after 5 seconds
+      setTimeout(() => setDeleteConfirm(false), 5000);
+      return;
+    }
+    await deleteTournament.mutateAsync(id);
+    router.replace("/tournaments");
   };
 
   if (isLoading) {
@@ -356,6 +364,22 @@ export default function TournamentDetailsPage() {
                     Editar Torneio
                   </Button>
                 </EditTournamentDialog>
+              )}
+              {user?.uid === tournament.organizer_id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDeleteTournament}
+                  disabled={deleteTournament.isPending}
+                  className={`font-black uppercase italic tracking-widest text-[10px] transition-all ${
+                    deleteConfirm
+                      ? "border-red-500/60 text-red-400 hover:bg-red-500/20 animate-pulse"
+                      : "border-red-500/20 text-red-500/60 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40"
+                  }`}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {deleteConfirm ? "CONFIRMAR REMOÇÃO" : "Remover Torneio"}
+                </Button>
               )}
               <Link href={`/tournaments/${id}/hub`}>
                 <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-primary/10 hover:text-primary font-black uppercase italic tracking-widest text-[10px]">

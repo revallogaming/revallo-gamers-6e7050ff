@@ -44,12 +44,14 @@ export function JoinTournamentDialog({
   const [teamName, setTeamName] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("player");
   const [pixKey, setPixKey] = useState("");
   const [pixKeyType, setPixKeyType] = useState<string>("cpf");
   
   // New invitation state
   const searchParams = useSearchParams();
   const [assignedRole, setAssignedRole] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>("player");
   const [assignedTeamName, setAssignedTeamName] = useState<string | null>(null);
   
   const { userTeams, createTeam, inviteMemberByEmail } = useTeams(userId);
@@ -68,6 +70,7 @@ export function JoinTournamentDialog({
         setStep("confirmation");
       } else {
         setStep(tournament?.is_team_based ? "registration_type" : "confirmation");
+        setSelectedRole("player");
       }
     } else {
       setAssignedRole(null);
@@ -75,6 +78,7 @@ export function JoinTournamentDialog({
       setTeamName("");
       setSelectedTeamId(null);
       setInviteEmail("");
+      setInviteRole("player");
     }
   }, [open, tournament?.is_team_based, searchParams]);
 
@@ -112,9 +116,16 @@ export function JoinTournamentDialog({
     }
 
     try {
-      await inviteMemberByEmail.mutateAsync({ teamId: selectedTeamId, email: inviteEmail });
+      await inviteMemberByEmail.mutateAsync({ 
+        teamId: selectedTeamId, 
+        email: inviteEmail,
+        role: inviteRole,
+        tournamentId: tournament.id,
+        tournamentTitle: tournament.title,
+        senderNickname: user?.nickname || user?.displayName || "Um jogador"
+      });
       setInviteEmail("");
-      toast.success("Membro adicionado!");
+      toast.success("Convite enviado!");
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -163,7 +174,7 @@ export function JoinTournamentDialog({
         player_id: userId,
         team_id: selectedTeamId || null,
         team_name: assignedTeamName || teamName || null,
-        role: assignedRole || (selectedTeamId || teamName ? 'captain' : 'player'),
+        role: assignedRole || (selectedTeamId || teamName ? 'captain' : selectedRole),
         participant_email: user.email,
         registered_at: serverTimestamp(),
         placement: null,
@@ -301,19 +312,30 @@ export function JoinTournamentDialog({
                 </Badge>
               </div>
 
-              <form onSubmit={handleInvite} className="flex gap-2">
-                <Input 
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="E-mail do jogador"
-                  className="h-10 bg-white/2 border-white/5 text-xs"
-                />
+              <form onSubmit={handleInvite} className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  <Input 
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="E-mail do jogador"
+                    className="h-10 bg-white/2 border-white/5 text-xs flex-1"
+                  />
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    className="h-10 bg-black/40 border border-white/10 rounded-lg text-[10px] font-black uppercase px-2 outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="player">Player</option>
+                    <option value="coach">Coach</option>
+                    <option value="analista">Analista</option>
+                  </select>
+                </div>
                 <Button 
                   type="submit" 
                   disabled={inviteMemberByEmail.isPending}
-                  className="bg-primary hover:opacity-90 font-black uppercase italic tracking-widest text-[8px] px-4 rounded-xl"
+                  className="w-full bg-primary hover:opacity-90 font-black uppercase italic tracking-widest text-[9px] h-10 rounded-xl"
                 >
-                  {inviteMemberByEmail.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Convidar"}
+                  {inviteMemberByEmail.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Enviar Convite Notificação + E-mail"}
                 </Button>
               </form>
 
@@ -328,7 +350,16 @@ export function JoinTournamentDialog({
                         {member.user?.nickname || "Convidado"}
                       </span>
                     </div>
-                    <span className="text-[8px] font-black uppercase text-gray-500 tracking-widest italic">{member.role === 'captain' ? 'CAPITÃO' : 'PLAYER'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[8px] font-black uppercase tracking-widest italic px-2 py-0.5 rounded border ${
+                        member.role === 'captain' ? 'border-primary/30 text-primary' : 
+                        member.role === 'coach' ? 'border-amber-500/30 text-amber-500' :
+                        member.role === 'analista' ? 'border-blue-500/30 text-blue-500' :
+                        'border-white/10 text-gray-500'
+                      }`}>
+                        {member.role === 'captain' ? 'CAPITÃO' : member.role?.toUpperCase() || 'PLAYER'}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -394,10 +425,31 @@ export function JoinTournamentDialog({
               {tournament.is_team_based && teamDetails.data && (
                 <div className="p-4 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between">
                   <div>
-                    <p className="text-[8px] font-black uppercase text-gray-500 tracking-widest mb-1">Equipe</p>
+                    <p className="text-[8px] font-black uppercase text-gray-500 tracking-widest mb-1">Sua Equipe</p>
                     <p className="text-sm font-black italic uppercase tracking-tighter">{teamDetails.data.name}</p>
                   </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setStep("invite_members")} className="text-[9px] font-black text-primary hover:text-white underline">Mudar Membros</Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setStep("invite_members")} className="text-[9px] font-black text-primary hover:text-white underline">Gerenciar Time</Button>
+                </div>
+              )}
+
+              {!tournament.is_team_based && (
+                <div className="space-y-3 p-4 rounded-xl bg-white/2 border border-white/5">
+                  <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest italic mb-1">Qual seu papel neste torneio?</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['player', 'coach', 'analista'].map((role) => (
+                      <button
+                        key={role}
+                        onClick={() => setSelectedRole(role)}
+                        className={`h-10 rounded-lg text-[9px] font-black uppercase italic border transition-all ${
+                          selectedRole === role 
+                            ? "bg-primary border-primary text-white" 
+                            : "bg-black/20 border-white/5 text-gray-600 hover:border-white/10"
+                        }`}
+                      >
+                        {role === 'player' ? '🎮 Player' : role === 'coach' ? '🏫 Coach' : '📋 Analista'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 

@@ -11,9 +11,11 @@ import {
   orderBy,
   onSnapshot,
   limit,
+  limitToLast,
   deleteDoc,
   updateDoc,
   setDoc,
+  getCountFromServer,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Community, CommunityMember, Channel, Message, Profile } from "@/types";
@@ -156,6 +158,21 @@ export function useCommunityMembers(communityId: string) {
   });
 }
 
+export function useMemberCount(communityId: string) {
+  return useQuery({
+    queryKey: ["community-member-count", communityId],
+    queryFn: async () => {
+      const q = query(
+        collection(db, "community_members"),
+        where("community_id", "==", communityId),
+      );
+      const snapshot = await getCountFromServer(q);
+      return snapshot.data().count;
+    },
+    enabled: !!communityId,
+  });
+}
+
 export function useChannels(communityId: string) {
   return useQuery({
     queryKey: ["channels", communityId],
@@ -180,11 +197,12 @@ export function useMessages(channelId: string, userId?: string) {
   useEffect(() => {
     if (!channelId) return;
 
+    // Use limitToLast with asc order to get the newest messages in chronological order
     const q = query(
       collection(db, "messages"),
       where("channel_id", "==", channelId),
-      orderBy("created_at", "desc"),
-      limit(50),
+      orderBy("created_at", "asc"),
+      limitToLast(50),
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -208,7 +226,7 @@ export function useMessages(channelId: string, userId?: string) {
 
       // Fetch profile for each message
       const msgsWithProfiles = await Promise.all(
-        msgs.reverse().map(async (m) => {
+        msgs.map(async (m) => {
           // Client-side filtering for temporary messages
           if (m.expires_at && m.expires_at < now) return null;
 

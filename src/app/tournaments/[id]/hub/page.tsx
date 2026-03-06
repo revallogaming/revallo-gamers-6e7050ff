@@ -103,6 +103,7 @@ export default function TournamentHubPage() {
   const [showManagement, setShowManagement] = useState(false);
   const [inviteRole, setInviteRole] = useState<string>("player");
   const [inviteTeam, setInviteTeam] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
   const [winners, setWinners] = useState<{player_id: string, placement: number, amount: number}[]>([]);
   const [isDistributing, setIsDistributing] = useState(false);
   const initializingRef = useRef(false);
@@ -279,6 +280,12 @@ export default function TournamentHubPage() {
     }
   };
 
+  const cleanNickname = (nickname: string) => {
+    if (!nickname) return "";
+    // Strips common patterns: [TAG] Name, TAG | Name, TAG Name
+    return nickname.replace(/^\[.*?\]\s*|^.*?\|\s*|^.*?\s-\s*/, '').trim();
+  };
+
   const getRoleLabel = (role?: string | null) => {
     switch (role) {
       case 'captain': return "Capitão";
@@ -322,6 +329,24 @@ export default function TournamentHubPage() {
   const handleDistributePrizes = async () => {
     if (winners.length === 0) {
       toast.error("Selecione pelo menos um vencedor");
+      return;
+    }
+
+    // Check for missing PIX keys
+    const missingPix = winners.filter(w => {
+      const p = participants?.find(participant => participant.player_id === w.player_id);
+      return !p?.pix_key;
+    });
+
+    if (missingPix.length > 0) {
+      const names = missingPix.map(w => {
+        const p = participants?.find(participant => participant.player_id === w.player_id);
+        return p?.player?.nickname || "Participante";
+      }).join(", ");
+      
+      toast.error(`Impossível finalizar: Os seguintes premiados não possuem chave PIX cadastrada: ${names}.`, {
+        duration: 5000
+      });
       return;
     }
 
@@ -724,7 +749,7 @@ export default function TournamentHubPage() {
               </header>
               <ScrollArea className="flex-1 p-6">
                  <div className="space-y-8">
-                    {Object.entries(groupedParticipants || {}).map(([teamName, members]) => (
+                     {Object.entries(groupedParticipants || {}).map(([teamName, members]) => (
                        <div key={teamName} className="space-y-3">
                           <div className="flex items-center justify-between px-1">
                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 italic flex items-center gap-2">
@@ -733,31 +758,40 @@ export default function TournamentHubPage() {
                              <Badge className="bg-white/5 border-white/5 text-[8px] h-4 font-black italic">{members.length} players</Badge>
                           </div>
                           <div className="space-y-2">
-                             {members.map((p) => (
-                                <Link 
-                                  key={p.id} 
-                                  href={`/profile/${p.player_id || "not-found"}`}
-                                  className="flex items-center gap-3 p-3 rounded-2xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all group"
-                                >
-                                   <Avatar className="h-9 w-9 border border-white/10 group-hover:border-primary/50 transition-all">
-                                      <AvatarImage src={p.player?.avatar_url ?? undefined} />
-                                      <AvatarFallback className="bg-white/2 text-gray-500 font-black italic text-[10px]">
-                                         {p.player?.nickname?.charAt(0) || "P"}
-                                      </AvatarFallback>
-                                   </Avatar>
-                                   <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <p className="font-black italic uppercase tracking-tighter text-white text-xs truncate leading-tight">
-                                           {p.player?.nickname || "Jogador"}
-                                        </p>
-                                        {getRoleIcon(p.role)}
-                                      </div>
-                                      <p className="text-[8px] font-black uppercase text-gray-700 tracking-widest mt-0.5 italic">
-                                         {getRoleLabel(p.role)}
-                                      </p>
-                                   </div>
-                                </Link>
-                             ))}
+                              {members
+                                .sort((a, b) => (a.role === 'captain' ? -1 : b.role === 'captain' ? 1 : 0))
+                                .map((p) => (
+                                 <Link 
+                                   key={p.id} 
+                                   href={`/profile/${p.player_id || "not-found"}`}
+                                   className="flex items-center gap-3 p-3 rounded-2xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all group"
+                                 >
+                                    <Avatar className="h-9 w-9 border border-white/10 group-hover:border-primary/50 transition-all">
+                                       <AvatarImage src={p.player?.avatar_url ?? undefined} />
+                                       <AvatarFallback className="bg-white/2 text-gray-500 font-black italic text-[10px]">
+                                          {p.player?.nickname?.charAt(0) || "P"}
+                                       </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                       <div className="flex items-center gap-2">
+                                         <p className="font-black italic uppercase tracking-tighter text-white text-xs truncate leading-tight">
+                                            {cleanNickname(p.player?.nickname || "Jogador")}
+                                         </p>
+                                         {getRoleIcon(p.role)}
+                                       </div>
+                                       <div className="flex items-center gap-1.5 mt-0.5">
+                                          <span className={`text-[8px] font-black uppercase tracking-widest italic px-1.5 py-0.5 rounded ${
+                                            p.role === 'captain' ? 'bg-primary/20 text-primary' : 
+                                            p.role === 'coach' ? 'bg-amber-500/20 text-amber-500' :
+                                            p.role === 'analista' ? 'bg-blue-500/20 text-blue-500' :
+                                            'bg-white/5 text-gray-700'
+                                          }`}>
+                                            {getRoleLabel(p.role)}
+                                          </span>
+                                       </div>
+                                    </div>
+                                 </Link>
+                              ))}
                           </div>
                        </div>
                     ))}
@@ -777,7 +811,7 @@ export default function TournamentHubPage() {
                         <UserPlus className="h-3 w-3 text-secondary" />
                      </div>
                      
-                     <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="grid grid-cols-2 gap-2">
                            {['player', 'coach', 'analista'].map((role) => (
                               <button
@@ -794,22 +828,58 @@ export default function TournamentHubPage() {
                            ))}
                         </div>
                         <Input 
-                          placeholder="Nome do Time"
+                          placeholder="Email do Player"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          className="h-9 bg-white/2 border-white/5 text-[10px] font-bold italic placeholder:text-gray-700"
+                        />
+                        <Input 
+                          placeholder="Equipe (Opcional)"
                           value={inviteTeam}
                           onChange={(e) => setInviteTeam(e.target.value)}
-                          className="h-9 bg-white/2 border-white/5 text-[10px] font-bold uppercase italic placeholder:text-gray-700"
+                          className="h-9 bg-white/2 border-white/5 text-[10px] font-bold italic placeholder:text-gray-700 uppercase"
                         />
-                        <Button 
-                          onClick={() => {
-                             const baseUrl = window.location.origin + `/tournaments/${id}`;
-                             const inviteUrl = `${baseUrl}?join=true&role=${inviteRole}${inviteTeam ? `&team=${encodeURIComponent(inviteTeam)}` : ''}`;
-                             navigator.clipboard.writeText(inviteUrl);
-                             toast.success(`Link de ${inviteRole} copiado!`);
-                          }}
-                          className="w-full h-9 bg-secondary text-black hover:opacity-90 font-black uppercase italic tracking-widest text-[9px] rounded-lg shadow-lg shadow-secondary/10"
-                        >
-                           Gerar Link de Convite
-                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                           <Button 
+                              onClick={async () => {
+                                 if (!inviteEmail) return toast.error("Informe o e-mail");
+                                 try {
+                                    // Organizers might not have a teamId, but here they are likely inviting to the tournament
+                                    // In our schema, we can use a dummy teamId if needed or update useTeams
+                                    // But actually, the user wants the notification to arrive.
+                                    // We can use a tournament_wide_team or similar.
+                                    // Let's assume for now they are inviting to the general tournament.
+                                    await inviteMemberByEmail.mutateAsync({
+                                       teamId: "TOURNAMENT_INVITE", // Sentinel value
+                                       email: inviteEmail,
+                                       role: inviteRole,
+                                       tournamentId: id,
+                                       tournamentTitle: tournament.title,
+                                       senderNickname: user?.nickname || "Organização"
+                                    });
+                                    setInviteEmail("");
+                                    toast.success("Convite enviado com sucesso!");
+                                 } catch (err: any) {
+                                    toast.error(err.message);
+                                 }
+                              }}
+                              className="h-9 bg-primary text-white hover:opacity-90 font-black uppercase italic tracking-widest text-[9px] rounded-lg"
+                           >
+                              {inviteMemberByEmail.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Enviar Convite"}
+                           </Button>
+                           <Button 
+                              variant="outline"
+                              onClick={() => {
+                                 const baseUrl = window.location.origin + `/tournaments/${id}`;
+                                 const inviteUrl = `${baseUrl}?join=true&role=${inviteRole}${inviteTeam ? `&team=${encodeURIComponent(inviteTeam)}` : ''}`;
+                                 navigator.clipboard.writeText(inviteUrl);
+                                 toast.success(`Link de ${inviteRole} copiado!`);
+                              }}
+                              className="h-9 border-white/10 text-gray-400 text-[9px] font-black uppercase italic tracking-widest rounded-lg"
+                           >
+                              Copiar Link
+                           </Button>
+                        </div>
                      </div>
                   </div>
                )}

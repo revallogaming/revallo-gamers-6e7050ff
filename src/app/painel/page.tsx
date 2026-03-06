@@ -10,12 +10,13 @@ import {
   User, 
   ArrowRight,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  Zap
 } from "lucide-react";
 import Link from "next/link";
 import { SEO } from "@/components/SEO";
 
-export default function DashboardPage() {
+export default function PainelPage() {
   const { user, profile } = useAuth();
 
   if (!user) return null;
@@ -25,7 +26,7 @@ export default function DashboardPage() {
       title: "Financeiro",
       description: "Gerenciar saldo, saques e depósitos",
       icon: Wallet,
-      href: "/dashboard/financeiro",
+      href: "/financeiro",
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
     },
@@ -33,7 +34,7 @@ export default function DashboardPage() {
       title: "Meus Torneios",
       description: "Gerenciar campeonatos e participantes",
       icon: Trophy,
-      href: "/dashboard/torneios",
+      href: "/organizer",
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
@@ -130,5 +131,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-import { Zap } from "lucide-react";

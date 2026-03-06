@@ -18,7 +18,7 @@ export default function MyTournamentsPage() {
     if (!user) {
       router.replace("/auth");
     } else {
-      router.replace("/dashboard/torneios");
+      router.replace("/organizer");
     }
   }, [user, loading, router]);
 

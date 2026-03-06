@@ -6,66 +6,67 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 95%;
+    --background: 260 40% 2%;
+    --foreground: 210 40% 98%;
     
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 95%;
+    --card: 260 40% 4% / 0.6;
+    --card-foreground: 210 40% 98%;
     
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 260 40% 3%;
+    --popover-foreground: 210 40% 98%;
     
-    --primary: 270 70% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 263.4 70% 65%;
+    --primary-foreground: 210 40% 98%;
     
-    --secondary: 270 50% 40%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 260 40% 6%;
+    --secondary-foreground: 210 40% 98%;
     
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 260 40% 8%;
+    --muted-foreground: 215 20% 65%;
     
-    --accent: 270 80% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 158 80% 55%;
+    --accent-foreground: 210 40% 98%;
     
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
     
-    --border: 0 0% 15%;
-    --input: 0 0% 10%;
-    --ring: 270 70% 55%;
+    --border: 260 40% 12%;
+    --input: 260 40% 12%;
+    --ring: 263.4 70% 50%;
     
-    --radius: 0.5rem;
+    --radius: 1rem;
     
-    /* Purple gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(270 70% 55%), hsl(280 60% 45%));
-    --gradient-secondary: linear-gradient(135deg, hsl(280 60% 45%), hsl(270 70% 55%));
-    --gradient-accent: linear-gradient(135deg, hsl(270 80% 60%), hsl(260 70% 50%));
-    --gradient-dark: linear-gradient(180deg, hsl(0 0% 4%), hsl(0 0% 7%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 9%), hsl(0 0% 6%));
-    --gradient-subtle: linear-gradient(135deg, hsl(270 70% 55% / 0.08), hsl(270 50% 40% / 0.05));
+    /* Vibrant gradients */
+    --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(280 80% 50%), hsl(258 90% 66%));
+    --gradient-accent: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    --gradient-dark: linear-gradient(180deg, rgba(15, 12, 41, 0.8) 0%, rgba(48, 43, 99, 0.4) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(20, 15, 45, 0.7) 0%, rgba(10, 8, 30, 0.9) 100%);
+    --gradient-subtle: linear-gradient(135deg, hsl(258 90% 66% / 0.1), hsl(258 90% 66% / 0.05));
     
-    /* Shadows */
+    /* Shadows & Glows */
     --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.5);
     --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.6);
     --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.7);
-    --shadow-primary: 0 4px 16px hsl(270 70% 55% / 0.2);
+    --shadow-primary: 0 0 20px hsl(258 90% 66% / 0.3);
+    --shadow-accent: 0 0 20px hsl(142 76% 45% / 0.3);
     
     /* Game colors */
     --freefire: 15 90% 55%;
     --fortnite: 199 89% 48%;
     --cod: 30 80% 50%;
     --lol: 45 90% 50%;
-    --valorant: 0 80% 55%;
+    --valorant: 142 76% 45%; /* Using the toxic green/mint for Valorant as in the image */
     --bloodstrike: 185 90% 50%;
     
-    --sidebar-background: 0 0% 6%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 270 70% 55%;
+    --sidebar-background: 250 43% 3%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 258 90% 66%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 12%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 270 70% 55%;
+    --sidebar-accent: 250 30% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 250 30% 10%;
+    --sidebar-ring: 258 90% 66%;
   }
 }
 
@@ -75,11 +76,25 @@
   }
   
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    background-color: #05040a;
     background-image: 
-      radial-gradient(ellipse at 15% 0%, hsl(270 70% 55% / 0.05) 0%, transparent 40%),
-      radial-gradient(ellipse at 85% 100%, hsl(270 50% 40% / 0.03) 0%, transparent 40%);
+      radial-gradient(circle at 15% 25%, rgba(139, 92, 246, 0.4) 0%, transparent 60%), 
+      radial-gradient(circle at 85% 75%, rgba(52, 211, 153, 0.3) 0%, transparent 60%),
+      radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.2) 0%, transparent 80%),
+      url('/galactic-bg.png');
     background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: screen, screen, screen, normal;
+    color: hsl(var(--foreground));
+    @apply font-body antialiased; /* Kept font and antialiasing */
+  }
+
+  /* Glassmorphism Refinements */
+  .bg-glass {
+    background: rgba(13, 10, 30, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -149,6 +164,26 @@
   
   .shadow-primary {
     box-shadow: var(--shadow-primary);
+  }
+
+  .shadow-glow-sm {
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.4);
+  }
+
+  .shadow-glow-lg {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.5), 0 0 10px hsl(var(--accent) / 0.2);
+  }
+
+  .shadow-accent-glow {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.4);
+  }
+
+  .text-shadow-glow {
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
+  }
+
+  .text-shadow-accent {
+    text-shadow: 0 0 10px hsl(var(--accent) / 0.5);
   }
   
   .card-hover {

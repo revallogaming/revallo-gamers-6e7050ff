@@ -74,7 +74,21 @@ export function useTeams(userId?: string) {
   });
 
   const inviteMemberByEmail = useMutation({
-    mutationFn: async ({ teamId, email }: { teamId: string, email: string }) => {
+    mutationFn: async ({ 
+      teamId, 
+      email, 
+      role = 'member',
+      tournamentId,
+      tournamentTitle,
+      senderNickname
+    }: { 
+      teamId: string, 
+      email: string, 
+      role?: string,
+      tournamentId?: string,
+      tournamentTitle?: string,
+      senderNickname?: string
+    }) => {
       // 1. Find profile by email
       const q = query(
         collection(db, "profiles"),
@@ -88,6 +102,7 @@ export function useTeams(userId?: string) {
 
       const userDoc = snapshot.docs[0];
       const inviteeId = userDoc.id;
+      const inviteeNickname = userDoc.data().nickname;
 
       // 2. Check if already a member
       const memberQ = query(
@@ -104,16 +119,58 @@ export function useTeams(userId?: string) {
       await addDoc(collection(db, "team_members"), {
         team_id: teamId,
         user_id: inviteeId,
-        role: 'member',
+        role: role,
         joined_at: new Date().toISOString(),
       });
 
       // 4. Increment members_count
       const teamRef = doc(db, "teams", teamId);
+      const teamDoc = await getDoc(teamRef);
+      const teamName = teamDoc.data()?.name;
+
       await updateDoc(teamRef, {
         members_count: increment(1),
         updated_at: new Date().toISOString(),
       });
+
+      // 5. Create in-app notification if it's for a tournament
+      if (tournamentId && tournamentTitle && senderNickname) {
+        await addDoc(collection(db, "notifications"), {
+          type: "tournament_invite",
+          to_user_id: inviteeId,
+          from_user_id: userId,
+          from_nickname: senderNickname,
+          title: "Convite de Torneio",
+          body: `Você foi convidado para o torneio "${tournamentTitle}" como ${role}${teamName ? ` no time ${teamName}` : ""}.`,
+          action_url: `/tournaments/${tournamentId}?join=true&role=${role}&team=${encodeURIComponent(teamName || "")}`,
+          read: false,
+          created_at: serverTimestamp(),
+          metadata: {
+            tournamentId,
+            teamId,
+            role
+          }
+        });
+
+        // 6. Send email notification (non-blocking)
+        try {
+          fetch("/api/send-invite-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              recipientEmail: email.trim().toLowerCase(),
+              recipientNickname: inviteeNickname,
+              senderNickname,
+              tournamentTitle,
+              tournamentId,
+              role,
+              teamName
+            }),
+          });
+        } catch (e) {
+          console.error("Failed to send invite email:", e);
+        }
+      }
 
       return inviteeId;
     },

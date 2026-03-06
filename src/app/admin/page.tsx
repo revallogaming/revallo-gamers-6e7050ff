@@ -70,12 +70,12 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    // Only redirect if NOT loading, and either not logged in OR (is NOT authorized via password AND doesn't have admin role)
-    // Actually, let's simplify: if logged in, let them reach the password gate.
+    // Only redirect if NOT loading, and definitely no user
     if (!loading && !user) {
       router.replace("/auth");
     }
   }, [user, loading, router]);
+
 
   useEffect(() => {
     if (user && isAuthorized) {
@@ -142,51 +142,52 @@ export default function Admin() {
     );
   }
 
-  // If not authorized by password, always show gate (even for db admins)
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-[#0A0A0C] flex flex-col items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen bg-[#05040a] flex flex-col items-center justify-center relative overflow-hidden">
         {/* Background blobs */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-500/5 blur-[120px] rounded-full translate-x-1/2 translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/20 blur-[150px] rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent/10 blur-[150px] rounded-full translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
-        <div className="w-full max-w-sm p-8 rounded-[32px] bg-white/2 border border-white/5 backdrop-blur-xl relative z-10">
-          <div className="h-16 w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-6">
-            <Lock className="text-primary h-8 w-8" />
+        <div className="w-full max-w-sm p-10 rounded-[40px] bg-white/[0.02] border border-white/10 backdrop-blur-2xl relative z-10 shadow-2xl">
+          <div className="h-20 w-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-8 shadow-glow-sm">
+            <Lock className="text-primary h-10 w-10 animate-pulse" />
           </div>
           
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-2">Painel <span className="text-primary">Admin</span></h1>
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 italic">Área Restrita • Insira a Chave de Acesso</p>
+          <div className="text-center mb-10">
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter text-white mb-2 leading-none">
+              Painel <span className="text-primary drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]">Admin</span>
+            </h1>
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 italic opacity-80">Área Restrita • Chave de Acesso</p>
           </div>
 
-          <form onSubmit={handleAuthorize} className="space-y-4">
+          <form onSubmit={handleAuthorize} className="space-y-6">
             <div className="space-y-2 relative">
               <Input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-white/5 border-white/10 h-14 rounded-2xl text-center font-black tracking-[0.3em] focus-visible:ring-primary/40 pr-12"
+                className="bg-white/5 border-white/10 h-16 rounded-2xl text-center font-black tracking-[0.4em] focus-visible:ring-primary/40 focus-visible:border-primary/40 text-lg transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
               </button>
             </div>
             <Button 
               type="submit"
-              className="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black uppercase italic tracking-widest text-[10px] shadow-lg shadow-primary/20"
+              className="w-full h-16 bg-gradient-primary hover:scale-[1.02] active:scale-[0.98] text-white rounded-2xl font-black uppercase italic tracking-widest text-[11px] transition-all shadow-glow-sm"
             >
               Autorizar Acesso
             </Button>
           </form>
 
-          <Link href="/" className="flex items-center justify-center gap-2 mt-8 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white transition-colors italic">
-            <ArrowLeft size={12} />
+          <Link href="/" className="flex items-center justify-center gap-2 mt-10 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white transition-colors italic group">
+            <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
             Voltar para a Início
           </Link>
         </div>
@@ -207,15 +208,15 @@ export default function Admin() {
           Voltar
         </Link>
 
-        <div className="flex items-center gap-3 mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60">
-            <Shield className="h-6 w-6 text-primary-foreground" />
+        <div className="flex items-center gap-4 mb-10">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-glow-sm">
+            <Shield className="h-7 w-7 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-3xl font-display font-bold text-foreground">
-              Painel de Administração
+            <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-none mb-2">
+              Painel de <span className="text-primary">Administração</span>
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground font-medium italic">
               Gerencie usuários, torneios, créditos e moderação
             </p>
           </div>

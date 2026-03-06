@@ -152,11 +152,11 @@ function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/5" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/5" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 blur-[120px] rounded-full pointer-events-none shadow-glow-lg" />
 
-      <Card className="relative w-full max-w-md border-white/10 bg-[#0D0D0F]/80 backdrop-blur-xl shadow-2xl">
+      <Card className="relative w-full max-w-md border-white/10 bg-card/80 backdrop-blur-xl shadow-2xl">
         <CardHeader className="text-center space-y-4 pt-10">
           <Link
             href="/"
@@ -350,7 +350,7 @@ function AuthForm() {
 
             <Button
               type="submit"
-              className="w-full h-14 bg-primary hover:opacity-90 text-white font-black uppercase italic text-sm tracking-widest rounded-xl shadow-lg shadow-primary/20"
+              className="w-full h-14 bg-gradient-primary hover:scale-[1.02] active:scale-[0.98] text-white font-black uppercase italic text-sm tracking-widest rounded-xl shadow-glow-sm transition-all"
               disabled={
                 isLoading ||
                 (mode === "signup" && (!ageConfirmed || !termsConfirmed))
@@ -402,8 +402,8 @@ export default function AuthPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0A0A0C] flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin shadow-glow-sm" />
         </div>
       }
     >

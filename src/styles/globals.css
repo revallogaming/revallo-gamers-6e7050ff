@@ -26,11 +26,27 @@
   /* Custom Revallo Glow Tokens */
   --glow-blue: 210 100% 50%;
   --glow-purple: 280 100% 60%;
+  
+  /* Vibrant gradients */
+  --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --gradient-secondary: linear-gradient(135deg, hsl(280 80% 50%), hsl(258 90% 66%));
+  --gradient-accent: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  --gradient-card: linear-gradient(145deg, rgba(20, 15, 45, 0.7) 0%, rgba(10, 8, 30, 0.9) 100%);
 }
 
 @layer base {
   body {
-    @apply bg-background text-foreground;
+    background-color: #010002;
+    background-image: 
+      radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.015) 0%, transparent 40%),
+      radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.01) 0%, transparent 50%), 
+      radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.005) 0%, transparent 60%),
+      url('/galactic-bg.png');
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: screen, screen, screen, multiply;
+    @apply text-foreground antialiased;
     font-feature-settings:
       "rlig" 1,
       "calt" 1;

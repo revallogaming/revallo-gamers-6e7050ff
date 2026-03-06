@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { CreateTournamentDialog } from "@/components/CreateTournamentDialog";
 
 const ITEMS_PER_PAGE = 48;
 
@@ -162,10 +163,10 @@ function TournamentsContent() {
         ])}
       />
 
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 bg-transparent">
         {/* ── Game Filter Sidebar (tournament-specific only) ── */}
-        <aside className="hidden xl:flex w-52 flex-col border-r border-white/5 bg-[#0D0D0F]/60 sticky top-32 h-[calc(100vh-8rem)] shrink-0">
-          <div className="p-4 pt-12 overflow-y-auto flex-1">
+        <aside className="hidden xl:flex w-52 flex-col border-r border-white/5 bg-[#0D0D0F]/60 sticky top-16 h-[calc(100vh-4rem)] shrink-0">
+          <div className="p-4 overflow-y-auto flex-1">
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-700 px-2 mb-4 italic">
               Filtrar por Jogo
             </p>
@@ -205,8 +206,13 @@ function TournamentsContent() {
 
         {/* ── Main Content ── */}
         <main className="flex-1 flex flex-col min-w-0 overflow-auto">
-          {/* Compact Inline Header */}
-          <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-white/5 bg-[#0A0A0C]/80 backdrop-blur-md sticky top-16 z-20">
+          <Header 
+            searchQuery={filters.search} 
+            setSearchQuery={(q) => handleFiltersChange({ ...filters, search: q })}
+            searchPlaceholder="BUSCAR TORNEIO PELO NOME..."
+          />
+          {/* Compact Inline Header - Just Title and Create Button */}
+          <div className="flex items-center justify-between gap-4 px-6 py-4 mt-3 border-b border-white/5 bg-black/40 backdrop-blur-md">
             <div className="flex items-center gap-3 min-w-0">
               <Trophy className="h-5 w-5 text-primary shrink-0" />
               <h1 className="font-black italic uppercase tracking-tighter text-lg text-white leading-none truncate">
@@ -215,22 +221,27 @@ function TournamentsContent() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <TournamentFilters
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-              />
-              <Button
-                onClick={() => router.push(user ? "/organizer" : "/auth")}
-                className="bg-primary hover:opacity-90 h-9 px-4 rounded-2xl font-black italic uppercase text-[11px] shadow-lg shadow-primary/20 flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Criar</span>
-              </Button>
+              {user ? (
+                <CreateTournamentDialog>
+                  <Button className="bg-primary hover:opacity-90 h-9 px-4 rounded-2xl font-black italic uppercase text-[11px] shadow-lg shadow-primary/20 flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Criar</span>
+                  </Button>
+                </CreateTournamentDialog>
+              ) : (
+                <Button
+                  onClick={() => router.push("/auth")}
+                  className="bg-primary hover:opacity-90 h-9 px-4 rounded-2xl font-black italic uppercase text-[11px] shadow-lg shadow-primary/20 flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Criar</span>
+                </Button>
+              )}
             </div>
           </div>
 
           {/* Tournament Grid */}
-          <div className="p-6">
+          <div className="p-6 pt-5">
             {isLoading ? (
               <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(9)].map((_, i) => (
@@ -352,7 +363,6 @@ function TournamentsContent() {
 export default function TournamentsPage() {
   return (
     <div className="flex flex-col flex-1">
-      <Header />
       <Suspense
         fallback={
           <div className="flex-1 flex items-center justify-center py-20">

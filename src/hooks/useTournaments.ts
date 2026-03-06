@@ -9,6 +9,7 @@ import {
   getDoc, 
   doc, 
   addDoc,
+  deleteDoc,
   serverTimestamp,
   increment,
   updateDoc
@@ -193,5 +194,26 @@ export function useTournamentParticipants(tournamentId: string) {
     enabled: !!tournamentId,
     staleTime: STALE_TIME,
     gcTime: CACHE_TIME,
+  });
+}
+
+export function useDeleteTournament() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (tournamentId: string) => {
+      await deleteDoc(doc(db, 'tournaments', tournamentId));
+      return tournamentId;
+    },
+    onSuccess: (tournamentId) => {
+      // Immediately remove stale data so the page doesn't flash on navigate
+      queryClient.removeQueries({ queryKey: ['tournament', tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+      toast({ title: 'Torneio removido com sucesso!' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao remover torneio', description: error.message, variant: 'destructive' });
+    },
   });
 }
