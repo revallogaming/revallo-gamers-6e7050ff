@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCredits } from "@/hooks/useCredits";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, doc, setDoc } from "firebase/firestore";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { GameType, GAME_INFO } from "@/types";
+import { GameType, GAME_INFO, MiniTournamentFormat } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { normalizeExternalUrl } from "@/lib/links";
@@ -34,7 +36,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { Plus, Loader2, Image as ImageIcon, Star, Coins, CalendarIcon, Trophy, Users, DollarSign, FileText, Key, Gamepad2, Link as LinkIcon } from "lucide-react";
+import { Plus, Loader2, Image as ImageIcon, Star, Coins, CalendarIcon, Trophy, Users, DollarSign, FileText, Key, Gamepad2, Link as LinkIcon, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CreateTournamentDialogProps {
@@ -65,6 +67,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
     title: "",
     description: "",
     game: "" as GameType | "",
+    format: "squad" as MiniTournamentFormat,
     rules: "",
     prize_amount: 0,
     entry_fee_brl: 0,
@@ -73,8 +76,14 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
     end_date: null as Date | null,
     registration_deadline: null as Date | null,
     organizer_pix_key: "",
-    tournament_link: "",
   });
+
+  const FORMAT_OPTIONS: { value: MiniTournamentFormat; label: string; size: number }[] = [
+    { value: 'x1', label: 'Solo (1v1)', size: 1 },
+    { value: 'duo', label: 'Duo (2v2)', size: 2 },
+    { value: 'trio', label: 'Trio (3v3)', size: 3 },
+    { value: 'squad', label: 'Squad (4v4)', size: 4 },
+  ];
 
   const selectedBoostPackage = BOOST_PACKAGES[selectedBoost];
   const hasEnoughCredits = credits >= (selectedBoostPackage?.credits || 0);
@@ -127,24 +136,14 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
   const uploadBanner = async (): Promise<string | null> => {
     if (!bannerFile || !user) return null;
 
-    const fileExt = bannerFile.name.split(".").pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-    
-    const { error } = await supabase.storage
-      .from("tournament-banners")
-      .upload(fileName, bannerFile);
-
-    if (error) {
+    try {
+      const url = await uploadToCloudinary(bannerFile);
+      return url;
+    } catch (error) {
       console.error("Error uploading banner:", error);
       toast.error("Erro ao fazer upload do banner");
       return null;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from("tournament-banners")
-      .getPublicUrl(fileName);
-
-    return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -195,37 +194,45 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
         ? `R$ ${formData.prize_amount.toFixed(2).replace('.', ',')}`
         : null;
 
-      const tournamentLink = normalizeExternalUrl(formData.tournament_link);
-      if (formData.tournament_link.trim() && !tournamentLink) {
-        toast.error("Link do torneio inválido. Use um link completo (https://...)");
-        setLoading(false);
-        return;
-      }
+
+
+      // Determine team size from format
+      const selectedFormat = FORMAT_OPTIONS.find(f => f.value === formData.format);
+      const teamSize = selectedFormat?.size || 1;
 
       // Create tournament
-      const { data: tournament, error } = await supabase
-        .from("tournaments")
-        .insert({
-          organizer_id: user.id,
-          title: formData.title,
-          description: formData.description || null,
-          game: formData.game as GameType,
-          rules: formData.rules || null,
-          prize_description: prizeDescription,
-          entry_fee: Math.round(formData.entry_fee_brl * 100), // Store as centavos for precision
-          max_participants: formData.max_participants,
-          start_date: formData.start_date?.toISOString() || "",
-          end_date: formData.end_date?.toISOString() || null,
-          registration_deadline: formData.registration_deadline?.toISOString() || "",
-          banner_url: bannerUrl,
-          status: "upcoming",
-          is_highlighted: isHighlighted,
-          highlighted_until: highlightedUntil,
-          tournament_link: tournamentLink,
-        })
-        .select()
-        .single();
-      if (error) throw error;
+      const newTournamentData = {
+        title: formData.title,
+        description: formData.description,
+        game: formData.game,
+        organizer_id: user.uid,
+        banner_url: bannerUrl,
+        status: "upcoming",
+        is_highlighted: isHighlighted,
+        highlighted_until: highlightedUntil,
+        format: formData.format,
+        is_team_based: formData.format !== 'x1',
+        min_team_size: teamSize,
+        max_team_size: teamSize,
+        prize_amount: formData.prize_amount,
+        entry_fee_brl: formData.entry_fee_brl,
+        max_participants: formData.max_participants,
+        current_participants: 0,
+        participants: [],
+        rules: formData.rules,
+        start_date: formData.start_date?.toISOString() || null,
+        end_date: formData.end_date?.toISOString() || null,
+        registration_deadline: formData.registration_deadline?.toISOString() || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const docRef = await addDoc(collection(db, "tournaments"), newTournamentData);
+      const tournamentId = docRef.id;
+
+      // NOTE: We do NOT create the community hub here anymore.
+      // The hub is created lazily on first visit to /tournaments/[id]/hub
+      // by the organizer. This prevents duplicate hub creation.
 
       // Spend credits for boost if enabled
       if (enableBoost && selectedBoostPackage) {
@@ -233,27 +240,32 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           amount: selectedBoostPackage.credits,
           type: "tournament_boost",
           description: `Impulso de torneio: ${formData.title} (${selectedBoostPackage.label})`,
-          referenceId: tournament.id,
+          referenceId: tournamentId,
         });
       }
 
       // Save PIX key in separate secure table
-      const { error: pixError } = await supabase
-        .from("organizer_payment_info")
-        .upsert({
-          organizer_id: user.id,
+      try {
+        await setDoc(doc(db, "organizer_payment_info", user.uid), {
+          organizer_id: user.uid,
           pix_key: formData.organizer_pix_key,
-        }, { onConflict: 'organizer_id' });
-
-      if (pixError) {
+          updated_at: new Date().toISOString(),
+        }, { merge: true });
+      } catch (pixError) {
         console.error("Error saving PIX key:", pixError);
       }
 
       // Send confirmation email
       try {
-        await supabase.functions.invoke("send-tournament-email", {
-          body: {
-            tournamentId: tournament.id,
+        const idToken = await user.getIdToken();
+        await fetch("/api/send-tournament-email", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            tournamentId: tournamentId,
             email: user.email,
             tournamentTitle: formData.title,
             game: GAME_INFO[formData.game as GameType].name,
@@ -262,7 +274,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             maxParticipants: formData.max_participants,
             prizeDescription: prizeDescription,
             pixKey: formData.organizer_pix_key,
-          },
+          }),
         });
       } catch (emailError) {
         console.log("Email not sent:", emailError);
@@ -285,6 +297,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
       title: "",
       description: "",
       game: "",
+      format: "squad",
       rules: "",
       prize_amount: 0,
       entry_fee_brl: 0,
@@ -293,7 +306,6 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
       end_date: null,
       registration_deadline: null,
       organizer_pix_key: "",
-      tournament_link: "",
     });
     setBannerFile(null);
     setBannerPreview(null);
@@ -408,6 +420,30 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               </div>
             </div>
 
+            {/* Format Selector */}
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground flex items-center gap-2">
+                <Swords className="h-3.5 w-3.5" />
+                Formato do Torneio *
+              </Label>
+              <div className="grid grid-cols-4 gap-2">
+                {FORMAT_OPTIONS.map((f) => (
+                  <button
+                    key={f.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, format: f.value })}
+                    className={`h-12 rounded-xl text-[10px] font-black uppercase italic border transition-all ${
+                      formData.format === f.value
+                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                        : 'bg-muted/30 border-border/50 hover:border-primary/50 text-muted-foreground'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description" className="text-xs text-muted-foreground">Descrição</Label>
@@ -452,7 +488,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               <div className="space-y-2">
                 <Label htmlFor="max_participants" className="text-xs text-muted-foreground">Máx. Participantes *</Label>
                 <div className="relative">
-                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
                   <Input
                     id="max_participants"
                     type="text"
@@ -490,7 +526,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                         !formData.registration_deadline && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4 text-destructive" />
+                      <CalendarIcon className="mr-2 h-4 w-4 text-white/70" />
                       {formData.registration_deadline ? (
                         <span className="font-medium">{format(formData.registration_deadline, "dd 'de' MMM", { locale: ptBR })}</span>
                       ) : (
@@ -521,7 +557,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                         !formData.start_date && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4 text-secondary" />
+                      <CalendarIcon className="mr-2 h-4 w-4 text-white/70" />
                       {formData.start_date ? (
                         <span className="font-medium">{format(formData.start_date, "dd 'de' MMM", { locale: ptBR })}</span>
                       ) : (
@@ -552,7 +588,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                         !formData.end_date && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4 text-accent" />
+                      <CalendarIcon className="mr-2 h-4 w-4 text-white/70" />
                       {formData.end_date ? (
                         <span className="font-medium">{format(formData.end_date, "dd 'de' MMM", { locale: ptBR })}</span>
                       ) : (
@@ -593,24 +629,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               />
             </div>
 
-            {/* Tournament Link */}
-            <div className="space-y-2">
-              <Label htmlFor="tournament_link" className="text-xs text-muted-foreground flex items-center gap-2">
-                <LinkIcon className="h-3 w-3" />
-                Link do Torneio (Discord, WhatsApp, etc)
-              </Label>
-              <Input
-                id="tournament_link"
-                type="url"
-                value={formData.tournament_link}
-                onChange={(e) => setFormData({ ...formData, tournament_link: e.target.value })}
-                placeholder="https://discord.gg/... ou https://chat.whatsapp.com/..."
-                className="h-12 bg-muted/30 border-border/50 focus:border-primary/50"
-              />
-              <p className="text-xs text-muted-foreground/70">
-                Este link será enviado aos participantes inscritos
-              </p>
-            </div>
+
 
             {/* PIX Key */}
             <div className="space-y-2">

@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, doc, updateDoc, deleteDoc, setDoc, addDoc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -61,12 +63,18 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
 
   const updateCredits = async (userId: string, amount: number) => {
     try {
-      const { error } = await supabase.rpc("admin_add_credits", {
-        p_user_id: userId,
-        p_amount: amount,
-      });
+      const creditsRef = doc(db, 'user_credits', userId);
+      const creditsSnap = await getDoc(creditsRef);
+      const currentBalance = creditsSnap.exists() ? creditsSnap.data().balance : 0;
+      await setDoc(creditsRef, { balance: currentBalance + amount, user_id: userId }, { merge: true });
 
-      if (error) throw error;
+      await addDoc(collection(db, 'credit_transactions'), {
+        user_id: userId,
+        amount,
+        type: amount > 0 ? "admin_add" : "admin_remove",
+        description: "Ajuste manual por administrador",
+        created_at: new Date().toISOString()
+      });
 
       toast.success(`${amount > 0 ? "Adicionados" : "Removidos"} ${Math.abs(amount)} créditos`);
       onRefresh();
@@ -80,12 +88,11 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
 
   const handleAddAdminRole = async (userId: string, nickname: string) => {
     try {
-      const { error } = await supabase.rpc("admin_add_role", {
-        p_user_id: userId,
-        p_role: "admin",
+      await setDoc(doc(db, 'user_roles', `${userId}_admin`), {
+        user_id: userId,
+        role: "admin",
+        created_at: new Date().toISOString()
       });
-
-      if (error) throw error;
 
       toast.success(`${nickname} agora é administrador`);
       onRefresh();
@@ -98,12 +105,10 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
 
   const handleRemoveAdminRole = async (userId: string, nickname: string) => {
     try {
-      const { error } = await supabase.rpc("admin_remove_role", {
-        p_user_id: userId,
-        p_role: "admin",
-      });
-
-      if (error) throw error;
+      // In Firestore, we might have multiple docs or a specific ID. Let's find and delete.
+      const rolesQ = query(collection(db, 'user_roles'), where('user_id', '==', userId), where('role', '==', 'admin'));
+      const rolesSn = await getDocs(rolesQ);
+      rolesSn.forEach(async (d) => await deleteDoc(doc(db, 'user_roles', d.id)));
 
       toast.success(`${nickname} não é mais administrador`);
       onRefresh();
@@ -124,12 +129,18 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
         return;
       }
 
-      const { error } = await supabase.rpc("admin_set_credits", {
-        p_user_id: selectedUser.id,
-        p_amount: amount,
-      });
+      await setDoc(doc(db, 'user_credits', selectedUser.id), {
+        user_id: selectedUser.id,
+        balance: amount
+      }, { merge: true });
 
-      if (error) throw error;
+      await addDoc(collection(db, 'credit_transactions'), {
+        user_id: selectedUser.id,
+        amount,
+        type: "admin_set",
+        description: "Saldo definido por administrador",
+        created_at: new Date().toISOString()
+      });
 
       toast.success(`Créditos definidos para ${amount}`);
       setSetCreditsDialogOpen(false);
@@ -147,13 +158,10 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
     if (!selectedUser) return;
 
     try {
-      const { error } = await supabase.rpc("admin_toggle_ban", {
-        p_user_id: selectedUser.id,
-        p_ban: true,
-        p_reason: banReason || null,
+      await updateDoc(doc(db, 'profiles', selectedUser.id), {
+        is_banned: true,
+        ban_reason: banReason || null
       });
-
-      if (error) throw error;
 
       toast.success(`Usuário ${selectedUser.nickname} banido`);
       setBanDialogOpen(false);
@@ -169,12 +177,10 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
 
   const handleUnbanUser = async (userId: string, nickname: string) => {
     try {
-      const { error } = await supabase.rpc("admin_toggle_ban", {
-        p_user_id: userId,
-        p_ban: false,
+      await updateDoc(doc(db, 'profiles', userId), {
+        is_banned: false,
+        ban_reason: null
       });
-
-      if (error) throw error;
 
       toast.success(`Usuário ${nickname} desbanido`);
       onRefresh();
@@ -189,11 +195,8 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
     if (!selectedUser) return;
 
     try {
-      const { error } = await supabase.rpc("admin_delete_user", {
-        p_user_id: selectedUser.id,
-      });
-
-      if (error) throw error;
+      await deleteDoc(doc(db, 'profiles', selectedUser.id));
+      await deleteDoc(doc(db, 'user_credits', selectedUser.id));
 
       toast.success(`Usuário ${selectedUser.nickname} removido permanentemente`);
       setDeleteDialogOpen(false);
@@ -217,25 +220,11 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
     setIsResettingPassword(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
-        body: { userId: selectedUser.id, newPassword, sendEmail: sendPasswordEmail },
-      });
-
-      if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      const message = data.emailSent 
-        ? `Senha de ${selectedUser.nickname} alterada e enviada por email` 
-        : `Senha de ${selectedUser.nickname} alterada com sucesso`;
-      
-      toast.success(message);
-      setResetPasswordDialogOpen(false);
-      setNewPassword("");
-      setSendPasswordEmail(true);
-      setSelectedUser(null);
+      // We cannot set arbitrary passwords for users in Firebase from the client SDK easily.
+      // Easiest is to send a password reset email if their profile has an email.
+      // However, we don't have the email in UserWithCredits interface.
+      // Let's throw an error indicating we need a backend for this.
+      throw new Error("A troca direta de senha requer Firebase Admin SDK. Por favor, redefina a senha via email no Firebase Console.");
     } catch (error: unknown) {
       console.error("Error resetting password:", error);
       const errorMessage = error instanceof Error ? error.message : "Erro ao alterar senha";

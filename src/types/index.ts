@@ -1,9 +1,64 @@
 export type GameType = 'freefire' | 'valorant' | 'blood_strike' | 'cod';
+export type MatchStatus = 'pending' | 'in_progress' | 'completed' | 'disputed' | 'cancelled';
+export type MatchRoomStatus = 'not_started' | 'room_created' | 'active' | 'finished';
+export type DisputeStatus = 'open' | 'investigating' | 'resolved' | 'rejected';
 export type TournamentStatus = 'upcoming' | 'open' | 'in_progress' | 'completed' | 'cancelled';
 export type AppRole = 'admin' | 'organizer' | 'player';
 export type PixKeyType = 'cpf' | 'phone' | 'email' | 'random';
 export type MiniTournamentFormat = 'x1' | 'duo' | 'trio' | 'squad';
 export type MiniTournamentStatus = 'draft' | 'pending_deposit' | 'open' | 'in_progress' | 'awaiting_result' | 'completed' | 'cancelled';
+
+export interface Community {
+  id: string;
+  name: string;
+  description: string | null;
+  banner_url: string | null;
+  icon_url: string | null;
+  owner_id: string;
+  member_count: number;
+  game: GameType | null;
+  is_public: boolean;
+  type?: 'social' | 'tournament';
+  tournament_id?: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface CommunityMember {
+  id: string;
+  community_id: string;
+  user_id: string;
+  role: 'owner' | 'moderator' | 'member';
+  joined_at: string;
+  muted?: boolean;
+  user?: Profile;
+}
+
+export interface Channel {
+  id: string;
+  community_id: string;
+  name: string;
+  description: string | null;
+  type: 'text' | 'voice' | 'announcement' | 'broadcast';
+  position: number;
+  is_temporary?: boolean | null;
+  created_at: string;
+}
+
+export interface Message {
+  id: string;
+  channel_id: string;
+  user_id: string;
+  content: string;
+  type?: string;
+  audio_url?: string | null;
+  created_at: string;
+  updated_at: string | null;
+  expires_at?: string | null;
+  deleted_for?: string[] | null;
+  user?: Profile;
+}
+
 
 export interface Profile {
   id: string;
@@ -16,6 +71,20 @@ export interface Profile {
   highlighted_until: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AuthContextType {
+  user: any;
+  profile: Profile | null;
+  roles: UserRole[];
+  loading: boolean;
+  isGuest: boolean;
+  signIn: (e: string, p: string) => Promise<{error: Error | null}>;
+  signUp: (e: string, p: string, n: string) => Promise<{error: Error | null}>;
+  signOut: () => Promise<void>;
+  resetPassword: (e: string) => Promise<{error: Error | null}>;
+  refreshProfile: () => Promise<void>;
+  hasRole: (r: 'admin' | 'organizer' | 'player') => boolean;
 }
 
 export interface Tournament {
@@ -36,10 +105,18 @@ export interface Tournament {
   is_highlighted: boolean;
   highlighted_until: string | null;
   banner_url: string | null;
-  tournament_link: string | null;
+  tournament_link: string | null; // Keep for legacy, but favoring internal room info
+  is_team_based?: boolean;
+  format?: MiniTournamentFormat;
+  min_team_size?: number;
+  max_team_size?: number;
+  room_info_visible?: boolean;
   created_at: string;
   updated_at: string;
   organizer?: Profile;
+  community_id?: string;
+  prize_pool_total?: number;
+  prizes_paid_at?: string | null;
 }
 
 export interface OrganizerPaymentInfo {
@@ -54,11 +131,71 @@ export interface TournamentParticipant {
   id: string;
   tournament_id: string;
   player_id: string;
+  team_id?: string | null;
+  team_name?: string | null;
+  role?: 'captain' | 'player' | 'coach' | 'analista' | null;
   placement: number | null;
   score: number;
   registered_at: string;
   participant_email: string | null;
+  pix_key?: string | null;
+  pix_key_type?: PixKeyType | null;
   player?: Profile;
+}
+
+export interface Match {
+  id: string;
+  tournament_id: string;
+  player1_id: string | null;
+  player2_id: string | null;
+  team1_id?: string | null;
+  team2_id?: string | null;
+  winner_id: string | null;
+  round: number;
+  position: number;
+  status: MatchStatus;
+  next_match_id: string | null;
+  room_id?: string | null;
+  room_password?: string | null;
+  room_status?: MatchRoomStatus;
+  created_at: string;
+  updated_at: string;
+  player1?: Profile;
+  player2?: Profile;
+  team1?: Team;
+  team2?: Team;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  captain_id: string;
+  members_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamMember {
+  id: string;
+  team_id: string;
+  user_id: string;
+  role: 'captain' | 'member';
+  joined_at: string;
+  user?: Profile;
+}
+
+export interface TournamentDispute {
+  id: string;
+  tournament_id: string;
+  match_id: string;
+  reporter_id: string;
+  reason: string;
+  evidence_url: string | null;
+  status: DisputeStatus;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreditTransaction {

@@ -1,109 +1,81 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { db } from '@/lib/firebase';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, getDocs, documentId } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
-import { MiniTournamentMessage } from '@/types';
-import { useEffect } from 'react';
+import { MiniTournamentMessage, Profile } from '@/types';
 import { toast } from 'sonner';
 
 export function useMiniTournamentChat(tournamentId: string) {
   const { user } = useAuth();
+  const [messages, setMessages] = useState<MiniTournamentMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: messages, isLoading, error } = useQuery({
-    queryKey: ['mini-tournament-messages', tournamentId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('mini_tournament_messages')
-        .select('*')
-        .eq('tournament_id', tournamentId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      // Fetch user profiles separately
-      const userIds = [...new Set(data.map(m => m.user_id))];
-      const { data: users } = await supabase
-        .from('profiles')
-        .select('id, nickname, avatar_url, is_highlighted')
-        .in('id', userIds);
-
-      const userMap = new Map(users?.map(u => [u.id, u]) || []);
-
-      return data.map(m => ({
-        ...m,
-        user: userMap.get(m.user_id),
-      })) as MiniTournamentMessage[];
-    },
-    enabled: !!tournamentId,
-  });
-
-  // Real-time subscription
   useEffect(() => {
     if (!tournamentId) return;
 
-    const channel = supabase
-      .channel(`mini-tournament-chat-${tournamentId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'mini_tournament_messages',
-          filter: `tournament_id=eq.${tournamentId}`,
-        },
-        async (payload) => {
-          // Fetch the full message with user profile
-          const { data: newMessage } = await supabase
-            .from('mini_tournament_messages')
-            .select('*')
-            .eq('id', payload.new.id)
-            .single();
+    setIsLoading(true);
+    const q = query(
+      collection(db, 'mini_tournament_messages'),
+      where('tournament_id', '==', tournamentId),
+      orderBy('created_at', 'asc')
+    );
 
-          if (newMessage) {
-            // Fetch user profile
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('id, nickname, avatar_url, is_highlighted')
-              .eq('id', newMessage.user_id)
-              .single();
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      try {
+        const newMessages = snapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data(),
+          created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString()
+        })) as any[];
 
-            const messageWithUser = {
-              ...newMessage,
-              user: userProfile,
-            } as MiniTournamentMessage;
-
-            queryClient.setQueryData(
-              ['mini-tournament-messages', tournamentId],
-              (old: MiniTournamentMessage[] | undefined) => {
-                if (!old) return [messageWithUser];
-                // Avoid duplicates
-                if (old.some(m => m.id === messageWithUser.id)) return old;
-                return [...old, messageWithUser];
-              }
-            );
+        const userIds = Array.from(new Set(newMessages.map(m => m.user_id)));
+        const profilesMap = new Map<string, Profile>();
+        
+        if (userIds.length > 0) {
+          for (let i = 0; i < userIds.length; i += 10) {
+            const chunk = userIds.slice(i, i + 10);
+            const pQuery = query(collection(db, 'profiles'), where(documentId(), 'in', chunk));
+            const pSn = await getDocs(pQuery);
+            pSn.docs.forEach(d => profilesMap.set(d.id, { id: d.id, ...d.data() } as Profile));
           }
         }
-      )
-      .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+        const messagesWithUsers = newMessages.map(m => ({
+          ...m,
+          user: profilesMap.get(m.user_id)
+        })) as MiniTournamentMessage[];
+
+        setMessages(messagesWithUsers);
+        queryClient.setQueryData(['mini-tournament-messages', tournamentId], messagesWithUsers);
+        setError(null);
+      } catch (err: any) {
+        console.error("Error fetching chat messages:", err);
+        setError(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }, (err) => {
+      console.error("Chat subscription error:", err);
+      setError(err);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [tournamentId, queryClient]);
 
   const sendMessage = useMutation({
-    mutationFn: async (message: string) => {
+    mutationFn: async (messageText: string) => {
       if (!user) throw new Error('Não autenticado');
 
-      const { error } = await supabase
-        .from('mini_tournament_messages')
-        .insert({
-          tournament_id: tournamentId,
-          user_id: user.id,
-          message: message.trim(),
-        });
-
-      if (error) throw error;
+      await addDoc(collection(db, 'mini_tournament_messages'), {
+        tournament_id: tournamentId,
+        user_id: user.uid,
+        message: messageText.trim(),
+        created_at: serverTimestamp()
+      });
     },
     onError: () => {
       toast.error('Erro ao enviar mensagem');

@@ -1,6 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Tournament, GameType } from '@/types';
+import { db } from '@/lib/firebase';
+import { 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  getDocs, 
+  getDoc, 
+  doc, 
+  addDoc,
+  serverTimestamp,
+  increment,
+  updateDoc
+} from 'firebase/firestore';
+import { Tournament, GameType, Profile, TournamentParticipant } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 // Cache durations for performance optimization
@@ -11,19 +24,46 @@ export function useTournaments(game?: GameType) {
   return useQuery({
     queryKey: ['tournaments', game],
     queryFn: async () => {
-      let query = supabase
-        .from('tournaments')
-        .select('*, organizer:profiles(id, nickname, avatar_url, is_highlighted)')
-        .order('is_highlighted', { ascending: false })
-        .order('start_date', { ascending: true });
+      // No orderBy/where combo — avoids composite index requirement
+      // Fetch all, filter and sort client-side
+      const q = query(
+        collection(db, 'tournaments'),
+      );
       
-      if (game) {
-        query = query.eq('game', game);
-      }
+      const snapshot = await getDocs(q);
+      const tournaments = await Promise.all(
+        snapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          let organizer: Profile | undefined = undefined;
+          
+          if (data.organizer_id) {
+            const orgDoc = await getDoc(doc(db, 'profiles', data.organizer_id));
+            if (orgDoc.exists()) {
+              organizer = { id: orgDoc.id, ...orgDoc.data() } as Profile;
+            }
+          }
+
+          return {
+            id: docSnap.id,
+            ...data,
+            organizer,
+          } as Tournament;
+        })
+      );
+
+      // Client-side game filter
+      const filtered = game && (game as string) !== 'all'
+        ? tournaments.filter(t => t.game === game)
+        : tournaments;
       
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Tournament[];
+      // Sort: highlighted first, then by start_date asc (missing date goes last)
+      return filtered.sort((a, b) => {
+        if (a.is_highlighted && !b.is_highlighted) return -1;
+        if (!a.is_highlighted && b.is_highlighted) return 1;
+        const da = a.start_date ? new Date(a.start_date).getTime() : Number.MAX_SAFE_INTEGER;
+        const db2 = b.start_date ? new Date(b.start_date).getTime() : Number.MAX_SAFE_INTEGER;
+        return da - db2;
+      });
     },
     staleTime: STALE_TIME,
     gcTime: CACHE_TIME,
@@ -34,14 +74,24 @@ export function useTournament(id: string) {
   return useQuery({
     queryKey: ['tournament', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tournaments')
-        .select('*, organizer:profiles(id, nickname, avatar_url, is_highlighted, bio)')
-        .eq('id', id)
-        .maybeSingle();
+      const docSnap = await getDoc(doc(db, 'tournaments', id));
+      if (!docSnap.exists()) return null;
       
-      if (error) throw error;
-      return data as Tournament | null;
+      const data = docSnap.data();
+      let organizer: Profile | undefined = undefined;
+      
+      if (data.organizer_id) {
+        const orgDoc = await getDoc(doc(db, 'profiles', data.organizer_id));
+        if (orgDoc.exists()) {
+          organizer = { id: orgDoc.id, ...orgDoc.data() } as Profile;
+        }
+      }
+
+      return {
+        id: docSnap.id,
+        ...data,
+        organizer,
+      } as Tournament;
     },
     enabled: !!id,
     staleTime: STALE_TIME,
@@ -55,14 +105,16 @@ export function useCreateTournament() {
 
   return useMutation({
     mutationFn: async (tournament: Omit<Tournament, 'id' | 'created_at' | 'updated_at' | 'current_participants' | 'organizer'>) => {
-      const { data, error } = await supabase
-        .from('tournaments')
-        .insert(tournament)
-        .select()
-        .single();
+      const docRef = await addDoc(collection(db, 'tournaments'), {
+        ...tournament,
+        current_participants: 0,
+        is_highlighted: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
       
-      if (error) throw error;
-      return data;
+      const newDoc = await getDoc(docRef);
+      return { id: docRef.id, ...newDoc.data() };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournaments'] });
@@ -80,16 +132,19 @@ export function useJoinTournament() {
 
   return useMutation({
     mutationFn: async ({ tournamentId, playerId }: { tournamentId: string; playerId: string }) => {
-      const { data, error } = await supabase
-        .from('tournament_participants')
-        .insert({ tournament_id: tournamentId, player_id: playerId })
-        .select()
-        .single();
+      const participantRef = await addDoc(collection(db, 'tournament_participants'), {
+        tournament_id: tournamentId,
+        player_id: playerId,
+        score: 0,
+        registered_at: new Date().toISOString(),
+      });
+
+      // Update participant count in the tournament document
+      await updateDoc(doc(db, 'tournaments', tournamentId), {
+        current_participants: increment(1)
+      });
       
-      if (error) throw error;
-      
-      // Participant count is now updated automatically via database trigger
-      return data;
+      return { id: participantRef.id };
     },
     onSuccess: (_, { tournamentId }) => {
       queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
@@ -107,27 +162,33 @@ export function useTournamentParticipants(tournamentId: string) {
   return useQuery({
     queryKey: ['participants', tournamentId],
     queryFn: async () => {
-      // Use the secure RPC function that doesn't expose participant emails
-      const { data, error } = await supabase
-        .rpc('get_tournament_participants', { p_tournament_id: tournamentId });
+      const q = query(
+        collection(db, 'tournament_participants'),
+        where('tournament_id', '==', tournamentId)
+      );
       
-      if (error) throw error;
+      const snapshot = await getDocs(q);
+      const participants = await Promise.all(
+        snapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          let player: Profile | undefined = undefined;
+          
+          if (data.player_id) {
+            const playerDoc = await getDoc(doc(db, 'profiles', data.player_id));
+            if (playerDoc.exists()) {
+              player = { id: playerDoc.id, ...playerDoc.data() } as Profile;
+            }
+          }
+
+          return {
+            id: docSnap.id,
+            ...data,
+            player,
+          } as TournamentParticipant;
+        })
+      );
       
-      // Transform the flat result to match expected format
-      return (data || []).map((p: any) => ({
-        id: p.id,
-        tournament_id: p.tournament_id,
-        player_id: p.player_id,
-        placement: p.placement,
-        score: p.score,
-        registered_at: p.registered_at,
-        player: {
-          id: p.player_id,
-          nickname: p.player_nickname,
-          avatar_url: p.player_avatar_url,
-          is_highlighted: p.player_is_highlighted,
-        },
-      }));
+      return participants;
     },
     enabled: !!tournamentId,
     staleTime: STALE_TIME,

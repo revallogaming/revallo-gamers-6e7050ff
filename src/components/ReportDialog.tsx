@@ -1,6 +1,7 @@
+"use client";
+
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
@@ -22,12 +23,14 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Flag, Loader2 } from "lucide-react";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 interface ReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   targetId: string;
-  targetType: "tournament" | "mini_tournament" | "user";
+  targetType: "tournament" | "mini_tournament" | "user" | "community";
   targetName: string;
 }
 
@@ -54,12 +57,20 @@ const REPORT_REASONS = {
     { value: "cheating", label: "Trapaça em jogos" },
     { value: "other", label: "Outro" },
   ],
+  community: [
+    { value: "inappropriate", label: "Conteúdo inapropriado" },
+    { value: "harassment", label: "Assédio no Hub" },
+    { value: "spam", label: "Spam / Divulgação" },
+    { value: "fraud", label: "Fraude / Atividade Ilegal" },
+    { value: "other", label: "Outro" },
+  ],
 };
 
 const TARGET_LABELS = {
   tournament: "torneio",
   mini_tournament: "mini torneio",
   user: "usuário",
+  community: "hub",
 };
 
 export function ReportDialog({
@@ -78,15 +89,15 @@ export function ReportDialog({
       if (!user) throw new Error("Você precisa estar logado para denunciar");
       if (!reason) throw new Error("Selecione um motivo");
 
-      const { error } = await supabase.from("reports").insert({
-        reporter_id: user.id,
+      await addDoc(collection(db, "reports"), {
+        reporter_id: user.uid,
         report_type: targetType,
         target_id: targetId,
         reason,
         description: description.trim() || null,
+        created_at: serverTimestamp(),
+        status: "pending",
       });
-
-      if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Denúncia enviada com sucesso!");
@@ -124,7 +135,7 @@ export function ReportDialog({
                 <SelectValue placeholder="Selecione um motivo" />
               </SelectTrigger>
               <SelectContent>
-                {REPORT_REASONS[targetType].map((r) => (
+                {(REPORT_REASONS[targetType] ?? REPORT_REASONS.user).map((r) => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>

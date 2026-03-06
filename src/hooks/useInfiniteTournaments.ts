@@ -1,6 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Tournament, GameType } from '@/types';
+import { db } from '@/lib/firebase';
+import { 
+  collection, 
+  query, 
+  limit, 
+  getDocs, 
+  getDoc,
+  doc,
+} from 'firebase/firestore';
+import { Tournament, GameType, Profile } from '@/types';
 
 export interface TournamentFilters {
   game?: GameType | 'all';
@@ -11,71 +19,91 @@ export interface TournamentFilters {
   prizeMax?: number;
 }
 
+// Fetch ALL tournaments once, cache them, then paginate client-side.
+// This avoids composite index requirements and missing-field exclusions from orderBy.
 const PAGE_SIZE = 24;
-const STALE_TIME = 1000 * 60 * 2; // 2 minutes
-const CACHE_TIME = 1000 * 60 * 10; // 10 minutes
+const STALE_TIME = 1000 * 60 * 2;
+const CACHE_TIME = 1000 * 60 * 10;
+
+async function fetchAllTournaments(): Promise<Tournament[]> {
+  // Fetch in batches of 500 (Firestore max per getDocs) if needed
+  const q = query(collection(db, 'tournaments'), limit(500));
+  const snapshot = await getDocs(q);
+
+  const tournaments = await Promise.all(
+    snapshot.docs.map(async (docSnap) => {
+      const data = docSnap.data();
+      let organizer: Profile | undefined = undefined;
+
+      if (data.organizer_id) {
+        const orgDoc = await getDoc(doc(db, 'profiles', data.organizer_id));
+        if (orgDoc.exists()) {
+          organizer = { id: orgDoc.id, ...orgDoc.data() } as Profile;
+        }
+      }
+
+      return {
+        id: docSnap.id,
+        ...data,
+        organizer,
+      } as Tournament;
+    })
+  );
+
+  // Sort: highlighted first, then by start_date ascending (missing date goes last)
+  return tournaments.sort((a, b) => {
+    if (a.is_highlighted && !b.is_highlighted) return -1;
+    if (!a.is_highlighted && b.is_highlighted) return 1;
+    const da = a.start_date ? new Date(a.start_date).getTime() : Number.MAX_SAFE_INTEGER;
+    const db2 = b.start_date ? new Date(b.start_date).getTime() : Number.MAX_SAFE_INTEGER;
+    return da - db2;
+  });
+}
 
 export function useInfiniteTournaments(filters: TournamentFilters = {}) {
   return useInfiniteQuery({
     queryKey: ['tournaments-infinite', filters],
     staleTime: STALE_TIME,
     gcTime: CACHE_TIME,
-    queryFn: async ({ pageParam = 0 }) => {
-      let query = supabase
-        .from('tournaments')
-        .select('*, organizer:profiles(*)', { count: 'exact' })
-        .order('is_highlighted', { ascending: false })
-        .order('start_date', { ascending: true })
-        .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1);
-      
-      // Filter by game
-      if (filters.game && filters.game !== 'all') {
-        query = query.eq('game', filters.game);
+    queryFn: async ({ pageParam }: { pageParam: number }) => {
+      // Fetch all tournaments (cached by React Query)
+      const all = await fetchAllTournaments();
+
+      // Apply all filters client-side
+      let filtered = all;
+
+      if (filters.game && (filters.game as string) !== 'all') {
+        filtered = filtered.filter(t => t.game === filters.game);
       }
-      
-      // Filter by search (title)
+
       if (filters.search && filters.search.trim()) {
-        query = query.ilike('title', `%${filters.search.trim()}%`);
+        const s = filters.search.toLowerCase().trim();
+        filtered = filtered.filter(t =>
+          t.title?.toLowerCase().includes(s)
+        );
       }
-      
-      // Filter by date range
+
       if (filters.dateFrom) {
-        query = query.gte('start_date', filters.dateFrom.toISOString());
+        filtered = filtered.filter(t =>
+          t.start_date && new Date(t.start_date) >= filters.dateFrom!
+        );
       }
+
       if (filters.dateTo) {
-        query = query.lte('start_date', filters.dateTo.toISOString());
+        filtered = filtered.filter(t =>
+          t.start_date && new Date(t.start_date) <= filters.dateTo!
+        );
       }
-      
-      // Filter by prize (we'll filter client-side since prize_description is text)
-      // For now, we'll just fetch and filter server-side when possible
-      
-      const { data, error, count } = await query;
-      if (error) throw error;
-      
-      // Client-side filtering for prize range (if needed)
-      let filteredData = data as Tournament[];
-      
-      // Parse prize from description for filtering (rough estimate)
-      if (filters.prizeMin !== undefined || filters.prizeMax !== undefined) {
-        filteredData = filteredData.filter(t => {
-          if (!t.prize_description) return filters.prizeMin === undefined || filters.prizeMin === 0;
-          
-          // Extract numbers from prize description
-          const numbers = t.prize_description.match(/[\d.,]+/g);
-          if (!numbers) return true;
-          
-          const prizeValue = parseFloat(numbers[0].replace('.', '').replace(',', '.'));
-          
-          if (filters.prizeMin !== undefined && prizeValue < filters.prizeMin) return false;
-          if (filters.prizeMax !== undefined && prizeValue > filters.prizeMax) return false;
-          return true;
-        });
-      }
-      
+
+      // Client-side pagination
+      const start = pageParam * PAGE_SIZE;
+      const page = filtered.slice(start, start + PAGE_SIZE);
+      const hasMore = start + PAGE_SIZE < filtered.length;
+
       return {
-        tournaments: filteredData,
-        totalCount: count || 0,
-        nextPage: (data?.length || 0) === PAGE_SIZE ? pageParam + 1 : undefined,
+        tournaments: page,
+        nextPage: hasMore ? pageParam + 1 : undefined,
+        totalCount: filtered.length,
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,

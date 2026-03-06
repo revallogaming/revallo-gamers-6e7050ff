@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -14,8 +16,9 @@ import { Button } from '@/components/ui/button';
 import { MiniTournament } from '@/types';
 import { Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { db } from '@/lib/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
@@ -26,7 +29,7 @@ interface Props {
 
 export function DeleteMiniTournamentDialog({ tournament, onSuccess, children }: Props) {
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   // Can only delete draft or pending_deposit tournaments
@@ -40,18 +43,13 @@ export function DeleteMiniTournamentDialog({ tournament, onSuccess, children }: 
 
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from('mini_tournaments')
-        .delete()
-        .eq('id', tournament.id);
-
-      if (error) throw error;
+      await deleteDoc(doc(db, 'mini_tournaments', tournament.id));
 
       toast.success('Torneio excluído com sucesso');
       queryClient.invalidateQueries({ queryKey: ['mini-tournaments'] });
       queryClient.invalidateQueries({ queryKey: ['my-mini-tournaments'] });
       onSuccess?.();
-      navigate('/meus-mini-torneios');
+      router.push('/fast-tournaments');
     } catch (error) {
       console.error('Error deleting tournament:', error);
       toast.error('Erro ao excluir torneio');

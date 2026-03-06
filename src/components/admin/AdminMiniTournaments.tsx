@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, documentId } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -18,9 +19,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { GAME_INFO, GameType } from "@/types";
-import { Database } from "@/integrations/supabase/types";
-
-type MiniTournamentStatus = Database["public"]["Enums"]["mini_tournament_status"];
+export type MiniTournamentStatus = 'draft' | 'pending_deposit' | 'open' | 'in_progress' | 'awaiting_result' | 'completed' | 'cancelled';
 
 interface MiniTournament {
   id: string;
@@ -57,21 +56,24 @@ export function AdminMiniTournaments() {
   const { data: tournaments = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-mini-tournaments'],
     queryFn: async (): Promise<MiniTournament[]> => {
-      const { data, error } = await supabase
-        .from('mini_tournaments')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const tournQuery = query(collection(db, 'mini_tournaments'), orderBy('created_at', 'desc'));
+      const tournSn = await getDocs(tournQuery);
+      const data = tournSn.docs.map(d => ({ id: d.id, ...d.data() })) as MiniTournament[];
 
       // Get organizer nicknames
-      const organizerIds = [...new Set(data?.map(t => t.organizer_id) || [])];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nickname')
-        .in('id', organizerIds);
+      const organizerIds = Array.from(new Set(data.map(t => t.organizer_id)));
+      
+      let profilesData: any[] = [];
+      if (organizerIds.length > 0) {
+        for (let i = 0; i < organizerIds.length; i += 10) {
+          const chunk = organizerIds.slice(i, i + 10);
+          const pQuery = query(collection(db, 'profiles'), where(documentId(), 'in', chunk));
+          const pSn = await getDocs(pQuery);
+          profilesData.push(...pSn.docs.map(d => ({ id: d.id, ...d.data() })));
+        }
+      }
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p.nickname]) || []);
+      const profileMap = new Map(profilesData.map(p => [p.id, p.nickname]));
 
       return (data || []).map(t => ({
         ...t,
@@ -83,12 +85,7 @@ export function AdminMiniTournaments() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: MiniTournamentStatus }) => {
-      const { error } = await supabase
-        .from('mini_tournaments')
-        .update({ status })
-        .eq('id', id);
-      
-      if (error) throw error;
+      await updateDoc(doc(db, 'mini_tournaments', id), { status });
     },
     onSuccess: () => {
       toast.success("Mini torneio atualizado");
@@ -102,8 +99,7 @@ export function AdminMiniTournaments() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('mini_tournaments').delete().eq('id', id);
-      if (error) throw error;
+      await deleteDoc(doc(db, 'mini_tournaments', id));
     },
     onSuccess: () => {
       toast.success("Mini torneio removido");
@@ -179,7 +175,7 @@ export function AdminMiniTournaments() {
                 ) : (
                   filteredTournaments.map((t) => {
                     const gameInfo = GAME_INFO[t.game];
-                    const statusInfo = MINI_STATUS_INFO[t.status];
+                    const statusInfo = MINI_STATUS_INFO[t.status as keyof typeof MINI_STATUS_INFO];
                     return (
                       <TableRow key={t.id}>
                         <TableCell className="font-medium">{t.title}</TableCell>

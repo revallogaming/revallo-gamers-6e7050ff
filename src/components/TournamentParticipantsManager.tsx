@@ -29,7 +29,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/lib/firebase";
 import { Link } from "react-router-dom";
 
 interface Props {
@@ -118,16 +118,19 @@ export function TournamentParticipantsManager({ tournamentId, tournamentTitle, i
 
     setSendingEmail(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-mass-email", {
-        body: {
+      const response = await fetch("/api/send-mass-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           emails,
           subject: emailSubject,
           message: emailMessage,
           tournamentTitle,
-        },
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Erro desconhecido");
 
       toast.success(`Email enviado para ${emails.length} participantes!`);
       setEmailDialogOpen(false);

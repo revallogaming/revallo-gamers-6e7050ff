@@ -1,7 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/lib/firebase';
+import { 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  orderBy, 
+  limit, 
+  doc, 
+  onSnapshot 
+} from 'firebase/firestore';
 import { useAuth } from './useAuth';
-import { useToast } from './use-toast';
+import { toast } from "sonner";
 import { CreditTransaction, PixPayment } from '@/types';
 
 interface CreatePaymentResponse {
@@ -12,63 +22,75 @@ interface CreatePaymentResponse {
 }
 
 export function useCredits() {
-  const { profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const createPixPayment = useMutation({
     mutationFn: async ({ amountBrl, creditsAmount }: { amountBrl: number; creditsAmount: number }) => {
-      const { data, error } = await supabase.functions.invoke<CreatePaymentResponse>('create-pix-payment', {
-        body: { amount_brl: amountBrl, credits_amount: creditsAmount },
+      if (!user) throw new Error('Usuário não autenticado');
+      
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/create-pix-payment', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ 
+            userId: user.uid,
+            amount_brl: amountBrl, 
+            credits_amount: creditsAmount 
+        }),
       });
       
-      if (error) throw error;
-      return data;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Erro ao criar pagamento');
+      return data as CreatePaymentResponse;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
     },
     onError: (error: Error) => {
-      toast({ title: 'Erro ao criar pagamento', description: error.message, variant: 'destructive' });
+      toast.error('Erro ao criar pagamento: ' + error.message);
     },
   });
 
   const transactions = useQuery({
-    queryKey: ['transactions', profile?.id],
+    queryKey: ['transactions', user?.uid],
     queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase
-        .from('credit_transactions')
-        .select('*')
-        .eq('user_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(50); // Limit to recent transactions
-      
-      if (error) throw error;
-      return data as CreditTransaction[];
+      if (!user?.uid) return [];
+      // Use only orderBy to avoid composite index; filter user client-side
+      const q = query(
+        collection(db, 'credit_transactions'),
+        orderBy('created_at', 'desc'),
+        limit(100)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }) as CreditTransaction)
+        .filter(t => t.user_id === user.uid)
+        .slice(0, 50);
     },
-    enabled: !!profile?.id,
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    enabled: !!user?.uid,
   });
 
   const payments = useQuery({
-    queryKey: ['payments', profile?.id],
+    queryKey: ['payments', user?.uid],
     queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase
-        .from('pix_payments')
-        .select('*')
-        .eq('user_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(20); // Limit to recent payments
-      
-      if (error) throw error;
-      return data as PixPayment[];
+      if (!user?.uid) return [];
+      // Use only orderBy to avoid composite index; filter user client-side
+      const q = query(
+        collection(db, 'pix_payments'),
+        orderBy('created_at', 'desc'),
+        limit(50)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }) as PixPayment)
+        .filter(p => p.user_id === user.uid)
+        .slice(0, 20);
     },
-    enabled: !!profile?.id,
-    staleTime: 1000 * 30, // 30 seconds - payments need fresher data
-    gcTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!user?.uid,
   });
 
   const spendCredits = useMutation({
@@ -78,58 +100,48 @@ export function useCredits() {
       description: string;
       referenceId?: string;
     }) => {
-      if (!profile) throw new Error('Usuário não encontrado');
+      if (!user) throw new Error('Usuário não encontrado');
 
-      // Use atomic RPC to prevent race conditions
-      const { data, error } = await supabase.rpc('spend_credits', {
-        p_user_id: profile.id,
-        p_amount: amount,
-        p_type: type,
-        p_description: description,
-        p_reference_id: referenceId || null
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/spend-credits', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+            userId: user.uid,
+            amount,
+            type,
+            description,
+            referenceId
+        })
       });
       
-      if (error) throw error;
-      if (!data) throw new Error('Créditos insuficientes');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Erro ao utilizar créditos');
+      return data;
     },
     onSuccess: () => {
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast({ title: 'Créditos utilizados!' });
+      toast.success('Créditos utilizados!');
     },
     onError: (error: Error) => {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      toast.error('Erro: ' + error.message);
     },
-  });
-
-  // Query credits from user_credits table
-  const creditsQuery = useQuery({
-    queryKey: ['user_credits', profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return 0;
-      const { data, error } = await supabase
-        .from('user_credits')
-        .select('balance')
-        .eq('user_id', profile.id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data?.balance ?? 0;
-    },
-    enabled: !!profile?.id,
-    staleTime: 1000 * 30, // 30 seconds
-    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 
   return {
-    credits: creditsQuery.data ?? profile?.credits ?? 0,
+    credits: profile?.credits ?? 0,
     createPixPayment,
     spendCredits,
-    transactions: transactions.data,
-    payments: payments.data,
+    transactions: transactions.data || [],
+    payments: payments.data || [],
     refreshProfile: () => {
       refreshProfile();
-      queryClient.invalidateQueries({ queryKey: ['user_credits'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.uid] });
+      queryClient.invalidateQueries({ queryKey: ['payments', user?.uid] });
     },
   };
 }

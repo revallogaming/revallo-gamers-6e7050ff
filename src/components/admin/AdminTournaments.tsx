@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, documentId } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -19,9 +20,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { GAME_INFO, STATUS_INFO, GameType } from "@/types";
-import { Database } from "@/integrations/supabase/types";
-
-type TournamentStatus = Database["public"]["Enums"]["tournament_status"];
+export type TournamentStatus = 'upcoming' | 'open' | 'in_progress' | 'completed' | 'cancelled';
 
 interface Tournament {
   id: string;
@@ -47,21 +46,24 @@ export function AdminTournaments() {
   const { data: tournaments = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-tournaments'],
     queryFn: async (): Promise<Tournament[]> => {
-      const { data, error } = await supabase
-        .from('tournaments')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const tournQuery = query(collection(db, 'tournaments'), orderBy('created_at', 'desc'));
+      const tournSn = await getDocs(tournQuery);
+      const data = tournSn.docs.map(d => ({ id: d.id, ...d.data() })) as Tournament[];
 
       // Get organizer nicknames
-      const organizerIds = [...new Set(data?.map(t => t.organizer_id) || [])];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nickname')
-        .in('id', organizerIds);
+      const organizerIds = Array.from(new Set(data.map(t => t.organizer_id)));
+      
+      let profilesData: any[] = [];
+      if (organizerIds.length > 0) {
+        for (let i = 0; i < organizerIds.length; i += 10) {
+          const chunk = organizerIds.slice(i, i + 10);
+          const pQuery = query(collection(db, 'profiles'), where(documentId(), 'in', chunk));
+          const pSn = await getDocs(pQuery);
+          profilesData.push(...pSn.docs.map(d => ({ id: d.id, ...d.data() })));
+        }
+      }
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p.nickname]) || []);
+      const profileMap = new Map(profilesData.map(p => [p.id, p.nickname]));
 
       return (data || []).map(t => ({
         ...t,
@@ -73,19 +75,14 @@ export function AdminTournaments() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, status, is_highlighted }: { id: string; status?: TournamentStatus; is_highlighted?: boolean }) => {
-      const updates: Record<string, unknown> = {};
+      const updates: Record<string, any> = {};
       if (status !== undefined) updates.status = status;
       if (is_highlighted !== undefined) {
         updates.is_highlighted = is_highlighted;
         updates.highlighted_until = is_highlighted ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
       }
       
-      const { error } = await supabase
-        .from('tournaments')
-        .update(updates)
-        .eq('id', id);
-      
-      if (error) throw error;
+      await updateDoc(doc(db, 'tournaments', id), updates);
     },
     onSuccess: () => {
       toast.success("Torneio atualizado");
@@ -99,8 +96,7 @@ export function AdminTournaments() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('tournaments').delete().eq('id', id);
-      if (error) throw error;
+      await deleteDoc(doc(db, 'tournaments', id));
     },
     onSuccess: () => {
       toast.success("Torneio removido");
@@ -193,7 +189,7 @@ export function AdminTournaments() {
                 ) : (
                   filteredTournaments.map((t) => {
                     const gameInfo = GAME_INFO[t.game];
-                    const statusInfo = STATUS_INFO[t.status];
+                    const statusInfo = STATUS_INFO[t.status as keyof typeof STATUS_INFO];
                     return (
                       <TableRow key={t.id} className={t.is_highlighted ? 'bg-primary/5' : ''}>
                         <TableCell>

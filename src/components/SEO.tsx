@@ -1,4 +1,6 @@
-import { Helmet } from "react-helmet-async";
+"use client";
+
+import { useEffect } from "react";
 
 interface SEOProps {
   title?: string;
@@ -33,7 +35,6 @@ export const SEO = ({
   const currentUrl = url || (typeof window !== "undefined" ? window.location.href : SITE_URL);
   const absoluteImage = image.startsWith("http") ? image : `${SITE_URL}${image}`;
 
-  // Default Organization structured data
   const defaultStructuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -41,72 +42,79 @@ export const SEO = ({
     "url": SITE_URL,
     "logo": `${SITE_URL}/favicon.svg`,
     "description": DEFAULT_DESCRIPTION,
-    "sameAs": [
-      "https://twitter.com/Revallo"
-    ]
+    "sameAs": ["https://twitter.com/Revallo"],
   };
 
-  // Handle array or single object structured data
-  const renderStructuredData = () => {
-    if (!structuredData) {
-      return (
-        <script type="application/ld+json">
-          {JSON.stringify(defaultStructuredData)}
-        </script>
-      );
-    }
+  const sdToEmit = structuredData
+    ? Array.isArray(structuredData)
+      ? structuredData
+      : [structuredData]
+    : [defaultStructuredData];
 
-    if (Array.isArray(structuredData)) {
-      return structuredData.map((data, index) => (
-        <script key={index} type="application/ld+json">
-          {JSON.stringify(data)}
-        </script>
-      ));
-    }
+  useEffect(() => {
+    // Title
+    document.title = fullTitle;
 
-    return (
-      <script type="application/ld+json">
-        {JSON.stringify(structuredData)}
-      </script>
-    );
-  };
+    const setMeta = (attr: string, key: string, value: string) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", value);
+    };
 
-  return (
-    <Helmet>
-      {/* Primary Meta Tags */}
-      <title>{fullTitle}</title>
-      <meta name="title" content={fullTitle} />
-      <meta name="description" content={description} />
-      <meta name="keywords" content={keywords} />
-      <meta name="author" content="Revallo" />
-      <meta name="robots" content={noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"} />
-      <meta name="googlebot" content={noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"} />
-      <link rel="canonical" href={currentUrl} />
+    const setLink = (rel: string, href: string) => {
+      let el = document.querySelector(`link[rel="${rel}"]`);
+      if (!el) {
+        el = document.createElement("link");
+        el.setAttribute("rel", rel);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("href", href);
+    };
 
-      {/* Open Graph / Facebook */}
-      <meta property="og:type" content={type} />
-      <meta property="og:site_name" content={SITE_NAME} />
-      <meta property="og:url" content={currentUrl} />
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
-      <meta property="og:image" content={absoluteImage} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-      <meta property="og:locale" content="pt_BR" />
+    // Primary
+    setMeta("name", "title", fullTitle);
+    setMeta("name", "description", description);
+    setMeta("name", "keywords", keywords);
+    setMeta("name", "author", "Revallo");
+    setMeta("name", "robots", noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large");
+    setLink("canonical", currentUrl);
 
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:site" content={TWITTER_HANDLE} />
-      <meta name="twitter:creator" content={TWITTER_HANDLE} />
-      <meta name="twitter:url" content={currentUrl} />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={absoluteImage} />
+    // OG
+    setMeta("property", "og:type", type);
+    setMeta("property", "og:site_name", SITE_NAME);
+    setMeta("property", "og:url", currentUrl);
+    setMeta("property", "og:title", fullTitle);
+    setMeta("property", "og:description", description);
+    setMeta("property", "og:image", absoluteImage);
+    setMeta("property", "og:locale", "pt_BR");
 
-      {/* Structured Data */}
-      {renderStructuredData()}
-    </Helmet>
-  );
+    // Twitter
+    setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:site", TWITTER_HANDLE);
+    setMeta("name", "twitter:creator", TWITTER_HANDLE);
+    setMeta("name", "twitter:url", currentUrl);
+    setMeta("name", "twitter:title", fullTitle);
+    setMeta("name", "twitter:description", description);
+    setMeta("name", "twitter:image", absoluteImage);
+
+    // Structured Data
+    const existingScripts = document.querySelectorAll('script[data-seo="revallo"]');
+    existingScripts.forEach((s) => s.remove());
+
+    sdToEmit.forEach((sd) => {
+      const script = document.createElement("script");
+      script.type = "application/ld+json";
+      script.setAttribute("data-seo", "revallo");
+      script.textContent = JSON.stringify(sd);
+      document.head.appendChild(script);
+    });
+  }, [fullTitle, description, keywords, absoluteImage, currentUrl, type, noIndex]);
+
+  return null;
 };
 
 // WebSite structured data for home page
@@ -121,18 +129,18 @@ export const getWebsiteStructuredData = () => ({
     "@type": "SearchAction",
     "target": {
       "@type": "EntryPoint",
-      "urlTemplate": typeof window !== "undefined" ? `${window.location.origin}/tournaments?search={search_term_string}` : ""
+      "urlTemplate": typeof window !== "undefined" ? `${window.location.origin}/tournaments?search={search_term_string}` : "",
     },
-    "query-input": "required name=search_term_string"
+    "query-input": "required name=search_term_string",
   },
   "publisher": {
     "@type": "Organization",
     "name": "Revallo",
     "logo": {
       "@type": "ImageObject",
-      "url": typeof window !== "undefined" ? `${window.location.origin}/favicon.svg` : ""
-    }
-  }
+      "url": typeof window !== "undefined" ? `${window.location.origin}/favicon.svg` : "",
+    },
+  },
 });
 
 // Tournament Event structured data
@@ -159,25 +167,25 @@ export const getTournamentStructuredData = (tournament: {
   "eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode",
   "location": {
     "@type": "VirtualLocation",
-    "url": typeof window !== "undefined" ? `${window.location.origin}/tournament/${tournament.id}` : ""
+    "url": typeof window !== "undefined" ? `${window.location.origin}/tournament/${tournament.id}` : "",
   },
   "image": tournament.banner_url || "/og-image.png",
   "organizer": {
     "@type": "Organization",
     "name": "Revallo",
-    "url": typeof window !== "undefined" ? window.location.origin : ""
+    "url": typeof window !== "undefined" ? window.location.origin : "",
   },
   "offers": {
     "@type": "Offer",
     "price": tournament.entry_fee,
     "priceCurrency": "BRL",
-    "availability": tournament.current_participants < tournament.max_participants 
-      ? "https://schema.org/InStock" 
+    "availability": tournament.current_participants < tournament.max_participants
+      ? "https://schema.org/InStock"
       : "https://schema.org/SoldOut",
-    "validFrom": new Date().toISOString()
+    "validFrom": new Date().toISOString(),
   },
   "maximumAttendeeCapacity": tournament.max_participants,
-  "remainingAttendeeCapacity": tournament.max_participants - tournament.current_participants
+  "remainingAttendeeCapacity": tournament.max_participants - tournament.current_participants,
 });
 
 // Profile/Person structured data
@@ -192,21 +200,21 @@ export const getProfileStructuredData = (profile: {
   "name": profile.nickname,
   "description": profile.bio || `Jogador na plataforma Revallo`,
   "image": profile.avatar_url || "/og-image.png",
-  "url": typeof window !== "undefined" ? `${window.location.origin}/profile/${profile.id}` : ""
+  "url": typeof window !== "undefined" ? `${window.location.origin}/profile/${profile.id}` : "",
 });
 
 // FAQ structured data
 export const getFAQStructuredData = (faqs: { question: string; answer: string }[]) => ({
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  "mainEntity": faqs.map(faq => ({
+  "mainEntity": faqs.map((faq) => ({
     "@type": "Question",
     "name": faq.question,
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": faq.answer
-    }
-  }))
+      "text": faq.answer,
+    },
+  })),
 });
 
 // BreadcrumbList structured data
@@ -217,32 +225,32 @@ export const getBreadcrumbStructuredData = (items: { name: string; url: string }
     "@type": "ListItem",
     "position": index + 1,
     "name": item.name,
-    "item": item.url
-  }))
+    "item": item.url,
+  })),
 });
 
-// Default FAQs for home page - helps with rich snippets
+// Default FAQs for home page
 export const getDefaultFAQs = () => [
   {
     question: "O que é a Revallo?",
-    answer: "A Revallo é uma plataforma brasileira de torneios de eSports onde você pode participar de campeonatos de Free Fire, Valorant e Blood Strike."
+    answer: "A Revallo é uma plataforma brasileira de torneios de eSports onde você pode participar de campeonatos de Free Fire, Valorant e Blood Strike.",
   },
   {
     question: "Como me inscrever em um torneio?",
-    answer: "Basta criar uma conta gratuita na Revallo, escolher o torneio desejado e clicar em 'Inscrever-se'. Alguns torneios podem exigir taxa de inscrição ou ter requisitos específicos."
+    answer: "Basta criar uma conta gratuita na Revallo, escolher o torneio desejado e clicar em 'Inscrever-se'. Alguns torneios podem exigir taxa de inscrição ou ter requisitos específicos.",
   },
   {
     question: "Posso criar meu próprio torneio?",
-    answer: "Sim! Qualquer usuário pode se tornar organizador e criar torneios na Revallo. Acesse a área de Organizadores para começar a criar seus campeonatos."
+    answer: "Sim! Qualquer usuário pode se tornar organizador e criar torneios na Revallo. Acesse a área de Organizadores para começar a criar seus campeonatos.",
   },
   {
     question: "A Revallo é gratuita?",
-    answer: "Sim, criar conta e participar de muitos torneios é totalmente gratuito. Alguns torneios podem ter taxa de inscrição definida pelo organizador."
+    answer: "Sim, criar conta e participar de muitos torneios é totalmente gratuito. Alguns torneios podem ter taxa de inscrição definida pelo organizador.",
   },
   {
     question: "Quais jogos estão disponíveis na Revallo?",
-    answer: "Atualmente oferecemos torneios de Free Fire, Valorant e Blood Strike. Novos jogos são adicionados regularmente."
-  }
+    answer: "Atualmente oferecemos torneios de Free Fire, Valorant e Blood Strike. Novos jogos são adicionados regularmente.",
+  },
 ];
 
 // Combined structured data for pages with multiple schema types

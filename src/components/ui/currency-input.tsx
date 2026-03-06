@@ -62,7 +62,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     return (
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent font-bold pointer-events-none">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold pointer-events-none">
           {currencySymbol}
         </span>
         <input

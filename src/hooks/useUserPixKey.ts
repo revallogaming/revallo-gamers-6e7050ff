@@ -1,5 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/lib/firebase';
+import { 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  doc, 
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+  limit
+} from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { UserPixKey, PixKeyType } from '@/types';
 import { toast } from 'sonner';
@@ -9,18 +20,21 @@ export function useUserPixKey() {
   const queryClient = useQueryClient();
 
   const { data: pixKey, isLoading, error } = useQuery({
-    queryKey: ['user-pix-key', user?.id],
+    queryKey: ['user-pix-key', user?.uid],
     queryFn: async () => {
       if (!user) return null;
       
-      const { data, error } = await supabase
-        .from('user_pix_keys')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const q = query(
+        collection(db, 'user_pix_keys'),
+        where('user_id', '==', user.uid),
+        limit(1)
+      );
+      
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return null;
 
-      if (error) throw error;
-      return data as UserPixKey | null;
+      const docSnap = snapshot.docs[0];
+      return { id: docSnap.id, ...docSnap.data() } as UserPixKey;
     },
     enabled: !!user,
   });
@@ -29,33 +43,29 @@ export function useUserPixKey() {
     mutationFn: async ({ pixKeyType, pixKey: keyValue }: { pixKeyType: PixKeyType; pixKey: string }) => {
       if (!user) throw new Error('Não autenticado');
 
-      const existingKey = await supabase
-        .from('user_pix_keys')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const q = query(
+        collection(db, 'user_pix_keys'),
+        where('user_id', '==', user.uid),
+        limit(1)
+      );
+      
+      const snapshot = await getDocs(q);
 
-      if (existingKey.data) {
-        const { error } = await supabase
-          .from('user_pix_keys')
-          .update({ 
-            pix_key_type: pixKeyType, 
-            pix_key: keyValue,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-
-        if (error) throw error;
+      if (!snapshot.empty) {
+        const docRef = doc(db, 'user_pix_keys', snapshot.docs[0].id);
+        await updateDoc(docRef, {
+          pix_key_type: pixKeyType, 
+          pix_key: keyValue,
+          updated_at: new Date().toISOString()
+        });
       } else {
-        const { error } = await supabase
-          .from('user_pix_keys')
-          .insert({ 
-            user_id: user.id,
-            pix_key_type: pixKeyType, 
-            pix_key: keyValue 
-          });
-
-        if (error) throw error;
+        await setDoc(doc(db, 'user_pix_keys', user.uid), { 
+          user_id: user.uid,
+          pix_key_type: pixKeyType, 
+          pix_key: keyValue,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
       }
     },
     onSuccess: () => {

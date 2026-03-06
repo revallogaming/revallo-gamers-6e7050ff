@@ -1,7 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/lib/firebase';
+import { 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  getDocs, 
+  getDoc, 
+  doc, 
+  addDoc,
+  updateDoc
+} from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
-import { MiniTournament, MiniTournamentStatus, GameType, MiniTournamentFormat, PrizeDistributionConfig } from '@/types';
+import { MiniTournament, MiniTournamentStatus, GameType, MiniTournamentFormat, PrizeDistributionConfig, Profile } from '@/types';
 import { toast } from 'sonner';
 
 interface CreateMiniTournamentData {
@@ -25,38 +36,44 @@ export function useMiniTournaments(filters?: { status?: MiniTournamentStatus; ga
   const { data: tournaments, isLoading, error } = useQuery({
     queryKey: ['mini-tournaments', filters],
     queryFn: async () => {
-      let query = supabase
-        .from('mini_tournaments')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let q = query(
+        collection(db, 'mini_tournaments'),
+        orderBy('created_at', 'desc')
+      );
 
       if (filters?.status) {
-        query = query.eq('status', filters.status);
+        q = query(q, where('status', '==', filters.status));
       }
 
       if (filters?.game) {
-        query = query.eq('game', filters.game);
+        q = query(q, where('game', '==', filters.game));
       }
 
-      const { data, error } = await query;
+      const snapshot = await getDocs(q);
+      
+      const results = await Promise.all(
+        snapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          let organizer: Profile | undefined = undefined;
+          
+          if (data.organizer_id) {
+            const orgDoc = await getDoc(doc(db, 'profiles', data.organizer_id));
+            if (orgDoc.exists()) {
+              organizer = { id: orgDoc.id, ...orgDoc.data() } as Profile;
+            }
+          }
 
-      if (error) throw error;
+          return {
+            id: docSnap.id,
+            ...data,
+            prize_pool_brl: Number(data.prize_pool_brl),
+            prize_distribution: data.prize_distribution as PrizeDistributionConfig[],
+            organizer,
+          } as MiniTournament;
+        })
+      );
 
-      // Fetch organizers separately
-      const organizerIds = [...new Set(data.map(t => t.organizer_id))];
-      const { data: organizers } = await supabase
-        .from('profiles')
-        .select('id, nickname, avatar_url, is_highlighted')
-        .in('id', organizerIds);
-
-      const organizerMap = new Map(organizers?.map(o => [o.id, o]) || []);
-
-      return data.map(t => ({
-        ...t,
-        prize_pool_brl: Number(t.prize_pool_brl),
-        prize_distribution: t.prize_distribution as unknown as PrizeDistributionConfig[],
-        organizer: organizerMap.get(t.organizer_id),
-      })) as MiniTournament[];
+      return results;
     },
   });
 
@@ -64,8 +81,8 @@ export function useMiniTournaments(filters?: { status?: MiniTournamentStatus; ga
     mutationFn: async (data: CreateMiniTournamentData) => {
       if (!user) throw new Error('Não autenticado');
 
-      const insertData = {
-        organizer_id: user.id,
+      const docRef = await addDoc(collection(db, 'mini_tournaments'), {
+        organizer_id: user.uid,
         title: data.title,
         description: data.description || null,
         game: data.game,
@@ -73,21 +90,19 @@ export function useMiniTournaments(filters?: { status?: MiniTournamentStatus; ga
         max_participants: data.max_participants,
         entry_fee_credits: data.entry_fee_credits,
         prize_pool_brl: data.prize_pool_brl,
-        prize_distribution: JSON.stringify(data.prize_distribution),
+        prize_distribution: data.prize_distribution,
         rules: data.rules || null,
         start_date: data.start_date,
         registration_deadline: data.registration_deadline,
-        status: 'draft' as const,
-      };
+        status: 'draft',
+        current_participants: 0,
+        deposit_confirmed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-      const { data: tournament, error } = await supabase
-        .from('mini_tournaments')
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return tournament;
+      const newDoc = await getDoc(docRef);
+      return { id: docRef.id, ...newDoc.data() };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mini-tournaments'] });
@@ -101,15 +116,12 @@ export function useMiniTournaments(filters?: { status?: MiniTournamentStatus; ga
 
   const updateTournament = useMutation({
     mutationFn: async ({ id, status }: { id: string; status?: MiniTournamentStatus }) => {
-      const updateData: Record<string, unknown> = {};
+      const updateData: Record<string, any> = {
+        updated_at: new Date().toISOString()
+      };
       if (status) updateData.status = status;
 
-      const { error } = await supabase
-        .from('mini_tournaments')
-        .update(updateData)
-        .eq('id', id);
-
-      if (error) throw error;
+      await updateDoc(doc(db, 'mini_tournaments', id), updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mini-tournaments'] });
@@ -129,25 +141,24 @@ export function useMiniTournament(id: string) {
   const { data: tournament, isLoading, error, refetch } = useQuery({
     queryKey: ['mini-tournament', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('mini_tournaments')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      // Fetch organizer
-      const { data: organizer } = await supabase
-        .from('profiles')
-        .select('id, nickname, avatar_url, is_highlighted')
-        .eq('id', data.organizer_id)
-        .single();
+      const docSnap = await getDoc(doc(db, 'mini_tournaments', id));
+      if (!docSnap.exists()) throw new Error('Torneio não encontrado');
+      
+      const data = docSnap.data();
+      let organizer: Profile | undefined = undefined;
+      
+      if (data.organizer_id) {
+        const orgDoc = await getDoc(doc(db, 'profiles', data.organizer_id));
+        if (orgDoc.exists()) {
+          organizer = { id: orgDoc.id, ...orgDoc.data() } as Profile;
+        }
+      }
 
       return {
+        id: docSnap.id,
         ...data,
         prize_pool_brl: Number(data.prize_pool_brl),
-        prize_distribution: data.prize_distribution as unknown as PrizeDistributionConfig[],
+        prize_distribution: data.prize_distribution as PrizeDistributionConfig[],
         organizer,
       } as MiniTournament;
     },
@@ -161,23 +172,27 @@ export function useMyMiniTournaments() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['my-mini-tournaments', user?.id],
+    queryKey: ['my-mini-tournaments', user?.uid],
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('mini_tournaments')
-        .select('*')
-        .eq('organizer_id', user.id)
-        .order('created_at', { ascending: false });
+      const q = query(
+        collection(db, 'mini_tournaments'),
+        where('organizer_id', '==', user.uid),
+        orderBy('created_at', 'desc')
+      );
 
-      if (error) throw error;
+      const snapshot = await getDocs(q);
       
-      return data.map(t => ({
-        ...t,
-        prize_pool_brl: Number(t.prize_pool_brl),
-        prize_distribution: t.prize_distribution as unknown as PrizeDistributionConfig[],
-      })) as MiniTournament[];
+      return snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          prize_pool_brl: Number(data.prize_pool_brl),
+          prize_distribution: data.prize_distribution as PrizeDistributionConfig[],
+        } as MiniTournament;
+      });
     },
     enabled: !!user,
   });

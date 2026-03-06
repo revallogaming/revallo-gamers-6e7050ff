@@ -1,5 +1,7 @@
+'use client';
+
 import { memo, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { format, formatDistanceToNow, differenceInHours, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, Users, Star, Trophy, Clock, Flame } from 'lucide-react';
@@ -13,7 +15,7 @@ interface TournamentCardProps {
 }
 
 export const TournamentCard = memo(function TournamentCard({ tournament }: TournamentCardProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const gameInfo = GAME_INFO[tournament.game];
   const statusInfo = STATUS_INFO[tournament.status];
   
@@ -42,11 +44,11 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
 
   const handleClick = useCallback(() => {
     if (canJoin) {
-      navigate(`/tournament/${tournament.id}?join=true`);
+      router.push(`/tournaments/${tournament.id}?join=true`);
     } else {
-      navigate(`/tournament/${tournament.id}`);
+      router.push(`/tournaments/${tournament.id}`);
     }
-  }, [canJoin, navigate, tournament.id]);
+  }, [canJoin, router, tournament.id]);
 
   return (
     <Card 

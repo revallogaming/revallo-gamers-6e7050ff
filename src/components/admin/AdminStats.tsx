@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Trophy, Coins, Gamepad2, TrendingUp, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,33 +21,33 @@ export function AdminStats() {
     queryKey: ['admin-stats'],
     queryFn: async (): Promise<Stats> => {
       const [
-        profilesRes,
-        tournamentsRes,
-        miniTournamentsRes,
-        creditsRes,
-        transactionsRes
+        profilesSn,
+        tournamentsSn,
+        miniTournamentsSn,
+        creditsSn,
+        transactionsSn
       ] = await Promise.all([
-        supabase.from('profiles').select('id, is_banned'),
-        supabase.from('tournaments').select('id, status'),
-        supabase.from('mini_tournaments').select('id, status'),
-        supabase.from('user_credits').select('balance'),
-        supabase.from('credit_transactions').select('id', { count: 'exact', head: true })
+        getDocs(collection(db, 'profiles')),
+        getDocs(collection(db, 'tournaments')),
+        getDocs(collection(db, 'mini_tournaments')),
+        getDocs(collection(db, 'user_credits')),
+        getDocs(collection(db, 'credit_transactions')),
       ]);
 
-      const profiles = profilesRes.data || [];
-      const tournaments = tournamentsRes.data || [];
-      const miniTournaments = miniTournamentsRes.data || [];
-      const credits = creditsRes.data || [];
+      const profiles = profilesSn.docs.map(d => d.data());
+      const tournaments = tournamentsSn.docs.map(d => d.data());
+      const miniTournaments = miniTournamentsSn.docs.map(d => d.data());
+      const credits = creditsSn.docs.map(d => d.data());
 
       return {
         totalUsers: profiles.length,
         bannedUsers: profiles.filter(p => p.is_banned).length,
         totalTournaments: tournaments.length,
-        activeTournaments: tournaments.filter(t => ['open', 'in_progress'].includes(t.status)).length,
+        activeTournaments: tournaments.filter(t => ['open', 'in_progress'].includes(t.status as string)).length,
         totalMiniTournaments: miniTournaments.length,
-        activeMiniTournaments: miniTournaments.filter(t => ['open', 'in_progress', 'awaiting_result'].includes(t.status)).length,
+        activeMiniTournaments: miniTournaments.filter(t => ['open', 'in_progress', 'awaiting_result'].includes(t.status as string)).length,
         totalCreditsInCirculation: credits.reduce((sum, c) => sum + (c.balance || 0), 0),
-        totalTransactions: transactionsRes.count || 0
+        totalTransactions: transactionsSn.size || 0
       };
     }
   });

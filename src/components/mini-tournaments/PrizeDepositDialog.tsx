@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { MiniTournament } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { auth } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { Loader2, QrCode } from 'lucide-react';
 
@@ -26,16 +26,16 @@ export function PrizeDepositDialog({ tournament, onSuccess, children }: Props) {
 
     setIsLoading(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.access_token) throw new Error('Não autenticado');
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Não autenticado');
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-prize-deposit`,
+        `/api/create-prize-deposit`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.session.access_token}`,
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
             tournament_id: tournament.id,

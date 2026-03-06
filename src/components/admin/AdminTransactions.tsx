@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, orderBy, limit, documentId, where } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -28,24 +29,33 @@ export function AdminTransactions() {
   const { data: transactions = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-transactions'],
     queryFn: async (): Promise<Transaction[]> => {
-      const { data: transactionsData, error: transactionsError } = await supabase
-        .from('credit_transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200);
-
-      if (transactionsError) throw transactionsError;
+      const transactionsQuery = query(
+        collection(db, 'credit_transactions'),
+        orderBy('created_at', 'desc'),
+        limit(200)
+      );
+      const transactionsSn = await getDocs(transactionsQuery);
+      const transactionsData = transactionsSn.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Transaction[];
 
       // Get unique user IDs
-      const userIds = [...new Set(transactionsData?.map(t => t.user_id) || [])];
+      const userIds = Array.from(new Set(transactionsData.map(t => t.user_id))).filter(Boolean);
       
       // Fetch profiles
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nickname')
-        .in('id', userIds);
+      let profilesData: any[] = [];
+      if (userIds.length > 0) {
+        // split into chunks of 10 for 'in' query
+        for (let i = 0; i < userIds.length; i += 10) {
+          const chunk = userIds.slice(i, i + 10);
+          const profilesQuery = query(collection(db, 'profiles'), where(documentId(), 'in', chunk));
+          const pSn = await getDocs(profilesQuery);
+          profilesData.push(...pSn.docs.map(d => ({ id: d.id, ...d.data() })));
+        }
+      }
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p.nickname]) || []);
+      const profileMap = new Map(profilesData.map(p => [p.id, p.nickname]));
 
       return (transactionsData || []).map(t => ({
         ...t,

@@ -11,7 +11,8 @@ import { CurrencyInput } from '@/components/ui/currency-input';
 import { MiniTournament, PrizeDistributionConfig } from '@/types';
 import { Loader2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useQueryClient } from '@tanstack/react-query';
 
 const editSchema = z.object({
@@ -79,7 +80,7 @@ export function EditMiniTournamentDialog({ tournament, onSuccess, children }: Pr
 
     setIsLoading(true);
     try {
-      const updateData: Record<string, unknown> = {
+      const updateData: Record<string, any> = {
         title: data.title,
         description: data.description || null,
         rules: data.rules || null,
@@ -91,12 +92,8 @@ export function EditMiniTournamentDialog({ tournament, onSuccess, children }: Pr
         updateData.prize_distribution = JSON.stringify(prizeDistribution);
       }
 
-      const { error } = await supabase
-        .from('mini_tournaments')
-        .update(updateData)
-        .eq('id', tournament.id);
-
-      if (error) throw error;
+      const tournamentRef = doc(db, 'mini_tournaments', tournament.id);
+      await updateDoc(tournamentRef, updateData);
 
       toast.success('Torneio atualizado!');
       queryClient.invalidateQueries({ queryKey: ['mini-tournament', tournament.id] });

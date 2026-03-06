@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, documentId } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -84,50 +85,45 @@ export function AdminReports() {
   const { data: reports = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-reports"],
     queryFn: async (): Promise<Report[]> => {
-      const { data: reportsData, error } = await supabase
-        .from("reports")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const reportsQuery = query(collection(db, 'reports'), orderBy('created_at', 'desc'));
+      const reportsSn = await getDocs(reportsQuery);
+      const reportsData = reportsSn.docs.map(d => ({ id: d.id, ...d.data() })) as Report[];
 
-      if (error) throw error;
+      // Helper function to fetch chunks safely
+      const fetchInChunks = async (collectionName: string, ids: string[]) => {
+        let results: any[] = [];
+        if (ids.length > 0) {
+          for (let i = 0; i < ids.length; i += 10) {
+            const chunk = ids.slice(i, i + 10);
+            const q = query(collection(db, collectionName), where(documentId(), 'in', chunk));
+            const sn = await getDocs(q);
+            results.push(...sn.docs.map(d => ({ id: d.id, ...d.data() })));
+          }
+        }
+        return results;
+      };
 
       // Get reporter nicknames
-      const reporterIds = [...new Set(reportsData?.map((r) => r.reporter_id) || [])];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, nickname")
-        .in("id", reporterIds);
-
-      const profileMap = new Map(profiles?.map((p) => [p.id, p.nickname]) || []);
+      const reporterIds = Array.from(new Set(reportsData.map((r) => r.reporter_id)));
+      const profiles = await fetchInChunks("profiles", reporterIds);
+      const profileMap = new Map(profiles.map((p) => [p.id, p.nickname]));
 
       // Get target names based on type
-      const tournamentIds = reportsData?.filter((r) => r.report_type === "tournament").map((r) => r.target_id) || [];
-      const miniTournamentIds = reportsData?.filter((r) => r.report_type === "mini_tournament").map((r) => r.target_id) || [];
-      const userIds = reportsData?.filter((r) => r.report_type === "user").map((r) => r.target_id) || [];
+      const tournamentIds = Array.from(new Set(reportsData.filter((r) => r.report_type === "tournament").map((r) => r.target_id)));
+      const miniTournamentIds = Array.from(new Set(reportsData.filter((r) => r.report_type === "mini_tournament").map((r) => r.target_id)));
+      const userIds = Array.from(new Set(reportsData.filter((r) => r.report_type === "user").map((r) => r.target_id)));
 
       const [tournamentsRes, miniTournamentsRes, usersRes] = await Promise.all([
-        tournamentIds.length > 0
-          ? supabase.from("tournaments").select("id, title").in("id", tournamentIds)
-          : { data: [] as { id: string; title: string }[] },
-        miniTournamentIds.length > 0
-          ? supabase.from("mini_tournaments").select("id, title").in("id", miniTournamentIds)
-          : { data: [] as { id: string; title: string }[] },
-        userIds.length > 0
-          ? supabase.from("profiles").select("id, nickname").in("id", userIds)
-          : { data: [] as { id: string; nickname: string }[] },
+        fetchInChunks("tournaments", tournamentIds),
+        fetchInChunks("mini_tournaments", miniTournamentIds),
+        fetchInChunks("profiles", userIds),
       ]);
 
-      const tournamentMap = new Map<string, string>(
-        (tournamentsRes.data || []).map((t) => [t.id, t.title])
-      );
-      const miniTournamentMap = new Map<string, string>(
-        (miniTournamentsRes.data || []).map((t) => [t.id, t.title])
-      );
-      const userMap = new Map<string, string>(
-        (usersRes.data || []).map((u) => [u.id, u.nickname])
-      );
+      const tournamentMap = new Map<string, string>(tournamentsRes.map((t) => [t.id, t.title]));
+      const miniTournamentMap = new Map<string, string>(miniTournamentsRes.map((t) => [t.id, t.title]));
+      const userMap = new Map<string, string>(usersRes.map((u) => [u.id, u.nickname]));
 
-      return (reportsData || []).map((r) => {
+      return reportsData.map((r) => {
         let targetName = "Desconhecido";
         if (r.report_type === "tournament") {
           targetName = tournamentMap.get(r.target_id) || "Torneio removido";
@@ -148,17 +144,12 @@ export function AdminReports() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, status, notes }: { id: string; status: string; notes: string }) => {
-      const { error } = await supabase
-        .from("reports")
-        .update({
+      await updateDoc(doc(db, "reports", id), {
           status,
           admin_notes: notes || null,
-          reviewed_by: user?.id,
+          reviewed_by: user?.uid, // Firebase Auth user.uid
           reviewed_at: new Date().toISOString(),
-        })
-        .eq("id", id);
-
-      if (error) throw error;
+        });
     },
     onSuccess: () => {
       toast.success("Denúncia atualizada");
@@ -172,8 +163,7 @@ export function AdminReports() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("reports").delete().eq("id", id);
-      if (error) throw error;
+      await deleteDoc(doc(db, "reports", id));
     },
     onSuccess: () => {
       toast.success("Denúncia removida");

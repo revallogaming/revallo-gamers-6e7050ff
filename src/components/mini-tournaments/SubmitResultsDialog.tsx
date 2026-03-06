@@ -1,7 +1,8 @@
+'use client';
+
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { db, auth } from '@/lib/firebase';
 import { MiniTournament, MiniTournamentParticipant } from '@/types';
 import {
   Dialog,
@@ -40,15 +41,15 @@ export function SubmitResultsDialog({
   const [open, setOpen] = useState(false);
   const [placements, setPlacements] = useState<Record<string, number>>({});
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  // useNavigate removed — no navigation needed after submit
 
   // Get the number of prize places from the distribution
   const prizePositions = tournament.prize_distribution.length;
 
   const submitResults = useMutation({
     mutationFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.access_token) throw new Error('Não autenticado');
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Não autenticado');
 
       // Build results array
       const results: PlacementResult[] = [];
@@ -74,12 +75,12 @@ export function SubmitResultsDialog({
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/distribute-prizes`,
+        `/api/distribute-prizes`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.session.access_token}`,
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
             tournament_id: tournament.id,

@@ -1,0 +1,91 @@
+import { VercelRequest, VercelResponse } from "@vercel/node";
+import { adminDb } from "../src/lib/firebaseAdmin";
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method Not Allowed" });
+  }
+
+  const { tournament_id, user_id } = req.body;
+
+  if (!tournament_id || !user_id) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    await adminDb.runTransaction(async (transaction) => {
+      const tournamentRef = adminDb
+        .collection("mini_tournaments")
+        .doc(tournament_id);
+      const userCreditsRef = adminDb.collection("user_credits").doc(user_id);
+      const participantRef = adminDb
+        .collection("mini_tournament_participants")
+        .doc(`${tournament_id}_${user_id}`);
+
+      const [tournamentDoc, userCreditsDoc, participantDoc] = await Promise.all(
+        [
+          transaction.get(tournamentRef),
+          transaction.get(userCreditsRef),
+          transaction.get(participantRef),
+        ],
+      );
+
+      if (!tournamentDoc.exists) throw new Error("Torneio não encontrado");
+      if (!userCreditsDoc.exists)
+        throw new Error("Usuário não possui conta de créditos");
+      if (participantDoc.exists)
+        throw new Error("Você já está participando deste torneio");
+
+      const tournament = tournamentDoc.data()!;
+      if (tournament.status !== "published")
+        throw new Error("Torneio não está com inscrições abertas");
+
+      const currentParticipants = tournament.current_participants || 0;
+      if (currentParticipants >= tournament.max_participants) {
+        throw new Error("Torneio lotado");
+      }
+
+      const entryFee = tournament.entry_fee_credits || 0;
+      const userBalance = userCreditsDoc.data()?.balance || 0;
+
+      if (userBalance < entryFee) {
+        throw new Error("Saldo de créditos insuficiente");
+      }
+
+      // Deduct credits
+      transaction.update(userCreditsRef, {
+        balance: userBalance - entryFee,
+        updated_at: new Date().toISOString(),
+      });
+
+      // Add participant
+      transaction.set(participantRef, {
+        tournament_id,
+        player_id: user_id,
+        registered_at: new Date().toISOString(),
+        status: "confirmed",
+      });
+
+      // Update participant count
+      transaction.update(tournamentRef, {
+        current_participants: currentParticipants + 1,
+      });
+
+      // Record transaction
+      const transactionRef = adminDb.collection("credit_transactions").doc();
+      transaction.set(transactionRef, {
+        user_id,
+        amount: entryFee,
+        type: "entry_fee",
+        description: `Inscrição no mini torneio: ${tournament.title}`,
+        reference_id: tournament_id,
+        created_at: new Date().toISOString(),
+      });
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    console.error("Error joining mini tournament:", error);
+    return res.status(400).json({ error: error.message });
+  }
+}
