@@ -43,6 +43,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    console.log(`Starting prize distribution for tournament ${tournament_id} by user ${userId}`);
+
     const results = [];
 
     for (const winner of winners) {
@@ -78,39 +80,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         continue;
       }
 
-      const participant = participantSnap.docs[0].data();
-      const pixKey = participant.pix_key;
-      const pixType = participant.pix_key_type;
+      const participantData = participantSnap.docs[0].data();
+      const pixKey = participantData.pix_key;
+      const pixType = participantData.pix_key_type;
 
       if (!pixKey || !pixType) {
-        results.push({ player_id: winner.player_id, status: "failed", error: "Chave PIX não registrada" });
+        results.push({ player_id: winner.player_id, status: "failed", error: "Chave PIX não registrada (Capitão precisa cadastrar)" });
         continue;
       }
 
       // ── Mercado Pago Payout ────────────────────────────────────────────────
       try {
+        console.log(`Processing payout for player ${winner.player_id}: R$ ${winner.amount}`);
         // NOTE: Real MP disbursement API call would go here.
-        // Uncomment and configure when MP account supports payouts.
-        /*
-        const mpResponse = await axios.post("https://api.mercadopago.com/v1/disbursements", {
-          transaction_amount: winner.amount,
-          description: `Prêmio Torneio: ${tournament.title} - ${winner.placement}º Lugar`,
-          payer: { email: "financeiro@revallogamers.com.br" },
-          receiver: { pix: { key: pixKey, key_type: pixType } },
-          metadata: { tournament_id, player_id: winner.player_id, placement: winner.placement }
-        }, {
-          headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` }
-        });
-        */
-
         // Record payout in Firestore
-        await adminDb.collection("prize_distributions").add({
+        const distributionRef = await adminDb.collection("prize_distributions").add({
           tournament_id,
           player_id: winner.player_id,
           amount_brl: winner.amount,
           placement: winner.placement,
           pix_key: pixKey,
-          status: "confirmed", // Simulated — change to "pending" when real MP is integrated
+          pix_type: pixType,
+          status: "confirmed", // Simulated
           created_at: new Date().toISOString(),
           transfer_id: "SIM_MP_" + Math.random().toString(36).substr(2, 9)
         });
@@ -120,13 +111,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           placement: winner.placement,
           prize_amount_brl: winner.amount,
           prize_paid: true,
-          prize_paid_at: new Date().toISOString()
+          prize_paid_at: new Date().toISOString(),
+          distribution_id: distributionRef.id
         });
 
         results.push({ player_id: winner.player_id, status: "success" });
 
       } catch (mpError: any) {
-        console.error("MP Transfer Error:", mpError.response?.data || mpError.message);
+        console.error(`MP Transfer Error for player ${winner.player_id}:`, mpError.response?.data || mpError.message);
         results.push({ player_id: winner.player_id, status: "failed", error: "Erro no processamento do pagamento" });
       }
     }
@@ -134,13 +126,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ── Mark tournament as completed ONLY if ALL succeeded (or skipped idempotently) ──
     const failedCount = results.filter(r => r.status === "failed").length;
     if (failedCount === 0) {
+      console.log(`All prizes for tournament ${tournament_id} distributed successfully.`);
       await tournamentRef.update({
         status: "completed",
         prizes_distributed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
     } else {
-      // Partial failure: don't mark as completed so organizer can retry
+      console.warn(`Tournament ${tournament_id} had ${failedCount} distribution failures.`);
       await tournamentRef.update({ updated_at: new Date().toISOString() });
     }
 

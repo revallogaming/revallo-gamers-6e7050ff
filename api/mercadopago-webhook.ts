@@ -12,12 +12,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const body = req.body;
-    // Removed excessive logging
 
-    // Verify signature (Simplified for migration, should use robust verification)
+    // Verify signature
     const secret = process.env.MP_WEBHOOK_SECRET;
     if (!secret) {
       return res.status(500).json({ error: "Webhook security not configured" });
+    }
+
+    const xSignature = req.headers['x-signature'] as string;
+    const xRequestId = req.headers['x-request-id'] as string;
+    const dataId = body.data?.id || req.query['data.id'];
+
+    if (xSignature && xRequestId && dataId) {
+        const parts = xSignature.split(',');
+        let ts = '';
+        let v1 = '';
+        parts.forEach(part => {
+            const [key, value] = part.split('=');
+            if (key === 'ts') ts = value;
+            if (key === 'v1') v1 = value;
+        });
+        
+        const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+        const hmac = require('crypto').createHmac('sha256', secret).update(manifest).digest('hex');
+        if (hmac !== v1) {
+             return res.status(401).json({ error: "Invalid signature" });
+        }
     }
 
     // Only process payment notifications

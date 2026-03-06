@@ -242,6 +242,7 @@ export function EditTournamentDialog({
         game: formData.game as GameType,
         rules: formData.rules || null,
         prize_description: pDesc,
+        prize_pool_total: formData.prize_amount,
         entry_fee: Math.round(formData.entry_fee * 100),
         max_participants: formData.max_participants,
         start_date: formData.start_date?.toISOString() || null,

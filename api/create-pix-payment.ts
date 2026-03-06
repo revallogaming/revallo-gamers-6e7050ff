@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb, adminAuth } from "../src/lib/firebaseAdmin";
+import { adminDb, adminAuth, verifyToken } from "../src/lib/firebaseAdmin";
 import crypto from "crypto";
 
 const VALID_PACKAGES = [
@@ -17,12 +17,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Basic Auth Check (In a real app, verify the Firebase ID Token)
-    // For this migration, we'll assume the client sends the user_id for simplicity,
-    // but in production, you MUST verify the Authorization header.
+    // Verify Firebase ID Token
+    const decodedToken = await verifyToken(req);
+    const authUserId = decodedToken.uid;
+
     const { amount_brl, credits_amount, user_id } = req.body;
 
-    if (!user_id) {
+    if (!user_id || authUserId !== user_id) {
       return res.status(401).json({ error: "Não autorizado" });
     }
 

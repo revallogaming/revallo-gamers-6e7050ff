@@ -642,6 +642,10 @@ export function useCommunityActions() {
   });
 
   return { 
+    createCommunity,
+    joinCommunity,
+    leaveCommunity,
+    updateCommunity,
     sendMessage,
     createChannel,
     deleteChannel,

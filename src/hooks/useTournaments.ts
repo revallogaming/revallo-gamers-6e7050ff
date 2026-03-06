@@ -12,7 +12,8 @@ import {
   deleteDoc,
   serverTimestamp,
   increment,
-  updateDoc
+  updateDoc,
+  writeBatch
 } from 'firebase/firestore';
 import { Tournament, GameType, Profile, TournamentParticipant } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -133,6 +134,15 @@ export function useJoinTournament() {
 
   return useMutation({
     mutationFn: async ({ tournamentId, playerId }: { tournamentId: string; playerId: string }) => {
+      const tRef = doc(db, 'tournaments', tournamentId);
+      const tDoc = await getDoc(tRef);
+      if (!tDoc.exists()) throw new Error('Torneio não encontrado');
+      const tData = tDoc.data() as Tournament;
+      
+      if (tData.current_participants >= tData.max_participants) {
+        throw new Error('Torneio lotado!');
+      }
+
       const participantRef = await addDoc(collection(db, 'tournament_participants'), {
         tournament_id: tournamentId,
         player_id: playerId,
@@ -203,7 +213,22 @@ export function useDeleteTournament() {
 
   return useMutation({
     mutationFn: async (tournamentId: string) => {
-      await deleteDoc(doc(db, 'tournaments', tournamentId));
+      const batch = writeBatch(db);
+
+      // Delete participants
+      const pQuery = query(collection(db, 'tournament_participants'), where('tournament_id', '==', tournamentId));
+      const pSnap = await getDocs(pQuery);
+      pSnap.docs.forEach(d => batch.delete(d.ref));
+      
+      // Delete matches
+      const mQuery = query(collection(db, 'matches'), where('tournament_id', '==', tournamentId));
+      const mSnap = await getDocs(mQuery);
+      mSnap.docs.forEach(d => batch.delete(d.ref));
+
+      // Delete tournament
+      batch.delete(doc(db, 'tournaments', tournamentId));
+      
+      await batch.commit();
       return tournamentId;
     },
     onSuccess: (tournamentId) => {

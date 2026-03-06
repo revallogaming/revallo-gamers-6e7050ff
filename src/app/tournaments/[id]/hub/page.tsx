@@ -7,7 +7,6 @@ import { Header } from "@/components/Header";
 import { useTournament, useTournamentParticipants } from "@/hooks/useTournaments";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
-import { useChannels } from "@/hooks/useCommunities";
 import { 
   Trophy, MessageSquare, Users, Info, 
   ArrowLeft, Send, Hash, Loader2, Flag,
@@ -48,7 +47,8 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { SEO } from "@/components/SEO";
 import { GAME_INFO, STATUS_INFO, TournamentParticipant, GameType, TournamentStatus } from "@/types";
-import { useCommunityActions } from "@/hooks/useCommunities";
+import { useCommunityActions, useChannels } from "@/hooks/useCommunities";
+import { useTeams } from "@/hooks/useTeams";
 import { uploadAudioToCloudinary, uploadToCloudinary } from "@/lib/cloudinary";
 import { updateDoc, doc, getDoc, getDocs, query, collection, where, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -69,6 +69,8 @@ export default function TournamentHubPage() {
   
   const activeChannel = channels?.find(c => c.id === activeChannelId);
   const isOrganizer = user?.uid === tournament?.organizer_id;
+
+  const { inviteMemberByEmail } = useTeams(user?.uid);
 
   const {
     sendMessage,
@@ -954,19 +956,39 @@ export default function TournamentHubPage() {
 
            <ScrollArea className="flex-1 p-8">
               <div className="space-y-8">
-                 <section>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 italic mb-4">Configuração de Premiação</h3>
-                    <div className="p-4 rounded-2xl bg-white/2 border border-white/5 space-y-3">
-                       <div className="flex justify-between items-center text-[10px] font-black uppercase italic">
-                          <span className="text-gray-500">Prêmio Total:</span>
-                          <span className="text-primary">R$ {(tournament.prize_pool_total || 0).toFixed(2)}</span>
-                       </div>
-                       <div className="flex justify-between items-center text-[10px] font-black uppercase italic">
-                          <span className="text-gray-500">Status:</span>
-                          <span className={tournament.status === 'completed' ? "text-green-500" : "text-amber-500"}>{tournament.status?.toUpperCase()}</span>
-                       </div>
-                    </div>
-                 </section>
+                  <section>
+                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 italic mb-4">Configuração de Premiação</h3>
+                     <div className="p-4 rounded-2xl bg-white/2 border border-white/5 space-y-4">
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase italic">
+                           <span className="text-gray-500">Prêmio Total do Torneio:</span>
+                           <span className="text-white">R$ {(tournament.prize_pool_total || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase italic pt-2 border-t border-white/5">
+                           <span className="text-gray-500">Total a Distribuir Agora:</span>
+                           <span className={`${
+                             winners.reduce((acc, curr) => acc + curr.amount, 0) > (tournament.prize_pool_total || 0) + 0.01 
+                             ? "text-red-500" 
+                             : "text-primary"
+                           } font-black`}>
+                             R$ {winners.reduce((acc, curr) => acc + curr.amount, 0).toFixed(2)}
+                           </span>
+                        </div>
+                        
+                        {winners.reduce((acc, curr) => acc + curr.amount, 0) > (tournament.prize_pool_total || 0) + 0.01 && (
+                          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3">
+                             <Flag size={14} className="text-red-500 shrink-0" />
+                             <p className="text-[9px] font-black uppercase italic text-red-500 leading-tight">
+                               Atenção: O total distribuído excede o fundo de prêmios do torneio.
+                             </p>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase italic pt-2 border-t border-white/5">
+                           <span className="text-gray-500">Status do Torneio:</span>
+                           <span className={tournament.status === 'completed' ? "text-green-500" : "text-amber-500"}>{tournament.status?.toUpperCase()}</span>
+                        </div>
+                     </div>
+                  </section>
 
                  <section>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 italic mb-4">Definir Vencedores</h3>

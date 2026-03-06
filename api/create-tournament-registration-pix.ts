@@ -15,12 +15,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Mocking Mercado Pago integration
-    const qr_code =
-      "00020126580014br.gov.bcb.pix0136123e4567-e89b-12d3-a456-42661417400052040000530398654041.005802BR5913REVALLO GAME6009SAO PAULO62070503***6304E2CA";
-    const qr_code_base64 =
-      "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEAAQMAAABmvDolAAAABlBMVEUAAAD///+l2Z/dAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAWklEQVRIie2YQQ4AIQgDwfX/j86Lp8ZEL9pDQAnMvIuIkiRJkiRJkiRJkrS/mD8A8I8A/CMA/wiYv0D6F0j/AulfIP0LpH+B9C+Q/gXyP/8T8D8B/xPwPwH/E/D9ALvXEz9B78R2AAAAAElFTkSuQmCC";
-    const mercadopago_id = "reg_" + Date.now();
+    const accessToken = process.env.MP_ACCESS_TOKEN;
+    if (!accessToken) {
+      return res.status(500).json({ error: "Integração de pagamento não configurada" });
+    }
+
+    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        "X-Idempotency-Key": require("crypto").randomUUID(),
+      },
+      body: JSON.stringify({
+        transaction_amount: Number(amount_brl),
+        description: `Inscrição Torneio ${tournament_id}`,
+        payment_method_id: "pix",
+        payer: {
+          email: email,
+        },
+        notification_url: process.env.MP_PRODUCTION_WEBHOOK_URL,
+        metadata: {
+          user_id: userId,
+          type: "tournament_registration",
+          tournament_id: tournament_id,
+        },
+      }),
+    });
+
+    if (!mpResponse.ok) {
+      const errorText = await mpResponse.text();
+      console.error("Mercado Pago Error:", errorText);
+      return res.status(500).json({ error: "Erro ao gerar PIX" });
+    }
+
+    const mpData = await mpResponse.json();
+    const qr_code = mpData.point_of_interaction?.transaction_data?.qr_code;
+    const qr_code_base64 = mpData.point_of_interaction?.transaction_data?.qr_code_base64;
+    const mercadopago_id = String(mpData.id);
 
     // Create payment intent record
     const paymentRef = adminDb.collection("registration_payments").doc();

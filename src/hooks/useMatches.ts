@@ -200,12 +200,30 @@ export function useMatchActions(tournamentId: string) {
       for (let r = 0; r < rounds; r++) {
         for (let p = 0; p < matchRefs[r].length; p++) {
           const m = matchRefs[r][p];
+          
+          // Propagate bye to the next match
+          if (m.winner_id && m.next_match_id) {
+            const nextR = r + 1;
+            const nextP = Math.floor(p / 2);
+            if (nextR < rounds) {
+              const nextM = matchRefs[nextR][nextP];
+              const isPlayer1 = p % 2 === 0;
+              if (isTeamBased) {
+                if (isPlayer1) nextM.team1_id = m.winner_id;
+                else nextM.team2_id = m.winner_id;
+              } else {
+                if (isPlayer1) nextM.player1_id = m.winner_id;
+                else nextM.player2_id = m.winner_id;
+              }
+              
+              // If the next match now has only 1 participant after all byes in this round are processed, 
+              // it shouldn't auto-win yet until we know it's a true double-bye, which is rare.
+            }
+          }
+
           batch.set(doc(db, "matches", m.id), m);
         }
       }
-
-      // Final propagate byes
-      // (For a robust system, we'd do this recursively, but let's keep it simple for now)
 
       await batch.commit();
     },
@@ -249,11 +267,19 @@ export function useMatchActions(tournamentId: string) {
           // Determine if this winner goes to player1 or player2
           // Based on current match's position (if even, player1; if odd, player2)
           const isPlayer1 = match.position % 2 === 0;
+          const isTeamBased = !!match.team1_id || !!match.team2_id;
 
-          batch.update(nextMatchRef, {
-            [isPlayer1 ? "player1_id" : "player2_id"]: winnerId,
+          const updateData: any = {
             updated_at: new Date().toISOString(),
-          });
+          };
+
+          if (isTeamBased) {
+            updateData[isPlayer1 ? "team1_id" : "team2_id"] = winnerId;
+          } else {
+            updateData[isPlayer1 ? "player1_id" : "player2_id"] = winnerId;
+          }
+
+          batch.update(nextMatchRef, updateData);
         }
       }
 

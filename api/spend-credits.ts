@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb } from "../src/lib/firebaseAdmin";
+import { adminDb, verifyToken } from "../src/lib/firebaseAdmin";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -13,6 +13,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const decodedToken = await verifyToken(req);
+    const authUserId = decodedToken.uid;
+    
+    // Ensure the authenticated user is spending their own credits
+    if (authUserId !== user_id) {
+        return res.status(403).json({ message: "Forbidden: Cannot spend credits for another user" });
+    }
+
     const userCreditsRef = adminDb.collection("user_credits").doc(user_id);
 
     await adminDb.runTransaction(async (transaction) => {
