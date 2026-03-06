@@ -55,7 +55,9 @@ import {
   UserPlus,
   Ban,
   MoreHorizontal,
-  Pencil
+  Pencil,
+  Bell,
+  BellOff
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -131,6 +133,23 @@ export default function CommunityDetailPage({ params }: PageProps) {
 
   const [showHubLeaveDialog, setShowHubLeaveDialog] = useState(false);
 
+  const { 
+    sendMessage, 
+    joinCommunity, 
+    leaveCommunity, 
+    createChannel, 
+    deleteChannel, 
+    kickMember, 
+    updateMemberRole, 
+    muteMember, 
+    deleteCommunity, 
+    clearChannelMessages,
+    deleteMessageForMe,
+    toggleTemporaryMessages,
+    updateChannel,
+    updateMemberNotificationSettings,
+  } = useCommunityActions();
+
   const handleJoinLeave = async () => {
     if (!user) {
       router.push("/auth");
@@ -156,21 +175,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
       toast.error("Erro ao processar solicitação");
     }
   };
-
-  const { 
-    sendMessage, 
-    joinCommunity, 
-    leaveCommunity, 
-    createChannel, 
-    deleteChannel, 
-    kickMember, 
-    updateMemberRole, 
-    muteMember, 
-    deleteCommunity, 
-    clearChannelMessages,
-    deleteMessageForMe,
-    toggleTemporaryMessages
-  } = useCommunityActions();
 
   const handleToggleTempMessages = async (channelId: string, currentStatus: boolean) => {
     try {
@@ -232,8 +236,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
     if (confirm(`⚠️ Banir ${nickname} PERMANENTEMENTE? Este usuário não poderá voltar ao hub.`)) {
       try {
         await kickMember.mutateAsync({ communityId: id, userId });
-        // In a production environment, we'd add the user to a 'banned_users' collection
-        // For this implementation, we combine kick with a clear notice.
         toast.success(`${nickname} foi banido permanentemente.`);
       } catch {
         toast.error("Erro ao banir membro");
@@ -272,6 +274,48 @@ export default function CommunityDetailPage({ params }: PageProps) {
     }
   };
 
+  const handleToggleNotifications = async () => {
+    if (!user || !id) return;
+    const isCurrentlyEnabled = !!currentMember?.notifications_enabled;
+    const newStatus = !isCurrentlyEnabled;
+
+    if (newStatus && Notification.permission !== "granted") {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        toast.error("Permissão de notificação negada.");
+        return;
+      }
+    }
+
+    try {
+      await updateMemberNotificationSettings.mutateAsync({ 
+        communityId: id, 
+        userId: user.uid, 
+        enabled: newStatus 
+      });
+      toast.success(newStatus ? "Notificações ativadas!" : "Notificações desativadas.");
+      
+      if (newStatus) {
+        new Notification("Notificações Ativas", {
+          body: `Você receberá alertas de novas mensagens em ${community?.name}.`,
+          icon: "/logo.png"
+        });
+      }
+    } catch {
+      toast.error("Erro ao alterar configurações de notificação");
+    }
+  };
+
+  const handleToggleAnnouncement = async (channelId: string, currentType: string) => {
+    if (!isOwner) return;
+    const newType = currentType === "announcement" ? "text" : "announcement";
+    try {
+      await updateChannel.mutateAsync({ channelId, type: newType });
+      toast.success(newType === "announcement" ? "Canal agora é Somente Admins" : "Canal agora é Comunitário");
+    } catch {
+      toast.error("Erro ao alterar tipo do canal");
+    }
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -344,7 +388,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
 
       mediaRecorder.start();
       setIsRecording(true);
-      // No toast here - the UI already shows the recording state
     } catch (err) {
       toast.error("Erro ao acessar microfone");
     }
@@ -352,7 +395,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
 
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
-    // Stop all tracks to release mic
     mediaRecorderRef.current?.stream?.getTracks().forEach(t => t.stop());
     setIsRecording(false);
   };
@@ -512,6 +554,16 @@ export default function CommunityDetailPage({ params }: PageProps) {
                                   {channel.is_temporary ? "Desativar Temp." : "Mensagens Temp."}
                                 </DropdownMenuItem>
                                 
+                                {isOwner && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleToggleAnnouncement(channel.id, channel.type)}
+                                    className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-white/5 focus:text-white cursor-pointer py-2.5"
+                                  >
+                                    <Shield size={12} className={channel.type === "announcement" ? "text-primary" : "text-gray-500"} />
+                                    {channel.type === "announcement" ? "Permitir Mensagens" : "Somente Admins"}
+                                  </DropdownMenuItem>
+                                )}
+
                                 <DropdownMenuItem 
                                   onClick={() => handleClearChat(channel.id, channel.name)}
                                   className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-red-500/10 focus:text-red-500 text-red-400 cursor-pointer py-2.5"
@@ -586,6 +638,14 @@ export default function CommunityDetailPage({ params }: PageProps) {
 
             <div className="flex items-center gap-2">
               <button 
+                onClick={handleToggleNotifications}
+                className={`h-10 w-10 flex items-center justify-center border rounded-xl transition-all ${currentMember?.notifications_enabled ? "bg-primary/10 border-primary/20 text-primary" : "bg-white/2 border-white/5 text-gray-600 hover:text-white"}`}
+                title={currentMember?.notifications_enabled ? "Desativar Notificações" : "Ativar Notificações"}
+              >
+                {currentMember?.notifications_enabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              </button>
+
+              <button 
                 onClick={() => setShowInvite(true)}
                 className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 h-10 rounded-xl hover:bg-primary/20 transition-all"
               >
@@ -606,7 +666,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
               <button onClick={() => setShowMembers(true)} className="flex items-center gap-3 bg-white/2 border border-white/5 px-4 h-10 rounded-xl">
                 <Users className="h-4 w-4 text-gray-600" />
                 <span className="text-[10px] font-black uppercase tracking-widest italic text-gray-500">
-                  {/* Accurate count from Firestore server */}
                   {memberCount ?? (members?.length) ?? (community?.member_count || 0)} Membros
                 </span>
               </button>
@@ -724,7 +783,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
               </div>
             ) : (
               <form onSubmit={handleSend} className="flex items-center gap-3 max-w-5xl mx-auto">
-                {/* Text Input */}
                 <div className="flex-1 relative">
                   <Input
                     value={messageText}
@@ -746,7 +804,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
                   )}
                 </div>
 
-                {/* Mic / Recording Controls */}
                 {isRecording ? (
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 px-3 h-14 rounded-[22px]">
@@ -826,7 +883,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
                             {m.muted && <p className="text-[9px] text-red-400 italic font-black">MUTADO</p>}
                           </div>
 
-                           {/* Admin controls — shown to owner and moderators */}
                           {(isOwner || (isModerator && role === "member")) && m.user_id !== user?.uid && (
                             <div className="flex items-center gap-1 shrink-0">
                               <button
@@ -874,7 +930,6 @@ export default function CommunityDetailPage({ params }: PageProps) {
             </div>
           </ScrollArea>
 
-          {/* Danger Zone — only for owners */}
           {isOwner && (
             <div className="p-4 border-t border-red-500/10 bg-red-500/5 shrink-0">
               <p className="text-[9px] font-black uppercase tracking-widest text-red-500/50 italic mb-3">Zona de Perigo</p>
@@ -937,12 +992,10 @@ function HubLeaveDialog({ isOpen, onClose, communityId, members, onDelete }: Hub
       const oldOwnerId = user?.uid;
       if (!oldOwnerId) return;
 
-      // Update new owner
       await updateDoc(doc(db, "community_members", `${communityId}_${newOwnerId}`), {
         role: 'owner'
       });
 
-      // Downgrade old owner to member (so they can leave)
       await updateDoc(doc(db, "community_members", `${communityId}_${oldOwnerId}`), {
         role: 'member'
       });

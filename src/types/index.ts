@@ -32,6 +32,7 @@ export interface CommunityMember {
   joined_at: string;
   muted?: boolean;
   user?: Profile;
+  notifications_enabled?: boolean;
 }
 
 export interface Channel {

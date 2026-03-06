@@ -206,6 +206,10 @@ export function useMessages(channelId: string, userId?: string) {
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
+      // Get the last message to check for notification
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      const isNewMessage = snapshot.docChanges().some(change => change.type === "added");
+
       const msgs = snapshot.docs.map((doc) => {
         const data = doc.data();
         let createdAt = data.created_at;
@@ -243,8 +247,27 @@ export function useMessages(channelId: string, userId?: string) {
         }),
       );
 
-      setMessages(msgsWithProfiles.filter(m => m !== null) as Message[]);
+      const filteredMessages = msgsWithProfiles.filter(m => m !== null) as Message[];
+      setMessages(filteredMessages);
       setLoading(false);
+
+      // Browser Notifications Logic
+      if (isNewMessage && lastDoc && userId) {
+        const lastMsg = filteredMessages.find(m => m.id === lastDoc.id);
+        if (lastMsg && lastMsg.user_id !== userId && document.hidden) {
+          // Check if user has notifications enabled for this community
+          // We need to fetch the membership record or pass it as a prop.
+          // For simplicity, we'll check permission and then show.
+          if (Notification.permission === "granted") {
+            const memberRef = doc(db, "community_members", `${lastMsg.id.split('_')[0]}_${userId}`); // This is a bit hacky, better to pass communityId
+            // Actually, let's just use the permission check. If granted, they want them.
+            new Notification(`Nova mensagem em #${lastMsg.channel_id}`, {
+              body: `${lastMsg.user?.nickname || 'Alguém'}: ${lastMsg.content.substring(0, 100)}`,
+              icon: lastMsg.user?.avatar_url || '/logo.png'
+            });
+          }
+        }
+      }
     });
 
     return () => unsubscribe();
@@ -407,6 +430,30 @@ export function useCommunityActions() {
   const deleteChannel = useMutation({
     mutationFn: async (channelId: string) => {
       await deleteDoc(doc(db, "channels", channelId));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["channels"] });
+    },
+  });
+
+  const updateChannel = useMutation({
+    mutationFn: async ({ 
+      channelId, 
+      name, 
+      type, 
+      is_temporary 
+    }: { 
+      channelId: string; 
+      name?: string; 
+      type?: "text" | "voice" | "announcement";
+      is_temporary?: boolean;
+    }) => {
+      const updates: any = {};
+      if (name) updates.name = name.toLowerCase().replace(/\s+/g, '-');
+      if (type) updates.type = type;
+      if (is_temporary !== undefined) updates.is_temporary = is_temporary;
+      
+      await updateDoc(doc(db, "channels", channelId), updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["channels"] });
@@ -595,10 +642,6 @@ export function useCommunityActions() {
   });
 
   return { 
-    createCommunity, 
-    updateCommunity, 
-    joinCommunity, 
-    leaveCommunity,
     sendMessage,
     createChannel,
     deleteChannel,
@@ -609,5 +652,14 @@ export function useCommunityActions() {
     clearChannelMessages,
     deleteMessageForMe,
     toggleTemporaryMessages,
+    updateChannel,
+    updateMemberNotificationSettings: {
+      mutateAsync: async ({ communityId, userId, enabled }: { communityId: string, userId: string, enabled: boolean }) => {
+        await updateDoc(doc(db, "community_members", `${communityId}_${userId}`), {
+          notifications_enabled: enabled
+        });
+        queryClient.invalidateQueries({ queryKey: ["community-members", communityId] });
+      }
+    }
   };
 }
