@@ -10,6 +10,7 @@ import {
   serverTimestamp,
   onSnapshot,
   Timestamp,
+  limitToLast
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
@@ -45,15 +46,29 @@ export function useChat(community_id: string, channel_id: string, channelType?: 
       where("community_id", "==", community_id),
       where("channel_id", "==", channel_id),
       orderBy("created_at", "asc"),
-      limit(100),
+      limitToLast(100),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newMessages = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Message[];
-      setMessages(newMessages);
+      const newMessages = snapshot.docs.map((doc) => {
+        const data = doc.data() as Omit<Message, 'id'>;
+        let createdAt = data.created_at as any;
+        if (createdAt && typeof createdAt === 'object' && 'toDate' in createdAt) {
+          createdAt = createdAt.toDate().getTime();
+        } else if (!createdAt) {
+          createdAt = Date.now();
+        }
+        return {
+          id: doc.id,
+          ...data,
+          _sortTime: createdAt, // Internal helper for sorting
+        };
+      });
+
+      // Ensure chronological order
+      newMessages.sort((a, b) => a._sortTime - b._sortTime);
+
+      setMessages(newMessages as unknown as Message[]);
       setLoading(false);
     }, (error) => {
       console.error("Firestore error:", error);

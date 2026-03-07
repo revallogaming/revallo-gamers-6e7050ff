@@ -58,7 +58,9 @@ import {
   MoreHorizontal,
   Pencil,
   Bell,
-  BellOff
+  BellOff,
+  User,
+  Search
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -133,6 +135,7 @@ export default function CommunityDetailPage({ params }: PageProps) {
   }, [messages]);
 
   const [showHubLeaveDialog, setShowHubLeaveDialog] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
 
   const { 
     sendMessage, 
@@ -875,12 +878,25 @@ export default function CommunityDetailPage({ params }: PageProps) {
             <p className="text-[10px] uppercase font-black tracking-widest text-gray-700 italic">
               {memberCount ?? (members?.length) ?? (community?.member_count || 0)} membros
             </p>
+            <div className="mt-4 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-4 w-4" />
+              <Input 
+                placeholder="Pesquisar membro..." 
+                className="w-full bg-white/5 border-white/10 pl-9 h-10 rounded-xl text-xs placeholder:italic placeholder:uppercase placeholder:tracking-[0.2em] placeholder:text-gray-600 focus-visible:ring-primary/30"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+              />
+            </div>
           </SheetHeader>
 
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-6">
               {(["owner", "moderator", "member"] as const).map((role) => {
-                const roleMembers = members?.filter((m) => m.role === role) || [];
+                const searchLower = memberSearch.trim().toLowerCase();
+                const roleMembers = members?.filter((m) => 
+                  m.role === role && 
+                  (searchLower === "" || m.user?.nickname?.toLowerCase().includes(searchLower))
+                ) || [];
                 if (roleMembers.length === 0) return null;
 
                 const roleLabel = role === "owner" ? "Dono" : role === "moderator" ? "Moderadores" : "Membros";
@@ -891,12 +907,14 @@ export default function CommunityDetailPage({ params }: PageProps) {
                       {roleMembers.map((m) => (
                         <div key={m.id} className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${m.muted ? 'bg-red-500/5 border-red-500/10' : 'bg-white/2 border-transparent hover:border-white/5'}`}>
                           <div className="relative shrink-0">
-                            <Avatar className="h-10 w-10 border border-white/5">
-                              <AvatarImage src={m.user?.avatar_url || undefined} />
-                              <AvatarFallback className="bg-black text-gray-500 font-black italic text-xs">{m.user?.nickname?.charAt(0) || "P"}</AvatarFallback>
-                            </Avatar>
+                            <Link href={`/profile/${m.user?.nickname}`}>
+                              <Avatar className="h-10 w-10 border border-white/5 hover:border-primary/50 transition-colors cursor-pointer">
+                                <AvatarImage src={m.user?.avatar_url || undefined} />
+                                <AvatarFallback className="bg-black text-gray-500 font-black italic text-xs">{m.user?.nickname?.charAt(0) || "P"}</AvatarFallback>
+                              </Avatar>
+                            </Link>
                             {m.muted && (
-                              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
+                              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center pointer-events-none">
                                 <Shield size={8} className="text-white" />
                               </div>
                             )}
@@ -911,6 +929,14 @@ export default function CommunityDetailPage({ params }: PageProps) {
 
                           {(isOwner || (isModerator && role === "member")) && m.user_id !== user?.uid && (
                             <div className="flex items-center gap-1 shrink-0">
+                              <Link
+                                href={`/profile/${m.user?.nickname}`}
+                                title="Ver Perfil"
+                                className="p-2 rounded-xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all"
+                              >
+                                <User size={12} />
+                              </Link>
+                              
                               <button
                                 onClick={() => handleMute(m.user_id, m.muted ?? false)}
                                 title={m.muted ? "Desmutar" : "Mutar"}

@@ -15,7 +15,7 @@ import {
   Calendar, Coins, Clock, Mic, Image as ImageIcon,
   Trash2, Plus, MoreVertical, MoreHorizontal,
   Shield, ClipboardList, User, GraduationCap,
-  Crown, UserCheck, CheckCircle
+  Crown, UserCheck, CheckCircle, Search
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -57,7 +58,7 @@ import { GAME_INFO, STATUS_INFO, TournamentParticipant, GameType, TournamentStat
 import { useCommunityActions, useChannels } from "@/hooks/useCommunities";
 import { useTeams } from "@/hooks/useTeams";
 import { uploadAudioToCloudinary, uploadToCloudinary } from "@/lib/cloudinary";
-import { updateDoc, doc, getDoc, getDocs, query, collection, where, limit } from "firebase/firestore";
+import { updateDoc, doc, getDoc, getDocs, query, collection, where, limit, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function TournamentHubPage() {
@@ -84,6 +85,10 @@ export default function TournamentHubPage() {
     createCommunity,
     createChannel,
     deleteChannel,
+    kickMember,
+    updateChannel,
+    toggleTemporaryMessages,
+    clearChannelMessages
   } = useCommunityActions();
 
   // Find user as participant to check role
@@ -112,12 +117,29 @@ export default function TournamentHubPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showManagement, setShowManagement] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("player");
   const [inviteTeam, setInviteTeam] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [winners, setWinners] = useState<{player_id: string, placement: number, amount: number}[]>([]);
   const [isDistributing, setIsDistributing] = useState(false);
   const initializingRef = useRef(false);
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    action: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    action: () => {}
+  });
+
+  const confirmAction = (title: string, description: string, action: () => void) => {
+    setConfirmDialog({ isOpen: true, title, description, action });
+  };
 
   // Auto-select first channel
   useEffect(() => {
@@ -129,7 +151,7 @@ export default function TournamentHubPage() {
   // Scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
@@ -388,21 +410,50 @@ export default function TournamentHubPage() {
                           </p>
                         </div>
 
-                        {isOrganizer && channel.name !== "geral" && (
+                        {isOrganizer && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button onClick={e => e.stopPropagation()} className="opacity-0 group-hover/channel:opacity-100 p-2 text-gray-700 hover:text-white">
                                 <MoreVertical size={14} />
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent side="right" className="bg-[#0D0D0F] border-white/5">
+                            <DropdownMenuContent side="right" className="bg-[#0D0D0F] border-white/10 rounded-xl min-w-[170px]">
                               <DropdownMenuItem 
-                                onClick={() => handleDeleteChannel(channel.id, channel.name)}
-                                className="text-red-500 font-black italic uppercase text-[10px] tracking-widest"
+                                onClick={() => toggleTemporaryMessages.mutateAsync({ channelId: channel.id, enabled: !channel.is_temporary })}
+                                className="text-[10px] font-black uppercase tracking-widest text-white italic gap-2 focus:bg-white/5 focus:text-white cursor-pointer py-2.5"
                               >
-                                <Trash2 size={12} className="mr-2" />
-                                Excluir Canal
+                                <Clock size={12} className={channel.is_temporary ? "text-primary" : "text-gray-500"} />
+                                {channel.is_temporary ? "Desativar Temp." : "Mensagens Temp."}
                               </DropdownMenuItem>
+                              
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleAnnouncement(channel.id, channel.type)}
+                                className="text-[10px] font-black uppercase tracking-widest text-white italic gap-2 focus:bg-white/5 focus:text-white cursor-pointer py-2.5"
+                              >
+                                <Shield size={12} className={channel.type === "announcement" ? "text-primary" : "text-gray-500"} />
+                                {channel.type === "announcement" ? "Permitir Mensagens" : "Somente Admins"}
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem 
+                                onClick={() => handleClearChat(channel.id, channel.name)}
+                                className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-red-500/10 focus:text-red-500 text-red-500 cursor-pointer py-2.5"
+                              >
+                                <Trash2 size={12} />
+                                Limpar Canal
+                              </DropdownMenuItem>
+
+                              {channel.name !== "geral" && (
+                                <>
+                                  <DropdownMenuSeparator className="bg-white/5" />
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDeleteChannel(channel.id, channel.name)}
+                                    className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-red-500/10 focus:text-red-500 text-red-500 cursor-pointer py-2.5"
+                                  >
+                                    <Trash2 size={12} />
+                                    Excluir Canal
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
@@ -471,14 +522,86 @@ export default function TournamentHubPage() {
 
   const handleDeleteChannel = async (channelId: string, channelName: string) => {
     if (!isOrganizer) return;
-    if (confirm(`Excluir canal #${channelName}?`)) {
-      try {
-        await deleteChannel.mutateAsync(channelId);
-        toast.success("Canal excluído");
-        if (activeChannelId === channelId) setActiveChannelId(null);
-      } catch {
-        toast.error("Erro ao excluir canal");
+    confirmAction(
+      `Excluir canal #${channelName}?`,
+      "Esta ação é permanente e apagará todas as mensagens contidas nele.",
+      async () => {
+        try {
+          await deleteChannel.mutateAsync(channelId);
+          toast.success("Canal excluído");
+          if (activeChannelId === channelId) setActiveChannelId(null);
+        } catch {
+          toast.error("Erro ao excluir canal");
+        }
       }
+    );
+  };
+
+  const handleClearChat = async (channelId: string, channelName: string) => {
+    if (!isOrganizer) return;
+    confirmAction(
+      `Limpar TODAS as mensagens de #${channelName}?`,
+      "Isso irá apagar o histórico de mensagens para todos permanentemente.",
+      async () => {
+        try {
+          await clearChannelMessages.mutateAsync(channelId);
+          toast.success("Canal limpo com sucesso!");
+        } catch {
+          toast.error("Erro ao limpar mensagens");
+        }
+      }
+    );
+  };
+
+  const handleToggleAnnouncement = async (channelId: string, currentType: string) => {
+    if (!isOrganizer) return;
+    const newType = currentType === "announcement" ? "text" : "announcement";
+    try {
+      await updateChannel.mutateAsync({ channelId, type: newType });
+      toast.success(newType === "announcement" ? "Canal agora é Somente Admins" : "Canal agora é Comunitário");
+    } catch {
+      toast.error("Erro ao alterar tipo do canal");
+    }
+  };
+
+  const handleRemoveFromTournament = async (playerId: string, nickname?: string) => {
+    confirmAction(
+      `Remover ${nickname || 'o jogador'} do torneio e do hub?`,
+      "O jogador será sumariamente desqualificado e expulso da comunidade.",
+      async () => {
+        try {
+          if (communityId) {
+            await kickMember.mutateAsync({ communityId, userId: playerId });
+          }
+
+          const q = query(collection(db, "tournament_participants"), where("tournament_id", "==", id), where("player_id", "==", playerId));
+          const qSnap = await getDocs(q);
+          const deletePromises = qSnap.docs.map(d => deleteDoc(d.ref));
+          await Promise.all(deletePromises);
+
+          toast.success("Jogador removido do torneio e do hub.");
+          queryClient.invalidateQueries({ queryKey: ["tournament-participants", id] });
+        } catch {
+          toast.error("Erro ao remover jogador");
+        }
+      }
+    );
+  };
+
+  const handleUpdateTournamentRole = async (playerId: string, currentRole: string | null | undefined) => {
+    const roles = ['player', 'coach', 'analista', 'captain'];
+    const nextRole = roles[(roles.indexOf(currentRole || 'player') + 1) % roles.length];
+    
+    try {
+      const q = query(collection(db, "tournament_participants"), where("tournament_id", "==", id), where("player_id", "==", playerId));
+      const qSnap = await getDocs(q);
+      const updatePromises = qSnap.docs.map(d => updateDoc(d.ref, { role: nextRole }));
+      await Promise.all(updatePromises);
+
+      toast.success(`Cargo alterado para ${nextRole}`);
+      queryClient.invalidateQueries({ queryKey: ["tournament-participants", id] });
+    } catch {
+      toast.error("Erro ao alterar cargo");
     }
   };
   if (loadingTournament) {
@@ -685,7 +808,7 @@ export default function TournamentHubPage() {
                     );
                 })
             )}
-            <div className="h-4" />
+            <div ref={scrollRef} className="h-4 shrink-0" />
           </div>
 
           <footer className="p-4 md:p-6 bg-[#0D0D0F] border-t border-white/5 relative z-30">
@@ -768,13 +891,24 @@ export default function TournamentHubPage() {
         {/* Info/Participants Side Panel (Conditional) */}
         {showParticipants && (
            <aside className="w-80 border-l border-white/5 bg-[#0D0D0F] flex flex-col h-full shrink-0 animate-in slide-in-from-right-2 relative z-40 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-              <header className="p-6 border-b border-white/5 bg-black/20 flex items-center justify-between">
-                 <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
-                   Lineups <span className="text-primary italic">Ativos</span>
-                 </h3>
-                 <button onClick={() => setShowParticipants(false)} className="text-gray-600 hover:text-white transition-colors">
-                   <ArrowLeft className="h-5 w-5 rotate-180" />
-                 </button>
+              <header className="p-6 border-b border-white/5 bg-black/20 flex flex-col gap-4">
+                 <div className="flex items-center justify-between">
+                   <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
+                     Lineups <span className="text-primary italic">Ativos</span>
+                   </h3>
+                   <button onClick={() => setShowParticipants(false)} className="text-gray-600 hover:text-white transition-colors">
+                     <ArrowLeft className="h-5 w-5 rotate-180" />
+                   </button>
+                 </div>
+                 <div className="relative">
+                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-4 w-4" />
+                   <Input 
+                     placeholder="Pesquisar player..." 
+                     className="w-full bg-white/5 border-white/10 pl-9 h-10 rounded-xl text-xs placeholder:italic placeholder:uppercase placeholder:tracking-[0.2em] placeholder:text-gray-600 focus-visible:ring-primary/30"
+                     value={memberSearch}
+                     onChange={(e) => setMemberSearch(e.target.value)}
+                   />
+                 </div>
               </header>
               <ScrollArea className="flex-1 p-6">
                  <div className="space-y-8">
@@ -788,11 +922,11 @@ export default function TournamentHubPage() {
                           </div>
                           <div className="space-y-2">
                               {members
+                                .filter(p => memberSearch.trim() === "" || p.player?.nickname?.toLowerCase().includes((memberSearch || "").toLowerCase()))
                                 .sort((a, b) => (a.role === 'captain' ? -1 : b.role === 'captain' ? 1 : 0))
                                 .map((p) => (
-                                 <Link 
+                                 <div 
                                    key={p.id} 
-                                   href={`/profile/${p.player_id || "not-found"}`}
                                    className="flex items-center gap-3 p-3 rounded-2xl bg-white/2 border border-white/5 hover:bg-white/5 transition-all group"
                                  >
                                     <Avatar className="h-9 w-9 border border-white/10 group-hover:border-primary/50 transition-all">
@@ -819,7 +953,46 @@ export default function TournamentHubPage() {
                                           </span>
                                        </div>
                                     </div>
-                                 </Link>
+
+                                    <div className="flex items-center gap-1 shrink-0">
+                                       <Link 
+                                          href={`/profile/${p.player?.nickname || "not-found"}`}
+                                          title="Ver Perfil"
+                                          className="p-2 rounded-xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all"
+                                       >
+                                          <User size={12} />
+                                       </Link>
+                                       
+                                       {isOrganizer && p.player_id !== user?.uid && (
+                                          <DropdownMenu>
+                                             <DropdownMenuTrigger asChild>
+                                                <button className="p-2 rounded-xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all">
+                                                   <MoreVertical size={14} />
+                                                </button>
+                                             </DropdownMenuTrigger>
+                                             <DropdownMenuContent align="end" className="bg-[#0D0D0F] border-white/10 text-white rounded-xl">
+                                                <DropdownMenuItem 
+                                                   onClick={() => handleUpdateTournamentRole(p.player_id || "not-found", p.role || "player")} 
+                                                   className="text-[10px] font-black uppercase tracking-widest italic gap-2 py-2.5 focus:bg-white/5"
+                                                >
+                                                   <Crown size={12} className="text-primary"/>
+                                                   Alternar Cargo
+                                                </DropdownMenuItem>
+                                                
+                                                <DropdownMenuSeparator className="bg-white/5" />
+                                                
+                                                <DropdownMenuItem 
+                                                   onClick={() => handleRemoveFromTournament(p.player_id || "not-found", p.player?.nickname || "Desconhecido")} 
+                                                   className="text-[10px] font-black uppercase tracking-widest italic gap-2 py-2.5 text-red-500 focus:bg-red-500/10 focus:text-red-500"
+                                                >
+                                                   <Trash2 size={12}/>
+                                                   Remover Torneio & Hub
+                                                </DropdownMenuItem>
+                                             </DropdownMenuContent>
+                                          </DropdownMenu>
+                                       )}
+                                    </div>
+                                 </div>
                               ))}
                           </div>
                        </div>
@@ -953,6 +1126,28 @@ export default function TournamentHubPage() {
         open={showCreateChannel}
         onOpenChange={setShowCreateChannel}
       />
+
+      <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && setConfirmDialog(prev => ({ ...prev, isOpen: false }))}>
+        <AlertDialogContent className="bg-[#0D0D0F] border-primary/20 shadow-[0_0_50px_rgba(138,43,226,0.1)] rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-black italic uppercase text-white flex items-center gap-3">
+              <span className="text-primary text-2xl">⚠️</span> {confirmDialog.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400 font-bold uppercase text-[10px] tracking-widest leading-relaxed mt-2">
+              {confirmDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel className="bg-white/5 border-white/5 text-white hover:bg-white/10 font-black italic uppercase text-[10px] h-11 px-6 rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDialog.action}
+              className="bg-primary text-black hover:opacity-90 font-black italic uppercase text-[10px] h-11 px-8 rounded-xl shadow-[0_0_15px_rgba(138,43,226,0.4)] transition-all"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Global Finalized Banner */}
       {tournament.status === 'completed' && (

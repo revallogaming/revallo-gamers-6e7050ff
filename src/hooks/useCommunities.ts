@@ -210,7 +210,7 @@ export function useMessages(channelId: string, userId?: string) {
       const lastDoc = snapshot.docs[snapshot.docs.length - 1];
       const isNewMessage = snapshot.docChanges().some(change => change.type === "added");
 
-      const msgs = snapshot.docs.map((doc) => {
+      const newMessages = snapshot.docs.map((doc) => {
         const data = doc.data();
         let createdAt = data.created_at;
         
@@ -230,7 +230,7 @@ export function useMessages(channelId: string, userId?: string) {
 
       // Fetch profile for each message
       const msgsWithProfiles = await Promise.all(
-        msgs.map(async (m) => {
+        newMessages.map(async (m: Message) => {
           // Client-side filtering for temporary messages
           if (m.expires_at && m.expires_at < now) return null;
 
@@ -247,7 +247,15 @@ export function useMessages(channelId: string, userId?: string) {
         }),
       );
 
-      const filteredMessages = msgsWithProfiles.filter(m => m !== null) as Message[];
+      const filteredMessages = msgsWithProfiles.filter((m: Message | null) => m !== null) as Message[];
+      
+      // Ensure chronological order (fixes optimistic updates with null timestamps from Firestore)
+      filteredMessages.sort((a, b) => {
+        const timeA = new Date(a.created_at).getTime();
+        const timeB = new Date(b.created_at).getTime();
+        return timeA - timeB;
+      });
+
       setMessages(filteredMessages);
       setLoading(false);
 
