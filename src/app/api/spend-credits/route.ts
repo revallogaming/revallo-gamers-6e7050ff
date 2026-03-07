@@ -1,26 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { adminDb, verifyToken } from "@/lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
+  let body: any = {};
   try {
-    // ── Authentication ─────────────────────────────────────────────────────
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ message: "Não autorizado" }, { status: 401 });
-    }
-    const token = authHeader.split("Bearer ")[1];
-    const decoded = await verifyToken(token);
+    body = await req.json();
+  } catch (e) {} // ignore parse errors
 
-    const body = await req.json();
+  try {
+    const decodedToken = await verifyToken(req);
+    const authUserId = decodedToken.uid;
     const { user_id, amount, type, description, reference_id } = body;
 
-    // Enforce: caller can only spend their own credits
-    if (!user_id || decoded.uid !== user_id) {
-      return NextResponse.json({ message: "Não autorizado" }, { status: 403 });
-    }
-
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ message: "Valor inválido" }, { status: 400 });
+    // Ensure the authenticated user is spending their own credits
+    if (authUserId !== user_id) {
+      return NextResponse.json({ message: "Forbidden: Cannot spend credits for another user" }, { status: 403 });
     }
 
     const userCreditsRef = adminDb.collection("user_credits").doc(user_id);
@@ -50,7 +44,7 @@ export async function POST(req: NextRequest) {
       const transactionRef = adminDb.collection("credit_transactions").doc();
       transaction.set(transactionRef, {
         user_id,
-        amount,
+        amount: -Math.abs(amount), // ensure deduction
         type,
         description,
         reference_id: reference_id || null,
@@ -58,13 +52,10 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: unknown) {
     console.error("Error spending credits:", error);
-    return NextResponse.json(
-      { message: error?.message || "Internal Server Error" },
-      { status: 400 }
-    );
+    const message = error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ message: message }, { status: 400 });
   }
 }
-

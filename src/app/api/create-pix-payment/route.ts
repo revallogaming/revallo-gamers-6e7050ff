@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { adminDb, adminAuth, verifyToken } from "@/lib/firebaseAdmin";
 import crypto from "crypto";
 
@@ -12,21 +12,20 @@ const VALID_PACKAGES = [
 ] as const;
 
 export async function POST(req: NextRequest) {
+  let body: any = {};
   try {
-    // ── Authentication ─────────────────────────────────────────────────────
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-    }
-    const token = authHeader.split("Bearer ")[1];
-    const decoded = await verifyToken(token);
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
-    const body = await req.json();
+  try {
+    // Verify Firebase ID Token
+    const decodedToken = await verifyToken(req);
+    const authUserId = decodedToken.uid;
+
     const { amount_brl, credits_amount, user_id } = body;
 
-    // Caller must match the user_id in the body
-    if (!user_id || decoded.uid !== user_id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
+    if (!user_id || authUserId !== user_id) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     // Validate against valid packages
@@ -61,7 +60,7 @@ export async function POST(req: NextRequest) {
         payer: {
           email: userRecord.email,
         },
-        notification_url: process.env.MP_PRODUCTION_WEBHOOK_URL,
+        notification_url: process.env.MP_PRODUCTION_WEBHOOK_URL, // Ensure this points to the Vercel URL
         metadata: {
           user_id: user_id,
           type: "credit_purchase",
@@ -97,9 +96,10 @@ export async function POST(req: NextRequest) {
       qr_code_base64:
         mpData.point_of_interaction?.transaction_data?.qr_code_base64,
       mercadopago_id: String(mpData.id),
-    });
-  } catch (error: any) {
+    }, { status: 200 });
+  } catch (error: unknown) {
     console.error("Unexpected error:", error);
-    return NextResponse.json({ error: error?.message || "Erro interno" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro interno";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

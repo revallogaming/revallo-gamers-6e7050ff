@@ -15,14 +15,18 @@ export const adminDb = admin.firestore();
 export const adminStorage = admin.storage();
 
 export const verifyToken = async (
-  reqOrToken: import("http").IncomingMessage | string,
+  reqOrToken: any | string,
 ) => {
   let token: string | undefined;
 
   if (typeof reqOrToken === "string") {
     token = reqOrToken;
   } else {
-    const authHeader = reqOrToken.headers.authorization;
+    // Support Web Request (NextRequest) and Node Request (IncomingMessage)
+    const authHeader = reqOrToken.headers?.get
+      ? reqOrToken.headers.get("authorization")
+      : reqOrToken.headers?.authorization;
+
     if (authHeader?.startsWith("Bearer ")) {
       token = authHeader.split(" ")[1];
     }

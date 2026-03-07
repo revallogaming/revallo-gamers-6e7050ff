@@ -1,18 +1,19 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb, verifyToken } from "../src/lib/firebaseAdmin";
+import { NextResponse, NextRequest } from "next/server";
+import { adminDb, verifyToken } from "@/lib/firebaseAdmin";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
   try {
     const decodedToken = await verifyToken(req);
     const userId = decodedToken.uid;
-    const { tournament_id, results } = req.body;
+    const { tournament_id, results } = body;
 
     if (!tournament_id || !results || !Array.isArray(results)) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     let allSuccessful = true;
@@ -96,11 +97,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     });
 
-    return res
-      .status(200)
-      .json({ success: true, all_successful: allSuccessful });
+    return NextResponse.json({ success: true, all_successful: allSuccessful }, { status: 200 });
   } catch (error: any) {
     console.error("Error distributing prizes:", error);
-    return res.status(400).json({ error: error.message });
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

@@ -134,32 +134,32 @@ export default function CommunitiesPage() {
         description="Hub social gamer da Revallo."
       />
       <Header />
-      <div className="flex-1 overflow-y-auto py-12 px-4">
+      <div className="flex-1 overflow-y-auto py-6 md:py-12 px-4 md:px-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-white mb-12 transition-colors text-[10px] font-black uppercase tracking-[0.2em]"
+          className="inline-flex items-center gap-2 text-gray-500 hover:text-white mb-8 md:mb-12 transition-colors text-[10px] font-black uppercase tracking-[0.2em]"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar ao Início
         </Link>
 
         {/* Hero Section */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16 px-2">
-          <div className="max-w-2xl">
-            <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 md:gap-8 mb-10 md:mb-16">
+          <div className="max-w-2xl px-2">
+            <h1 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter mb-4 leading-none">
               Comuni<span className="text-primary">dades</span>
             </h1>
-            <p className="text-gray-400 font-medium text-lg leading-relaxed">
+            <p className="text-gray-400 font-medium text-base md:text-lg leading-relaxed">
               O coração social da Revallo. Crie hubs, encontre parças e domine o
               cenário competitivo com a sua galera.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative group min-w-[300px]">
+          <div className="flex flex-col sm:flex-row gap-4 px-2">
+            <div className="relative group flex-1 sm:min-w-[300px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600 group-focus-within:text-primary transition-colors" />
-              <Input
+              <input
                 placeholder="Buscar hubs..."
-                className="pl-12 bg-white/5 border-white/5 h-12 rounded-xl focus:border-primary/50 text-white font-bold"
+                className="w-full pl-12 bg-white/5 border border-white/5 h-12 rounded-xl focus:border-primary/50 text-white font-bold outline-none focus:ring-1 focus:ring-primary/20 transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -172,7 +172,7 @@ export default function CommunitiesPage() {
                   setShowCreateDialog(true);
                 }
               }}
-              className="bg-primary hover:opacity-90 gap-3 rounded-xl h-12 px-8 font-black italic uppercase shadow-lg shadow-primary/20 transition-all active:scale-95"
+              className="bg-primary hover:opacity-90 gap-3 rounded-xl h-12 px-8 font-black italic uppercase shadow-lg shadow-primary/20 transition-all active:scale-95 whitespace-nowrap"
             >
               <Plus className="h-5 w-5" />
               Criar Hub
@@ -182,20 +182,20 @@ export default function CommunitiesPage() {
 
         {/* Communities Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8">
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className="aspect-[3/4] rounded-[40px] bg-white/5 animate-pulse border border-white/5"
+                className="aspect-[3/4] rounded-[32px] md:rounded-[40px] bg-white/5 animate-pulse border border-white/5"
               />
             ))}
           </div>
         ) : filteredCommunities && filteredCommunities.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8">
             {filteredCommunities.map((community) => (
               <Card
                 key={community.id}
-                className="bg-[#0D0D0F]/80 border-white/5 overflow-hidden group hover:border-primary/50 transition-all duration-500 rounded-[28px] hover:-translate-y-2 shadow-2xl flex flex-col h-full"
+                className="bg-[#0D0D0F]/80 border-white/5 overflow-hidden group hover:border-primary/50 transition-all duration-500 rounded-[24px] md:rounded-[28px] hover:-translate-y-2 shadow-2xl flex flex-col h-full"
               >
                 <Link
                   href={community.type === 'tournament' ? `/tournaments/${community.tournament_id}/hub` : `/communities/${community.id}`}
@@ -224,11 +224,11 @@ export default function CommunitiesPage() {
                     )}
                   </div>
                 </Link>
-                <CardContent className="p-6 flex flex-col flex-1">
-                  <h3 className="text-lg font-black italic uppercase tracking-tighter mb-2 group-hover:text-primary transition-colors truncate">
+                <CardContent className="p-4 md:p-6 flex flex-col flex-1">
+                  <h3 className="text-base md:text-lg font-black italic uppercase tracking-tighter mb-2 group-hover:text-primary transition-colors truncate">
                     {community.name}
                   </h3>
-                  <p className="text-gray-500 text-[10px] font-medium mb-6 line-clamp-2 leading-relaxed h-10">
+                  <p className="text-gray-500 text-[10px] font-medium mb-4 md:mb-6 line-clamp-2 leading-relaxed h-8 md:h-10">
                     {community.description ||
                       "Hub oficial Revallo para integração de players."}
                   </p>
@@ -265,6 +265,7 @@ export default function CommunitiesPage() {
               </Card>
             ))}
           </div>
+
         ) : (
           <div className="flex flex-col items-center justify-center py-32 text-center bg-white/2 border border-dashed border-white/5 rounded-[50px]">
             <div className="h-24 w-24 rounded-[32px] bg-white/5 flex items-center justify-center mb-8 border border-white/5">

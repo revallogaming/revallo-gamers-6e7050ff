@@ -1,38 +1,31 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminAuth } from "../src/lib/firebaseAdmin";
+import { NextResponse, NextRequest } from "next/server";
+import { adminAuth } from "@/lib/firebaseAdmin";
 import nodemailer from "nodemailer";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
-
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ error: "Email é obrigatório" });
-  }
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch (e) {} // ignore parse errors
 
   try {
-    // Check if user exists
+    const { email } = body;
+    if (!email) {
+      return NextResponse.json({ error: "Email required" }, { status: 400 });
+    }
+
     try {
       await adminAuth.getUserByEmail(email);
     } catch (e) {
-      // For security, don't reveal if user exists, but we need to know to avoid sending junk
-      return res
-        .status(200)
-        .json({
-          message:
-            "Se o email estiver cadastrado, um link de recuperação será enviado.",
-        });
+      return NextResponse.json({
+        message: "Se o email estiver cadastrado, um link de recuperação será enviado."
+      }, { status: 200 });
     }
 
-    // Generate reset link
     const link = await adminAuth.generatePasswordResetLink(email, {
       url: `${process.env.NEXT_PUBLIC_APP_URL || "https://revallo.com"}/reset-password`,
     });
 
-    // Configure transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -41,7 +34,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
 
-    // Send email
     await transporter.sendMail({
       from: `"Revallo" <${process.env.GMAIL_USER}>`,
       to: email,
@@ -60,13 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `,
     });
 
-    return res
-      .status(200)
-      .json({ message: "Email de recuperação enviado com sucesso" });
+    return NextResponse.json({ message: "Email de recuperação enviado com sucesso" }, { status: 200 });
   } catch (error: any) {
     console.error("Error sending reset email:", error);
-    return res
-      .status(500)
-      .json({ error: "Erro ao enviar email de recuperação" });
+    return NextResponse.json({ error: "Erro ao enviar email de recuperação" }, { status: 500 });
   }
 }

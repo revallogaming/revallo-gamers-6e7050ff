@@ -1,23 +1,25 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb, verifyToken } from "../src/lib/firebaseAdmin";
+import { NextResponse, NextRequest } from "next/server";
+import { adminDb, verifyToken } from "@/lib/firebaseAdmin";
+import crypto from "crypto";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
   try {
     const decodedToken = await verifyToken(req);
     const userId = decodedToken.uid;
-    const { tournament_id, email, amount_brl } = req.body;
+    const { tournament_id, email, amount_brl } = body;
 
     if (!tournament_id || !email || !amount_brl) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const accessToken = process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
-      return res.status(500).json({ error: "Integração de pagamento não configurada" });
+      return NextResponse.json({ error: "Integração de pagamento não configurada" }, { status: 500 });
     }
 
     const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
@@ -25,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
-        "X-Idempotency-Key": require("crypto").randomUUID(),
+        "X-Idempotency-Key": crypto.randomUUID(),
       },
       body: JSON.stringify({
         transaction_amount: Number(amount_brl),
@@ -46,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!mpResponse.ok) {
       const errorText = await mpResponse.text();
       console.error("Mercado Pago Error:", errorText);
-      return res.status(500).json({ error: "Erro ao gerar PIX" });
+      return NextResponse.json({ error: "Erro ao gerar PIX" }, { status: 500 });
     }
 
     const mpData = await mpResponse.json();
@@ -66,15 +68,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       created_at: new Date().toISOString(),
     });
 
-    return res.status(200).json({
+    return NextResponse.json({
       qr_code,
       qr_code_base64,
       payment_id: mercadopago_id,
-    });
+    }, { status: 200 });
   } catch (error: unknown) {
     console.error("Error creating registration PIX:", error);
     const message =
       error instanceof Error ? error.message : "Internal Server Error";
-    return res.status(401).json({ error: message });
+    return NextResponse.json({ error: message }, { status: 401 });
   }
 }

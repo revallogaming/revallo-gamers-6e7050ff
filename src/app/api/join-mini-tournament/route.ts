@@ -1,18 +1,19 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb } from "../src/lib/firebaseAdmin";
+import { NextResponse, NextRequest } from "next/server";
+import { adminDb } from "@/lib/firebaseAdmin";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
-
-  const { tournament_id, user_id } = req.body;
-
-  if (!tournament_id || !user_id) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
   try {
+    const { tournament_id, user_id } = body;
+
+    if (!tournament_id || !user_id) {
+       return NextResponse.json({ error: "Missing tournament_id or user_id" }, { status: 400 });
+    }
+
     await adminDb.runTransaction(async (transaction) => {
       const tournamentRef = adminDb
         .collection("mini_tournaments")
@@ -75,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const transactionRef = adminDb.collection("credit_transactions").doc();
       transaction.set(transactionRef, {
         user_id,
-        amount: entryFee,
+        amount: -Math.abs(entryFee), // Ensure it's a deduction
         type: "entry_fee",
         description: `Inscrição no mini torneio: ${tournament.title}`,
         reference_id: tournament_id,
@@ -83,9 +84,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     });
 
-    return res.status(200).json({ success: true });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
     console.error("Error joining mini tournament:", error);
-    return res.status(400).json({ error: error.message });
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

@@ -31,6 +31,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import {
   Send,
@@ -149,6 +150,202 @@ export default function CommunityDetailPage({ params }: PageProps) {
     updateChannel,
     updateMemberNotificationSettings,
   } = useCommunityActions();
+
+  const renderSidebarContent = () => (
+    <>
+      <div className="p-6 border-b border-white/5 bg-black/10 backdrop-blur-md shrink-0">
+        <Link
+          href="/communities"
+          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white mb-6 transition-colors italic"
+        >
+          <ArrowLeft className="h-3 w-3" />
+          Explorar Hubs
+        </Link>
+
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-[20px] bg-primary/10 border border-primary/20 flex items-center justify-center font-black italic text-primary text-xl shrink-0 shadow-lg shadow-primary/5">
+            {community?.name?.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-black italic uppercase tracking-tighter text-white truncate">
+              {community?.name}
+            </h2>
+            <div className="flex flex-col gap-2 mt-4">
+              {isMember ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleJoinLeave}
+                  className="w-full h-8 bg-red-500/5 border-red-500/20 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-all"
+                >
+                  Sair do Hub
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleJoinLeave}
+                  className="w-full h-8 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all"
+                >
+                  Entrar no Hub
+                </Button>
+              )}
+
+              {isOwner && (
+                <EditCommunityDialog community={community!}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-8 bg-white/2 border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/5 hover:text-primary transition-all group/btn"
+                  >
+                    <Settings className="h-3 w-3.5 mr-2 text-gray-500 group-hover/btn:text-primary" />
+                    Configurações
+                  </Button>
+                </EditCommunityDialog>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-6">
+          <div>
+            <div className="flex items-center justify-between px-3 mb-3">
+              <p className="text-[10px] font-black text-gray-700 uppercase tracking-[0.2em] italic">
+                Canais do Hub
+              </p>
+              {isOwner && (
+                <button 
+                  onClick={() => setShowCreateChannel(true)}
+                  className="text-gray-600 hover:text-primary transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="space-y-1">
+              {channels?.map((channel) => {
+                const isActive = selectedChannelId === channel.id;
+                const isAnnouncement = channel.type === "announcement";
+                return (
+                  <div key={channel.id} className="relative group/channel">
+                    <button
+                      onClick={() => {
+                        setSelectedChannelId(channel.id);
+                      }}
+                      className={`w-full group flex items-center gap-4 px-3 py-3 rounded-2xl text-left transition-all ${
+                        isActive
+                          ? "bg-white/5 text-white"
+                          : "text-gray-500 hover:bg-white/2 hover:text-white"
+                      }`}
+                    >
+                      <div
+                        className={`h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                          isActive
+                            ? "bg-primary text-white shadow-lg shadow-primary/20 scale-95"
+                            : "bg-white/2 group-hover:bg-white/5"
+                        }`}
+                      >
+                        {isAnnouncement ? (
+                            <Megaphone className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-700 group-hover:text-primary"}`} />
+                        ) : (
+                            <Hash className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-700 group-hover:text-primary"}`} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black italic uppercase tracking-tighter text-sm truncate">
+                          {channel.name}
+                        </p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-700 italic">
+                          {isActive ? "Sessão Ativa" : isAnnouncement ? "Anúncios" : "Chat de Texto"}
+                        </p>
+                      </div>
+
+                      {isMember && channel.name !== "geral" && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className={`p-2 text-gray-700 hover:text-white transition-all ${isActive ? "opacity-100" : "opacity-0 group-hover/channel:opacity-100"}`}
+                            >
+                              <MoreVertical size={14} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-[#0D0B1A] border-white/10 text-white rounded-xl min-w-[160px]">
+                            <DropdownMenuItem 
+                              onClick={() => handleToggleTempMessages(channel.id, !!channel.is_temporary)}
+                              className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-white/5 focus:text-white cursor-pointer py-2.5"
+                            >
+                              <Clock size={12} className={channel.is_temporary ? "text-primary" : "text-gray-500"} />
+                              {channel.is_temporary ? "Desativar Temp." : "Mensagens Temp."}
+                            </DropdownMenuItem>
+                            
+                            {isOwner && (
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleAnnouncement(channel.id, channel.type)}
+                                className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-white/5 focus:text-white cursor-pointer py-2.5"
+                              >
+                                <Shield size={12} className={channel.type === "announcement" ? "text-primary" : "text-gray-500"} />
+                                {channel.type === "announcement" ? "Permitir Mensagens" : "Somente Admins"}
+                              </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuItem 
+                              onClick={() => handleClearChat(channel.id, channel.name)}
+                              className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-red-500/10 focus:text-red-500 text-red-400 cursor-pointer py-2.5"
+                            >
+                              <Trash2 size={12} />
+                              {isModerator ? "Limpar Canal" : "Limpar para mim"}
+                            </DropdownMenuItem>
+
+                            {isModerator && (
+                              <>
+                                <DropdownMenuSeparator className="bg-white/5" />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteChannel(channel.id, channel.name)}
+                                  className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-red-500/10 focus:text-red-500 text-red-500 cursor-pointer py-2.5"
+                                >
+                                  <X size={12} />
+                                  Excluir Canal
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </ScrollArea>
+
+      <div className="p-4 bg-black/40 border-t border-white/5 backdrop-blur-md shrink-0">
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/2 border border-white/5">
+          <Avatar className="h-9 w-9 border border-white/10 shrink-0">
+            <AvatarImage src={user?.photoURL || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-black italic">
+              {user?.displayName?.charAt(0) || "?"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-black uppercase italic tracking-tighter truncate text-white">
+              {user?.displayName || "Player"}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 italic">
+                Hub Ativo
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   const handleJoinLeave = async () => {
     if (!user) {
@@ -427,246 +624,75 @@ export default function CommunityDetailPage({ params }: PageProps) {
       <div className="flex-1 flex overflow-hidden relative">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/2 cursor-default blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-        <aside className="w-80 bg-black/20 backdrop-blur-xl border-r border-white/5 hidden md:flex flex-col shrink-0 relative z-10 transition-all duration-500">
-          <div className="p-6 border-b border-white/5 bg-black/10 backdrop-blur-md">
-            <Link
-              href="/communities"
-              className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white mb-6 transition-colors italic"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Explorar Hubs
-            </Link>
-
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-[20px] bg-primary/10 border border-primary/20 flex items-center justify-center font-black italic text-primary text-xl shrink-0 shadow-lg shadow-primary/5">
-                {community?.name?.charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-lg font-black italic uppercase tracking-tighter text-white truncate">
-                  {community?.name}
-                </h2>
-                <div className="flex flex-col gap-4 mt-6">
-                  {isMember ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleJoinLeave}
-                      className="w-full h-9 bg-red-500/5 border-red-500/20 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-all"
-                    >
-                      Sair do Hub
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleJoinLeave}
-                      className="w-full h-9 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all"
-                    >
-                      Entrar no Hub
-                    </Button>
-                  )}
-
-                  {isOwner && (
-                    <EditCommunityDialog community={community!}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full h-9 bg-white/2 border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 hover:text-primary transition-all group/btn"
-                      >
-                        <Settings className="h-3.5 w-3.5 mr-2 text-gray-500 group-hover/btn:text-primary" />
-                        Configurações
-                      </Button>
-                    </EditCommunityDialog>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-6">
-              <div>
-                <div className="flex items-center justify-between px-3 mb-3">
-                  <p className="text-[10px] font-black text-gray-700 uppercase tracking-[0.2em] italic">
-                    Canais do Hub
-                  </p>
-                  {isOwner && (
-                    <button 
-                      onClick={() => setShowCreateChannel(true)}
-                      className="text-gray-600 hover:text-primary transition-colors"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  {channels?.map((channel) => {
-                    const isActive = selectedChannelId === channel.id;
-                    const isAnnouncement = channel.type === "announcement";
-                    return (
-                      <div key={channel.id} className="relative group/channel">
-                        <button
-                          onClick={() => setSelectedChannelId(channel.id)}
-                          className={`w-full group flex items-center gap-4 px-3 py-3 rounded-2xl text-left transition-all ${
-                            isActive
-                              ? "bg-white/5 text-white"
-                              : "text-gray-500 hover:bg-white/2 hover:text-white"
-                          }`}
-                        >
-                          <div
-                            className={`h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 ${
-                              isActive
-                                ? "bg-primary text-white shadow-lg shadow-primary/20 scale-95"
-                                : "bg-white/2 group-hover:bg-white/5"
-                            }`}
-                          >
-                            {isAnnouncement ? (
-                                <Megaphone className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-700 group-hover:text-primary"}`} />
-                            ) : (
-                                <Hash className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-700 group-hover:text-primary"}`} />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-black italic uppercase tracking-tighter text-sm truncate">
-                              {channel.name}
-                            </p>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-700 italic">
-                              {isActive ? "Sessão Ativa" : isAnnouncement ? "Anúncios" : "Chat de Texto"}
-                            </p>
-                          </div>
-
-                          {isMember && channel.name !== "geral" && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`p-2 text-gray-700 hover:text-white transition-all ${isActive ? "opacity-100" : "opacity-0 group-hover/channel:opacity-100"}`}
-                                >
-                                  <MoreVertical size={14} />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-[#0D0B1A] border-white/10 text-white rounded-xl min-w-[160px]">
-                                <DropdownMenuItem 
-                                  onClick={() => handleToggleTempMessages(channel.id, !!channel.is_temporary)}
-                                  className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-white/5 focus:text-white cursor-pointer py-2.5"
-                                >
-                                  <Clock size={12} className={channel.is_temporary ? "text-primary" : "text-gray-500"} />
-                                  {channel.is_temporary ? "Desativar Temp." : "Mensagens Temp."}
-                                </DropdownMenuItem>
-                                
-                                {isOwner && (
-                                  <DropdownMenuItem 
-                                    onClick={() => handleToggleAnnouncement(channel.id, channel.type)}
-                                    className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-white/5 focus:text-white cursor-pointer py-2.5"
-                                  >
-                                    <Shield size={12} className={channel.type === "announcement" ? "text-primary" : "text-gray-500"} />
-                                    {channel.type === "announcement" ? "Permitir Mensagens" : "Somente Admins"}
-                                  </DropdownMenuItem>
-                                )}
-
-                                <DropdownMenuItem 
-                                  onClick={() => handleClearChat(channel.id, channel.name)}
-                                  className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-red-500/10 focus:text-red-500 text-red-400 cursor-pointer py-2.5"
-                                >
-                                  <Trash2 size={12} />
-                                  {isModerator ? "Limpar Canal" : "Limpar para mim"}
-                                </DropdownMenuItem>
-
-                                {isModerator && (
-                                  <>
-                                    <DropdownMenuSeparator className="bg-white/5" />
-                                    <DropdownMenuItem 
-                                      onClick={() => handleDeleteChannel(channel.id, channel.name)}
-                                      className="text-[10px] font-black uppercase tracking-widest italic gap-2 focus:bg-red-500/10 focus:text-red-500 text-red-500 cursor-pointer py-2.5"
-                                    >
-                                      <X size={12} />
-                                      Excluir Canal
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </ScrollArea>
-
-          <div className="p-4 bg-black/40 border-t border-white/5 backdrop-blur-md">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/2 border border-white/5">
-              <Avatar className="h-9 w-9 border border-white/10 shrink-0">
-                <AvatarImage src={user?.photoURL || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-black italic">
-                  {user?.displayName?.charAt(0) || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-black uppercase italic tracking-tighter truncate text-white">
-                  {user?.displayName || "Player"}
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 italic">
-                    Hub Ativo
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Desktop Sidebar */}
+        <aside className="w-80 bg-black/20 backdrop-blur-xl border-r border-white/5 hidden lg:flex flex-col shrink-0 relative z-10 transition-all duration-500">
+          {renderSidebarContent()}
         </aside>
 
+        {/* Mobile Sidebar Trigger & Sheet */}
+        <Sheet>
+          <div className="lg:hidden fixed bottom-24 right-6 z-50">
+            <SheetTrigger asChild>
+              <Button size="icon" className="h-14 w-14 rounded-2xl bg-primary shadow-2xl shadow-primary/40 border border-primary/20">
+                <Hash className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+          </div>
+          <SheetContent side="left" className="w-[300px] p-0 bg-[#0D0D0F] border-white/5">
+            <div className="h-full flex flex-col">
+              {renderSidebarContent()}
+            </div>
+          </SheetContent>
+        </Sheet>
+
         <main className="flex-1 flex flex-col bg-transparent min-w-0 relative z-20">
-          <header className="h-20 border-b border-white/5 flex items-center px-8 justify-between bg-black/20 backdrop-blur-xl shrink-0">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-xl bg-primary/20 border border-primary/20 flex items-center justify-center">
+          <header className="h-20 border-b border-white/5 flex items-center px-4 md:px-8 justify-between bg-black/20 backdrop-blur-xl shrink-0">
+            <div className="flex items-center gap-3 md:gap-4 min-w-0">
+              <div className="h-10 w-10 rounded-xl bg-primary/20 border border-primary/20 flex items-center justify-center shrink-0">
                 {currentChannel?.type === 'announcement' ? <Megaphone className="h-5 w-5 text-primary" /> : <Hash className="h-5 w-5 text-primary" />}
               </div>
-              <div>
-                <h3 className="text-lg font-black italic uppercase tracking-tighter text-white">
+              <div className="min-w-0">
+                <h3 className="text-base md:text-lg font-black italic uppercase tracking-tighter text-white truncate">
                   {currentChannel?.name || "Hub Principal"}
                 </h3>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-700 italic">
-                  {currentChannel?.type === 'announcement' ? 'Canal de Anúncios • Somente Admins' : 'Canal de Texto • Comunitário'}
-                  {currentChannel?.is_temporary && <span className="text-primary ml-2">• Mensagens Temporárias (24h)</span>}
+                <p className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] text-gray-700 italic truncate">
+                  {currentChannel?.type === 'announcement' ? 'Somente Admins' : 'Comunitário'}
+                  {currentChannel?.is_temporary && <span className="text-primary ml-2">• Temp (24h)</span>}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 md:gap-2">
               <button 
                 onClick={handleToggleNotifications}
-                className={`h-10 w-10 flex items-center justify-center border rounded-xl transition-all ${currentMember?.notifications_enabled ? "bg-primary/10 border-primary/20 text-primary" : "bg-white/2 border-white/5 text-gray-600 hover:text-white"}`}
-                title={currentMember?.notifications_enabled ? "Desativar Notificações" : "Ativar Notificações"}
+                className={`h-9 w-9 md:h-10 md:w-10 flex items-center justify-center border rounded-xl transition-all ${currentMember?.notifications_enabled ? "bg-primary/10 border-primary/20 text-primary" : "bg-white/2 border-white/5 text-gray-600 hover:text-white"}`}
+                title={currentMember?.notifications_enabled ? "Desativar" : "Ativar"}
               >
                 {currentMember?.notifications_enabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
               </button>
 
               <button 
                 onClick={() => setShowInvite(true)}
-                className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 h-10 rounded-xl hover:bg-primary/20 transition-all"
+                className="hidden sm:flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 md:px-4 h-9 md:h-10 rounded-xl hover:bg-primary/20 transition-all"
               >
                 <UserPlus className="h-4 w-4 text-primary" />
-                <span className="text-[10px] font-black uppercase tracking-widest italic text-primary">
+                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest italic text-primary">
                   Convidar
                 </span>
               </button>
 
               <button 
                 onClick={() => setShowReport(true)}
-                className="h-10 w-10 flex items-center justify-center bg-white/2 border border-white/5 rounded-xl hover:bg-white/5 transition-all"
+                className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center bg-white/2 border border-white/5 rounded-xl hover:bg-white/5 transition-all"
                 title="Denunciar Hub"
               >
                 <Flag className="h-4 w-4 text-gray-600" />
               </button>
 
-              <button onClick={() => setShowMembers(true)} className="flex items-center gap-3 bg-white/2 border border-white/5 px-4 h-10 rounded-xl">
+              <button onClick={() => setShowMembers(true)} className="flex items-center gap-2 md:gap-3 bg-white/2 border border-white/5 px-3 md:px-4 h-9 md:h-10 rounded-xl">
                 <Users className="h-4 w-4 text-gray-600" />
-                <span className="text-[10px] font-black uppercase tracking-widest italic text-gray-500">
-                  {memberCount ?? (members?.length) ?? (community?.member_count || 0)} Membros
+                <span className="hidden xs:inline text-[9px] md:text-[10px] font-black uppercase tracking-widest italic text-gray-500">
+                  {memberCount ?? (members?.length) ?? (community?.member_count || 0)}
                 </span>
               </button>
             </div>

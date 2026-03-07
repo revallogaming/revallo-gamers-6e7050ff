@@ -1,46 +1,45 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb, verifyToken } from "../src/lib/firebaseAdmin";
+import { NextResponse, NextRequest } from "next/server";
+import { adminDb, verifyToken } from "@/lib/firebaseAdmin";
 
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
   try {
     const decodedToken = await verifyToken(req);
     const userId = decodedToken.uid;
-    const { tournament_id, winners } = req.body; // winners: [{ player_id, placement, amount }]
+    const { tournament_id, winners } = body; // winners: [{ player_id, placement, amount }]
 
     if (!tournament_id || !winners || !Array.isArray(winners) || winners.length === 0) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const tournamentRef = adminDb.collection("tournaments").doc(tournament_id);
     const tournamentDoc = await tournamentRef.get();
 
     if (!tournamentDoc.exists) {
-      return res.status(404).json({ error: "Torneio não encontrado" });
+      return NextResponse.json({ error: "Torneio não encontrado" }, { status: 404 });
     }
 
     const tournament = tournamentDoc.data()!;
     if (tournament.organizer_id !== userId) {
-      return res.status(403).json({ error: "Apenas o organizador pode distribuir prêmios" });
+      return NextResponse.json({ error: "Apenas o organizador pode distribuir prêmios" }, { status: 403 });
     }
 
     // Prevent re-distribution if already completed
     if (tournament.status === "completed" && tournament.prizes_distributed_at) {
-      return res.status(400).json({ error: "Prêmios já distribuídos para este torneio" });
+      return NextResponse.json({ error: "Prêmios já distribuídos para este torneio" }, { status: 400 });
     }
 
-    // ── Budget Validation ────────────────────────────────────────────────────
+    // Budget Validation
     const totalDistribution = winners.reduce((sum: number, w: any) => sum + (w.amount || 0), 0);
     const prizePool = tournament.prize_pool_total || tournament.prize_amount || 0;
     if (prizePool > 0 && totalDistribution > prizePool * 1.01) { // 1% tolerance for rounding
-      return res.status(400).json({
+      return NextResponse.json({
         error: `Total de distribuição (R$ ${totalDistribution.toFixed(2)}) excede o fundo de prêmios (R$ ${prizePool.toFixed(2)})`
-      });
+      }, { status: 400 });
     }
 
     console.log(`Starting prize distribution for tournament ${tournament_id} by user ${userId}`);
@@ -53,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         continue;
       }
 
-      // ── Idempotency Check ──────────────────────────────────────────────────
+      // Idempotency Check
       const existingPayout = await adminDb
         .collection("prize_distributions")
         .where("tournament_id", "==", tournament_id)
@@ -67,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         continue;
       }
 
-      // ── Get participant PIX key ────────────────────────────────────────────
+      // Get participant PIX key
       const participantSnap = await adminDb
         .collection("tournament_participants")
         .where("tournament_id", "==", tournament_id)
@@ -89,7 +88,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         continue;
       }
 
-      // ── Mercado Pago Payout ────────────────────────────────────────────────
       try {
         console.log(`Processing payout for player ${winner.player_id}: R$ ${winner.amount}`);
         // NOTE: Real MP disbursement API call would go here.
@@ -123,7 +121,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // ── Mark tournament as completed ONLY if ALL succeeded (or skipped idempotently) ──
     const failedCount = results.filter(r => r.status === "failed").length;
     if (failedCount === 0) {
       console.log(`All prizes for tournament ${tournament_id} distributed successfully.`);
@@ -137,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await tournamentRef.update({ updated_at: new Date().toISOString() });
     }
 
-    return res.status(200).json({
+    return NextResponse.json({
       success: failedCount === 0,
       results,
       summary: {
@@ -146,10 +143,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         failed: failedCount,
         skipped: results.filter(r => r.status === "skipped").length,
       }
-    });
+    }, { status: 200 });
 
   } catch (error: any) {
     console.error("Distribution Error:", error);
-    return res.status(500).json({ error: error.message });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

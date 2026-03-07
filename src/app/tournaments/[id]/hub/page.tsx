@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { useTournament, useTournamentParticipants } from "@/hooks/useTournaments";
@@ -41,10 +42,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CreateChannelDialog } from "@/components/communities/CreateChannelDialog";
 import { AudioPlayer } from "@/components/communities/AudioPlayer";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import Link from "next/link";
 import { SEO } from "@/components/SEO";
 import { GAME_INFO, STATUS_INFO, TournamentParticipant, GameType, TournamentStatus } from "@/types";
 import { useCommunityActions, useChannels } from "@/hooks/useCommunities";
@@ -94,6 +101,8 @@ export default function TournamentHubPage() {
     activeChannel?.type, 
     tournament?.organizer_id
   );
+
+  const canType = activeChannel?.type !== "announcement" || isOrganizer;
 
   const [message, setMessage] = useState("");
   const [showCreateChannel, setShowCreateChannel] = useState(false);
@@ -297,6 +306,169 @@ export default function TournamentHubPage() {
     }
   };
 
+  const renderSidebarContent = () => (
+    <>
+      <div className="p-6 border-b border-white/5 bg-[#0D0D0F]/50 backdrop-blur-md shrink-0">
+        <Link 
+          href={`/tournaments/${id}`}
+          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white mb-6 transition-colors italic"
+        >
+          <ArrowLeft className="h-3 w-3" />
+          Ver Torneio
+        </Link>
+
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
+            <Trophy className="h-7 w-7 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-black italic uppercase tracking-tighter text-lg truncate leading-tight">
+              {tournament?.title}
+            </h3>
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary italic">
+              Hub do Torneio
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <ScrollArea className="flex-1 px-3 py-4">
+        <div className="space-y-6">
+            <div className="flex items-center justify-between px-3 mb-3">
+              <p className="text-[9px] font-black text-gray-700 uppercase tracking-[0.2em] italic">
+                Canais do Hub
+              </p>
+              {isOrganizer && (
+                <button 
+                  onClick={() => setShowCreateChannel(true)}
+                  className="text-gray-600 hover:text-primary transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="space-y-1">
+              {loadingChannels ? (
+                 <div className="flex items-center justify-center p-8">
+                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                 </div>
+              ) : (
+                channels?.map((channel) => {
+                  const isActive = activeChannelId === channel.id;
+                  return (
+                    <div key={channel.id} className="relative group/channel">
+                      <button
+                        key={channel.id}
+                        onClick={() => setActiveChannelId(channel.id)}
+                        className={`w-full group flex items-center gap-4 px-3 py-3 rounded-2xl text-left transition-all ${
+                          isActive
+                            ? "bg-white/5 text-white"
+                            : "text-gray-500 hover:bg-white/2 hover:text-white"
+                        }`}
+                      >
+                        <div
+                          className={`h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                            isActive
+                              ? "bg-primary text-white shadow-lg shadow-primary/20 scale-95"
+                              : "bg-white/2 group-hover:bg-white/5"
+                          }`}
+                        >
+                          {channel.type === 'announcement' ? (
+                              <Megaphone className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-700 group-hover:text-primary"}`} />
+                          ) : (
+                              <Hash className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-700 group-hover:text-primary"}`} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black italic uppercase tracking-tighter text-sm truncate">
+                            {channel.name}
+                          </p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-gray-700 italic">
+                            {channel.type === 'announcement' ? "Anúncios" : "Chat de Texto"}
+                          </p>
+                        </div>
+
+                        {isOrganizer && channel.name !== "geral" && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button onClick={e => e.stopPropagation()} className="opacity-0 group-hover/channel:opacity-100 p-2 text-gray-700 hover:text-white">
+                                <MoreVertical size={14} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent side="right" className="bg-[#0D0D0F] border-white/5">
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteChannel(channel.id, channel.name)}
+                                className="text-red-500 font-black italic uppercase text-[10px] tracking-widest"
+                              >
+                                <Trash2 size={12} className="mr-2" />
+                                Excluir Canal
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Functional Options Area */}
+          <div className="pt-4 border-t border-white/5 space-y-4">
+             <p className="text-[9px] font-black text-gray-700 uppercase tracking-[0.2em] italic mb-3 px-3">
+              Opções Adicionais
+            </p>
+            <div className="grid grid-cols-1 gap-2 px-1">
+               <Button 
+                 variant="ghost" 
+                 className="w-full justify-start h-12 rounded-2xl bg-white/2 border border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/5"
+                 onClick={() => setShowParticipants(!showParticipants)}
+               >
+                 <Users className="h-4 w-4 mr-3 text-primary" />
+                 Participantes
+               </Button>
+               <Button 
+                 variant="ghost" 
+                 className="w-full justify-start h-12 rounded-2xl bg-white/2 border border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/5"
+                 onClick={() => {
+                    const url = window.location.origin + `/tournaments/${id}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Link do torneio copiado!");
+                 }}
+               >
+                 <Share2 className="h-4 w-4 mr-3 text-blue-500" />
+                 Convidar Players
+               </Button>
+               {isOrganizer && (
+                <Button 
+                  variant="ghost" 
+                  className={`w-full justify-start h-12 rounded-2xl border text-[10px] font-black uppercase italic tracking-widest transition-all ${
+                    showManagement 
+                      ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
+                      : "bg-white/2 border-white/5 text-primary hover:bg-primary/5"
+                  }`}
+                  onClick={() => setShowManagement(!showManagement)}
+                >
+                  <Trophy className="h-4 w-4 mr-3" />
+                  Administrar
+                </Button>
+                )}
+               <Link href={`/tournaments/${id}`}>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start h-12 rounded-2xl bg-white/2 border border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/5"
+                >
+                  <Info className="h-4 w-4 mr-3 text-amber-500" />
+                  Regulamento
+                </Button>
+               </Link>
+            </div>
+          </div>
+      </ScrollArea>
+    </>
+  );
+
   const handleDeleteChannel = async (channelId: string, channelName: string) => {
     if (!isOrganizer) return;
     if (confirm(`Excluir canal #${channelName}?`)) {
@@ -386,204 +558,63 @@ export default function TournamentHubPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#0A0A0C] text-white">
-      <SEO title={`Hub: ${tournament.title} - Revallo`} />
+      <SEO title={`Hub: ${tournament?.title || "Carregando..." } - Revallo`} />
       <Header />
       
       <div className="flex flex-1 overflow-hidden relative">
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/2 blur-[120px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
-        {/* Sidebar: Channels */}
-        <aside className="w-72 bg-[#0D0D0F] border-r border-white/5 flex flex-col h-full shrink-0 relative z-10 transition-all duration-500">
-          <div className="p-6 border-b border-white/5 bg-[#0D0D0F]/50 backdrop-blur-md">
-            <Link 
-              href={`/tournaments/${id}`}
-              className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-white mb-6 transition-colors italic"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Ver Torneio
-            </Link>
-
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
-                <Trophy className="h-7 w-7 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-black italic uppercase tracking-tighter text-lg truncate leading-tight">
-                  {tournament.title}
-                </h3>
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary italic">
-                  Hub do Torneio
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <ScrollArea className="flex-1 px-3 py-4">
-            <div className="space-y-6">
-                <div className="flex items-center justify-between px-3 mb-3">
-                  <p className="text-[9px] font-black text-gray-700 uppercase tracking-[0.2em] italic">
-                    Canais do Hub
-                  </p>
-                  {isOrganizer && (
-                    <button 
-                      onClick={() => setShowCreateChannel(true)}
-                      className="text-gray-600 hover:text-primary transition-colors"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  {loadingChannels ? (
-                     <div className="flex items-center justify-center p-8">
-                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                     </div>
-                  ) : (
-                    channels?.map((channel) => {
-                      const isActive = activeChannelId === channel.id;
-                      return (
-                        <div key={channel.id} className="relative group/channel">
-                          <button
-                            key={channel.id}
-                            onClick={() => setActiveChannelId(channel.id)}
-                            className={`w-full group flex items-center gap-4 px-3 py-3 rounded-2xl text-left transition-all ${
-                              isActive
-                                ? "bg-white/5 text-white"
-                                : "text-gray-500 hover:bg-white/2 hover:text-white"
-                            }`}
-                          >
-                            <div
-                              className={`h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 ${
-                                isActive
-                                  ? "bg-primary text-white shadow-lg shadow-primary/20 scale-95"
-                                  : "bg-white/2 group-hover:bg-white/5"
-                              }`}
-                            >
-                              {channel.type === 'announcement' ? (
-                                  <Megaphone className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-700 group-hover:text-primary"}`} />
-                              ) : (
-                                  <Hash className={`h-5 w-5 ${isActive ? "text-white" : "text-gray-700 group-hover:text-primary"}`} />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-black italic uppercase tracking-tighter text-sm truncate">
-                                {channel.name}
-                              </p>
-                              <p className="text-[9px] font-black uppercase tracking-widest text-gray-700 italic">
-                                {channel.type === 'announcement' ? "Anúncios" : "Chat de Texto"}
-                              </p>
-                            </div>
-
-                            {isOrganizer && channel.name !== "geral" && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <button onClick={e => e.stopPropagation()} className="opacity-0 group-hover/channel:opacity-100 p-2 text-gray-700 hover:text-white">
-                                    <MoreVertical size={14} />
-                                  </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent side="right" className="bg-[#0D0D0F] border-white/5">
-                                  <DropdownMenuItem 
-                                    onClick={() => handleDeleteChannel(channel.id, channel.name)}
-                                    className="text-red-500 font-black italic uppercase text-[10px] tracking-widest"
-                                  >
-                                    <Trash2 size={12} className="mr-2" />
-                                    Excluir Canal
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* Functional Options Area */}
-              <div className="pt-4 border-t border-white/5 space-y-4">
-                 <p className="text-[9px] font-black text-gray-700 uppercase tracking-[0.2em] italic mb-3 px-3">
-                  Opções Adicionais
-                </p>
-                <div className="grid grid-cols-1 gap-2 px-1">
-                   <Button 
-                     variant="ghost" 
-                     className="w-full justify-start h-12 rounded-2xl bg-white/2 border border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/5"
-                     onClick={() => setShowParticipants(!showParticipants)}
-                   >
-                     <Users className="h-4 w-4 mr-3 text-primary" />
-                     Participantes
-                   </Button>
-                   <Button 
-                     variant="ghost" 
-                     className="w-full justify-start h-12 rounded-2xl bg-white/2 border border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/5"
-                     onClick={() => {
-                        const url = window.location.origin + `/tournaments/${id}`;
-                        navigator.clipboard.writeText(url);
-                        toast.success("Link do torneio copiado!");
-                     }}
-                   >
-                     <Share2 className="h-4 w-4 mr-3 text-blue-500" />
-                     Convidar Players
-                   </Button>
-                   {isOrganizer && (
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start h-12 rounded-2xl border text-[10px] font-black uppercase italic tracking-widest transition-all ${
-                        showManagement 
-                          ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
-                          : "bg-white/2 border-white/5 text-primary hover:bg-primary/5"
-                      }`}
-                      onClick={() => setShowManagement(!showManagement)}
-                    >
-                      <Trophy className="h-4 w-4 mr-3" />
-                      Administrar
-                    </Button>
-                    )}
-                   <Link href={`/tournaments/${id}`}>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start h-12 rounded-2xl bg-white/2 border border-white/5 text-[10px] font-black uppercase italic tracking-widest hover:bg-white/5"
-                    >
-                      <Info className="h-4 w-4 mr-3 text-amber-500" />
-                      Regulamento
-                    </Button>
-                   </Link>
-                </div>
-              </div>
-          </ScrollArea>
+        {/* Desktop Sidebar: Channels */}
+        <aside className="w-72 bg-[#0D0D0F] border-r border-white/5 hidden lg:flex flex-col h-full shrink-0 relative z-10 transition-all duration-500">
+          {renderSidebarContent()}
         </aside>
+
+        {/* Mobile Sidebar Trigger & Sheet */}
+        <Sheet>
+          <div className="lg:hidden fixed bottom-24 right-6 z-50">
+            <SheetTrigger asChild>
+              <Button size="icon" className="h-14 w-14 rounded-2xl bg-primary shadow-2xl shadow-primary/40 border border-primary/20">
+                <Hash className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+          </div>
+          <SheetContent side="left" className="w-[300px] p-0 bg-[#0D0D0F] border-white/5">
+            <div className="h-full flex flex-col">
+              {renderSidebarContent()}
+            </div>
+          </SheetContent>
+        </Sheet>
 
         {/* Chat Area */}
         <main className="flex-1 flex flex-col overflow-hidden relative bg-[#0A0A0C]">
-          <header className="h-20 border-b border-white/5 bg-[#0D0D0F]/80 backdrop-blur-xl flex items-center justify-between px-8 shrink-0 relative z-10">
-            <div className="flex items-center gap-4">
-               <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                 {activeChannel?.type === 'announcement' ? <Megaphone className="h-6 w-6 text-primary" /> : <Hash className="h-6 w-6 text-primary" />}
+          <header className="h-20 border-b border-white/5 bg-[#0D0D0F]/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 shrink-0 relative z-10">
+            <div className="flex items-center gap-3 md:gap-4 min-w-0">
+               <div className="h-10 w-10 md:h-12 md:w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                 {activeChannel?.type === 'announcement' ? <Megaphone className="h-5 w-5 md:h-6 md:w-6 text-primary" /> : <Hash className="h-5 w-5 md:h-6 md:w-6 text-primary" />}
                </div>
-               <div>
-                  <h4 className="text-xl font-black italic uppercase tracking-tighter text-white">
+               <div className="min-w-0">
+                  <h4 className="text-base md:text-xl font-black italic uppercase tracking-tighter text-white truncate">
                     #{activeChannel?.name || "Canal"}
                   </h4>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 italic">
-                    {activeChannel?.type === 'announcement' ? "Canal Restrito • Somente Organização" : "Espaço de Comunicação do Torneio"}
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 italic truncate">
+                    {activeChannel?.type === 'announcement' ? "Restrito • Organização" : "Comunicação"}
                   </p>
                </div>
             </div>
 
-            <div className="flex items-center gap-4">
-               <div className="hidden md:flex flex-col items-end mr-4">
+            <div className="flex items-center gap-2 md:gap-4">
+               <div className="hidden sm:flex flex-col items-end mr-2 md:mr-4">
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
                     <span className="text-[10px] font-black uppercase italic tracking-widest text-white">Hub Ativo</span>
                   </div>
-                  <span className="text-[9px] font-bold text-gray-700 uppercase">{participants?.length || 0} players conectados</span>
+                  <span className="text-[9px] font-bold text-gray-700 uppercase">{participants?.length || 0} players</span>
                </div>
                
-               {user?.uid === tournament.organizer_id && (
+               {user?.uid === tournament?.organizer_id && (
                   <Link href={`/tournaments/${id}`}>
-                    <Button variant="outline" size="sm" className="bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 text-[10px] h-10 px-6 rounded-xl font-black uppercase tracking-widest italic">
-                       Gerenciar Torneio
+                    <Button variant="outline" size="sm" className="bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 text-[9px] md:text-[10px] h-9 md:h-10 px-4 md:px-6 rounded-xl font-black uppercase tracking-widest italic whitespace-nowrap">
+                       Gerenciar
                     </Button>
                   </Link>
                )}
@@ -592,7 +623,7 @@ export default function TournamentHubPage() {
 
           <div 
             ref={scrollRef}
-            className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide relative z-10"
+            className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8 scrollbar-hide relative z-10"
           >
             {loadingChat ? (
                <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-4 text-center">
@@ -600,63 +631,64 @@ export default function TournamentHubPage() {
                  <p className="text-[10px] font-black uppercase tracking-[0.2em] italic">Sincronizando Mensagens...</p>
                </div>
             ) : messages.length === 0 ? (
-               <div className="flex flex-col items-center justify-center h-full opacity-30 space-y-4 text-center">
-                 <div className="w-20 h-20 rounded-[32px] bg-white/2 border border-dashed border-white/5 flex items-center justify-center">
-                    <MessageSquare className="h-10 w-10 text-gray-700" />
-                 </div>
-                 <div>
-                    <h5 className="text-lg font-black italic uppercase text-white mb-1">Início da Conversa</h5>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-700 italic">As mensagens que você enviar aparecerão aqui.</p>
-                 </div>
-               </div>
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <div className="h-20 w-20 md:h-24 md:w-24 rounded-[32px] bg-primary/5 border border-dashed border-primary/20 flex items-center justify-center mb-6 md:mb-8">
+                    <MessageSquare className="h-8 w-8 md:h-10 md:w-10 text-primary/30" />
+                  </div>
+                  <h4 className="text-xl md:text-2xl font-black italic uppercase text-white mb-2">Canal Silencioso</h4>
+                  <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-gray-700 italic">Seja o primeiro a deixar sua marca.</p>
+                </div>
             ) : (
-                messages.map((msg: any) => (
-                    <div key={msg.id} className={`flex gap-4 group ${msg.user_id === user?.uid ? "flex-row-reverse" : ""}`}>
-                       <Avatar className={`h-11 w-11 rounded-2xl border shrink-0 ${msg.user_id === user?.uid ? "border-primary/30" : "border-white/5"}`}>
-                         <AvatarImage src={msg.user_photo} />
-                         <AvatarFallback className="bg-white/2 text-primary font-black italic text-sm">
-                            {msg.user_name?.[0]?.toUpperCase() || "U"}
-                         </AvatarFallback>
-                       </Avatar>
-    
-                          <div className={`flex flex-col gap-1.5 max-w-[70%] ${msg.user_id === user?.uid ? "items-end" : "items-start"}`}>
-                            <div className={`flex items-baseline gap-3 px-1 mb-1 ${msg.user_id === user?.uid ? "flex-row-reverse" : "flex-row"}`}>
-                              <span className={`text-[11px] font-black italic uppercase tracking-tighter ${msg.user_id === user?.uid ? "text-primary" : "text-white"}`}>
-                                {msg.user_name}
-                              </span>
-                              {msg.team_name && (
-                                <Badge variant="outline" className="text-[8px] h-4 bg-white/2 border-white/5 font-black italic uppercase tracking-widest text-gray-500">
-                                   {msg.team_name}
-                                </Badge>
-                              )}
-                              <span className="text-[9px] font-black uppercase text-gray-700 bg-white/2 px-2 py-0.5 rounded-md italic">
-                                 {msg.created_at?.toDate ? format(msg.created_at.toDate(), "HH:mm") : "agora"}
-                              </span>
-                            </div>
-                            
-                            {msg.type === 'audio' ? (
-                              <AudioPlayer src={msg.audio_url!} isOwn={msg.user_id === user?.uid} />
-                            ) : msg.type === 'image' || (msg.content?.startsWith('http') && (msg.content?.includes('cloudinary') || msg.content?.match(/\.(jpeg|jpg|gif|png)$/) )) ? (
-                              <div className="rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-                                <img src={msg.audio_url || msg.content} alt="Upload" className="max-w-xs max-h-64 object-cover" />
+                messages.map((msg: any) => {
+                    const isOwn = msg.user_id === user?.uid;
+                    return (
+                        <div key={msg.id} className={`flex gap-2 md:gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-500 ${isOwn ? "flex-row-reverse" : ""}`}>
+                           <Avatar className={`h-9 w-9 md:h-11 md:w-11 rounded-2xl border shrink-0 ${isOwn ? "border-primary/30" : "border-white/5"}`}>
+                             <AvatarImage src={msg.user_photo} />
+                             <AvatarFallback className="bg-white/2 text-primary font-black italic text-xs md:text-sm">
+                                {msg.user_name?.[0]?.toUpperCase() || "U"}
+                             </AvatarFallback>
+                           </Avatar>
+        
+                              <div className={`flex flex-col gap-1.5 max-w-[85%] md:max-w-[75%] ${isOwn ? "items-end" : "items-start"}`}>
+                                <div className={`flex items-baseline gap-2 md:gap-3 px-1 mb-1 ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
+                                  <span className={`text-[10px] md:text-[11px] font-black italic uppercase tracking-tighter ${isOwn ? "text-primary" : "text-white"}`}>
+                                    {msg.user_name}
+                                  </span>
+                                  {msg.team_name && (
+                                    <Badge variant="outline" className="text-[7px] md:text-[8px] h-3.5 md:h-4 bg-white/2 border-white/5 font-black italic uppercase tracking-widest text-gray-500">
+                                       {msg.team_name}
+                                    </Badge>
+                                  )}
+                                  <span className="text-[8px] md:text-[9px] font-black uppercase text-gray-700 bg-white/2 px-2 py-0.5 rounded-md italic">
+                                     {msg.created_at?.toDate ? format(msg.created_at.toDate(), "HH:mm") : "agora"}
+                                  </span>
+                                </div>
+                                
+                                {msg.type === 'audio' ? (
+                                  <AudioPlayer src={msg.audio_url!} isOwn={isOwn} />
+                                ) : msg.type === 'image' || (msg.content?.startsWith('http') && (msg.content?.includes('cloudinary') || msg.content?.match(/\.(jpeg|jpg|gif|png)$/) )) ? (
+                                  <div className="rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+                                    <img src={msg.audio_url || msg.content} alt="Upload" className="max-w-xs max-h-64 object-cover" />
+                                  </div>
+                                ) : (
+                                  <div className={`px-4 md:px-5 py-2.5 md:py-3.5 text-xs md:text-sm font-medium leading-relaxed break-words shadow-2xl ${
+                                      isOwn 
+                                        ? "bg-primary text-white rounded-[20px] md:rounded-[24px] rounded-tr-sm" 
+                                        : "bg-white/5 text-gray-200 rounded-[20px] md:rounded-[24px] rounded-tl-sm border border-white/5"
+                                  }`}>
+                                    {msg.content}
+                                  </div>
+                                )}
                               </div>
-                            ) : (
-                              <div className={`px-5 py-4 text-sm font-medium leading-relaxed break-words shadow-2xl ${
-                                  msg.user_id === user?.uid 
-                                    ? "bg-primary text-white rounded-[24px] rounded-tr-sm" 
-                                    : "bg-white/5 text-gray-200 rounded-[24px] rounded-tl-sm border border-white/5"
-                              }`}>
-                                {msg.content}
-                              </div>
-                            )}
-                          </div>
-                    </div>
-                ))
+                        </div>
+                    );
+                })
             )}
             <div className="h-4" />
           </div>
 
-          <footer className="p-6 bg-[#0D0D0F] border-t border-white/5 relative z-30">
+          <footer className="p-4 md:p-6 bg-[#0D0D0F] border-t border-white/5 relative z-30">
             {/* Hidden Input for Images */}
             <input 
               type="file" 
@@ -667,42 +699,41 @@ export default function TournamentHubPage() {
             />
 
             {!user ? (
-                <div className="h-16 flex items-center justify-center bg-white/2 border border-dashed border-white/5 rounded-2xl px-8">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 italic text-center">
-                    ❌ É necessário estar autenticado para interagir.
+                <div className="h-14 md:h-16 flex items-center justify-center bg-white/2 border border-dashed border-white/5 rounded-2xl px-4">
+                  <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-600 italic text-center">
+                    ❌ É necessário estar autenticado.
                   </p>
                 </div>
-            ) : (activeChannel?.type === 'announcement' && !isOrganizer) ? (
-                <div className="h-16 flex items-center justify-center bg-white/2 border border-dashed border-white/5 rounded-2xl px-8">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 italic text-center">
-                    ❌ Este canal é somente leitura. Apenas a organização pode enviar comunicados aqui.
+            ) : !canType ? (
+                <div className="h-14 md:h-16 flex items-center justify-center bg-white/2 border border-dashed border-white/5 rounded-2xl px-4">
+                  <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-600 italic text-center">
+                    ❌ Somente a organização pode enviar mensagens aqui.
                   </p>
                 </div>
             ) : (
-              <form onSubmit={handleSend} className="flex items-center gap-3 max-w-5xl mx-auto">
+              <form onSubmit={handleSend} className="flex items-center gap-2 md:gap-3 max-w-5xl mx-auto">
                 <div className="flex-1 relative">
-                  <input
-                    type="text"
+                  <Input
                     placeholder={isRecording ? "Gravando voz..." : `Sua mensagem em #${activeChannel?.name || "..."}`}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     disabled={isRecording}
-                    className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl px-8 pr-24 text-sm font-medium focus:outline-none focus:border-primary/50 transition-all text-white placeholder:text-gray-700 placeholder:italic placeholder:font-black placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest"
+                    className="w-full h-12 md:h-14 bg-white/5 border border-white/10 rounded-[18px] md:rounded-[22px] px-4 md:px-6 pr-12 md:pr-14 text-xs md:text-sm font-medium focus:outline-none focus:border-primary/50 transition-all text-white placeholder:text-gray-700 placeholder:italic placeholder:font-black placeholder:uppercase placeholder:text-[9px] md:placeholder:text-[10px] placeholder:tracking-widest"
                   />
-                  <div className="absolute right-3 top-3 flex items-center gap-2">
+                  <div className="absolute right-1.5 top-1.5 flex items-center gap-1.5">
                     {!isRecording && (
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="h-10 w-10 flex items-center justify-center text-gray-500 hover:text-white transition-all bg-white/5 rounded-xl border border-white/5"
+                        className="h-9 w-9 md:h-11 md:w-11 flex items-center justify-center text-gray-700 hover:text-white transition-all bg-white/5 rounded-xl md:rounded-2xl border border-white/5"
                       >
-                        <ImageIcon size={18} />
+                        <ImageIcon size={16} />
                       </button>
                     )}
                     <Button
                       type="submit"
                       disabled={!message.trim() || chatSendMessage.isPending || isRecording}
-                      className="h-10 w-10 p-0 bg-primary hover:opacity-90 rounded-[14px] shadow-lg shadow-primary/20 transition-transform active:scale-95"
+                      className="h-9 w-9 md:h-11 md:w-11 p-0 bg-primary hover:opacity-90 rounded-xl md:rounded-2xl shadow-lg shadow-primary/20 transition-transform active:scale-95"
                     >
                       {chatSendMessage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     </Button>
@@ -711,26 +742,22 @@ export default function TournamentHubPage() {
 
                 {/* Mic Control */}
                 {isRecording ? (
-                   <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-4 h-16 rounded-2xl">
-                         <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                         <span className="text-[10px] font-black uppercase italic text-red-400">Gravando</span>
-                      </div>
-                      <button
+                   <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-300">
+                       <button
                         type="button"
                         onClick={stopRecording}
-                        className="h-16 px-6 bg-primary text-white font-black italic uppercase text-[10px] rounded-2xl flex items-center gap-2"
+                        className="h-12 md:h-14 px-4 md:px-6 bg-primary text-white font-black italic uppercase text-[9px] md:text-[10px] rounded-[18px] md:rounded-[22px] flex items-center gap-2 shadow-lg shadow-primary/20"
                       >
-                         <Send size={16} /> Enviar
-                      </button>
-                   </div>
+                         <Send size={14} className="md:size-4" /> Enviar
+                       </button>
+                    </div>
                 ) : (
                   <button
                     type="button"
                     onClick={startRecording}
-                    className="h-16 w-16 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center text-gray-500 hover:text-primary transition-all active:scale-95"
+                    className="h-12 w-12 md:h-14 md:w-14 bg-white/5 border border-white/5 rounded-[18px] md:rounded-[22px] flex items-center justify-center text-gray-700 hover:text-primary transition-all active:scale-95"
                   >
-                    <Mic size={22} />
+                    <Mic size={18} className="md:size-5" />
                   </button>
                 )}
               </form>

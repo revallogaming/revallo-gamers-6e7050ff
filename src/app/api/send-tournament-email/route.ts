@@ -1,22 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { verifyToken } from "@/lib/firebaseAdmin";
 import nodemailer from "nodemailer";
 
 export async function POST(req: NextRequest) {
+  let body: any = {};
   try {
-    // Verify authentication
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    
-    // Some implementations of verifyToken take the whole request, 
-    // but in App Router we might need to pass the token string.
-    // Let's assume verifyToken is compatible or adapt if needed.
-    const token = authHeader.split("Bearer ")[1];
-    await verifyToken(token);
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
-    const body = await req.json();
+  try {
+    await verifyToken(req);
     const {
       email,
       tournamentTitle,
@@ -77,12 +70,10 @@ export async function POST(req: NextRequest) {
       html,
     });
 
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: unknown) {
     console.error("Error sending tournament email:", error);
-    return NextResponse.json(
-      { error: error?.message || "Internal Server Error" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

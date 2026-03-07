@@ -1,55 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { adminDb, adminAuth, verifyToken } from "@/lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
+  let body: any = {};
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { error: "Missing or invalid authorization header" },
-        { status: 401 },
-      );
-    }
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
-    const token = authHeader.split(" ")[1];
-    const decodedToken = await verifyToken(token);
+  try {
+    const decodedToken = await verifyToken(req);
 
-    // Check for bypass key in headers
-    const bypassKey = req.headers.get("x-admin-key");
-    const isAuthorizedViaKey = bypassKey === "Adiel&Adryan2026@!";
-
-    // Check if requester is admin in Firestore
+    // Check if requester is admin
     const rolesSnapshot = await adminDb
       .collection("user_roles")
       .where("user_id", "==", decodedToken.uid)
       .where("role", "==", "admin")
       .get();
 
-    const isAdminInDb = !rolesSnapshot.empty;
-
-    if (!isAdminInDb && !isAuthorizedViaKey) {
-      return NextResponse.json(
-        { error: "Unauthorized: Admin access required" },
-        { status: 403 },
-      );
+    if (rolesSnapshot.empty) {
+      return NextResponse.json({ error: "Unauthorized: Admin access required" }, { status: 403 });
     }
 
-    const body = await req.json();
-    const { action, userId, amount, role, reason, newPassword, nickname, avatar_url } = body;
+    const { action, userId, amount, role, reason, newPassword } = body;
 
     if (!userId && action !== "stats") {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
     switch (action) {
-      case "update_user":
-        await adminDb.collection("profiles").doc(userId).update({
-          nickname: nickname,
-          avatar_url: avatar_url || null,
-          updated_at: new Date().toISOString(),
-        });
-        break;
-
       case "add_credits":
         await adminDb.runTransaction(async (transaction) => {
           const creditsRef = adminDb.collection("user_credits").doc(userId);
@@ -88,7 +66,7 @@ export async function POST(req: NextRequest) {
         );
         break;
 
-      case "add_role": {
+      case "add_role":
         const roleRef = adminDb
           .collection("user_roles")
           .doc(`${userId}_${role}`);
@@ -97,19 +75,7 @@ export async function POST(req: NextRequest) {
           role: role,
           created_at: new Date().toISOString(),
         });
-
-        // Specific logic: if promoting to admin, give unlimited credits
-        if (role === "admin") {
-          await adminDb.collection("user_credits").doc(userId).set(
-            {
-              balance: 999999999, // Represents infinity in the UI
-              updated_at: new Date().toISOString(),
-            },
-            { merge: true },
-          );
-        }
         break;
-      }
 
       case "remove_role":
         await adminDb
@@ -169,9 +135,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: unknown) {
-    console.error(`Error in admin manage-user:`, error);
+    console.error(`Error in admin manage-user (${body.action}):`, error);
     const message =
       error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -1,10 +1,11 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb, verifyToken } from "../../src/lib/firebaseAdmin";
+import { NextResponse, NextRequest } from "next/server";
+import { adminDb, verifyToken } from "@/lib/firebaseAdmin";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
   try {
     const decodedToken = await verifyToken(req);
@@ -17,15 +18,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .get();
 
     if (rolesSnapshot.empty) {
-      return res
-        .status(403)
-        .json({ error: "Unauthorized: Admin access required" });
+      return NextResponse.json({ error: "Unauthorized: Admin access required" }, { status: 403 });
     }
 
-    const { action, tournamentId, isMini, data } = req.body;
+    const { action, tournamentId, isMini, data } = body;
 
     if (!tournamentId) {
-      return res.status(400).json({ error: "Missing tournamentId" });
+      return NextResponse.json({ error: "Missing tournamentId" }, { status: 400 });
     }
 
     const collectionName = isMini ? "mini_tournaments" : "tournaments";
@@ -68,17 +67,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       default:
-        return res.status(400).json({ error: "Invalid action" });
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    return res.status(200).json({ success: true });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: unknown) {
     console.error(
-      `Error in admin manage-tournament (${req.body.action}):`,
+      `Error in admin manage-tournament (${body.action}):`,
       error,
     );
     const message =
       error instanceof Error ? error.message : "Internal Server Error";
-    return res.status(500).json({ error: message });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

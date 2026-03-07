@@ -1,11 +1,15 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { verifyToken } from "../src/lib/firebaseAdmin";
+import { NextResponse, NextRequest } from "next/server";
+
+
+import { verifyToken } from "@/lib/firebaseAdmin";
 import nodemailer from "nodemailer";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
+
 
   try {
     await verifyToken(req);
@@ -17,10 +21,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tournamentId,
       role,
       teamName,
-    } = req.body;
+    } = body;
 
     if (!recipientEmail || !tournamentId) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const transporter = nodemailer.createTransport({
@@ -94,10 +98,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       html,
     });
 
-    return res.status(200).json({ success: true });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: unknown) {
     console.error("Error sending invite email:", error);
     const message = error instanceof Error ? error.message : "Internal Server Error";
-    return res.status(500).json({ error: message });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

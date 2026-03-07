@@ -1,27 +1,23 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb } from "../src/lib/firebaseAdmin";
+import { NextResponse, NextRequest } from "next/server";
+import { adminDb } from "@/lib/firebaseAdmin";
+import crypto from "crypto";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "GET") {
-    return res.status(200).json({ status: "ok" });
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
-  }
+export async function POST(req: NextRequest) {
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch(e) {} // ignore parse errors
 
   try {
-    const body = req.body;
-
     // Verify signature
     const secret = process.env.MP_WEBHOOK_SECRET;
     if (!secret) {
-      return res.status(500).json({ error: "Webhook security not configured" });
+      return NextResponse.json({ error: "Webhook security not configured" }, { status: 500 });
     }
 
-    const xSignature = req.headers['x-signature'] as string;
-    const xRequestId = req.headers['x-request-id'] as string;
-    const dataId = body.data?.id || req.query['data.id'];
+    const xSignature = req.headers.get("x-signature") as string;
+    const xRequestId = req.headers.get("x-request-id") as string;
+    const dataId = body.data?.id || req.nextUrl.searchParams.get('data.id');
 
     if (xSignature && xRequestId && dataId) {
         const parts = xSignature.split(',');
@@ -34,20 +30,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
         
         const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
-        const hmac = require('crypto').createHmac('sha256', secret).update(manifest).digest('hex');
+        const hmac = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
         if (hmac !== v1) {
-             return res.status(401).json({ error: "Invalid signature" });
+             return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
         }
     }
 
     // Only process payment notifications
     if (body.type !== "payment" || body.action !== "payment.updated") {
-      return res.status(200).json({ received: true });
+      return NextResponse.json({ received: true }, { status: 200 });
     }
 
     const paymentId = body.data?.id;
     if (!paymentId) {
-      return res.status(400).json({ error: "No payment ID" });
+      return NextResponse.json({ error: "No payment ID" }, { status: 400 });
     }
 
     // Get payment details from Mercado Pago
@@ -60,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     if (!mpResponse.ok) {
-      return res.status(500).json({ error: "MP API error" });
+      return NextResponse.json({ error: "MP API error" }, { status: 500 });
     }
 
     const mpPayment = await mpResponse.json();
@@ -121,9 +117,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Add other types (tournament_registration, etc.) here
     }
 
-    return res.status(200).json({ received: true });
+    return NextResponse.json({ received: true }, { status: 200 });
   } catch (error: unknown) {
     console.error("Webhook error:", error);
-    return res.status(500).json({ error: "Internal error" });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
