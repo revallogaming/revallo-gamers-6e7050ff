@@ -53,7 +53,7 @@ export const TournamentCard = memo(function TournamentCard({ tournament }: Tourn
   return (
     <Card 
       onClick={handleClick}
-      className="bg-card border-border/20 hover:border-border/50 overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-lg"
+      className="bg-[#1F1A3D]/40 backdrop-blur-md border-[#8F84D9]/25 hover:border-[#8F84D9]/50 overflow-hidden group cursor-pointer transition-all duration-250 ease-out hover:scale-[1.02] hover:shadow-revallo-glow"
     >
       {/* Banner Image */}
       <div className="relative">

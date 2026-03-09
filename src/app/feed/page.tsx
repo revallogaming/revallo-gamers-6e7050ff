@@ -70,44 +70,43 @@ export default function FeedPage() {
       >
         {/* Subtle atmospheric glows for depth */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/5 blur-[120px] rounded-full" />
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-revallo-purple/25 blur-[120px] rounded-full" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-revallo-glow/20 blur-[120px] rounded-full" />
+          <div className="absolute top-[30%] right-[-5%] w-[30%] h-[30%] bg-revallo-highlight/15 blur-[100px] rounded-full" />
         </div>
         <div className="max-w-[1200px] mx-auto px-6 pt-8 pb-5 space-y-5">
           {/* ── Hero Banner (Consolidated & Refined) ── */}
           <div
-            className="relative rounded-[32px] overflow-hidden group shadow-glow-lg"
+            className="relative rounded-[32px] overflow-hidden group shadow-revallo-glow"
             style={{
-              background: "rgba(13, 10, 30, 0.4)",
-              border: "1px solid hsl(var(--primary) / 0.2)",
+              background: "#0F0F18",
+              border: "1px solid rgba(143, 132, 217, 0.25)",
               minHeight: 160,
             }}
           >
+            <div className="absolute inset-0 hero-halo pointer-events-none opacity-60" />
             <div
-              className="absolute inset-0 opacity-40 group-hover:opacity-50 transition-opacity duration-700"
+              className="absolute inset-0 opacity-50 group-hover:opacity-60 transition-opacity duration-700"
               style={{
                 backgroundImage:
-                  "radial-gradient(ellipse at 30% 50%, rgba(124,58,237,0.4), transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(16,185,129,0.25), transparent 50%)",
+                  "radial-gradient(circle at left, #3A2F7C 0%, transparent 70%), radial-gradient(ellipse at 70% 30%, rgba(143, 132, 217, 0.25), transparent 50%)",
               }}
             />
             <div className="relative z-10 flex items-stretch min-h-[160px]">
               <div className="flex-1 flex flex-col justify-center px-10 py-4">
-                <p className="text-[9px] font-black mb-1 italic text-[#34D399] uppercase tracking-[0.3em]">
+                <p className="text-[9px] font-black mb-1 italic text-[#34D399] uppercase tracking-[0.3em] pr-2">
                   Bem-vindo, {profile?.nickname || "jogador"}!
                 </p>
-                <h1 className="text-3xl font-black leading-[1.1] mb-0.5 italic tracking-tighter text-white text-shadow-glow">
+                <h1 className="text-3xl font-black leading-[1.1] mb-0.5 italic tracking-tighter text-white text-shadow-glow pr-2">
                   Explore torneios <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-primary py-0.5">emocionantes</span>
                 </h1>
-                <h2 className="text-lg font-black leading-tight mb-4 italic tracking-tighter text-white/90">
+                <h2 className="text-lg font-black leading-tight mb-4 italic tracking-tighter text-white/90 pr-2">
                   e encontre novas comunidades
                 </h2>
                 {!user ? (
                   <button
                     onClick={() => router.push("/auth")}
-                    className="w-fit px-6 h-9 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95 shadow-glow-sm"
-                    style={{
-                      background: "var(--gradient-primary)",
-                    }}
+                    className="w-fit px-8 h-10 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 hover:brightness-110 active:scale-95 shadow-revallo-glow bg-revallo-gradient"
                   >
                     Criar conta gratuita
                   </button>
@@ -153,7 +152,7 @@ export default function FeedPage() {
             <div className="w-full">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
                 <div className="flex items-center gap-4">
-                  <h2 className="text-[12px] font-black text-white italic uppercase tracking-[0.2em] text-shadow-glow">
+                  <h2 className="text-[12px] font-black text-white italic uppercase tracking-[0.2em] text-shadow-glow pr-2">
                     Destaque
                   </h2>
                   <Link
@@ -196,7 +195,7 @@ export default function FeedPage() {
                   </div>
                   <div className="relative z-10 p-10 flex items-center justify-between h-full">
                     <div className="max-w-[60%]">
-                      <p className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-2 italic drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">
+                      <p className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-2 italic drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] pr-2">
                         TORNEIO {String(featuredTournament.game ?? "VALORANT").replace("_", " ").toUpperCase()}
                       </p>
                       <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white leading-[1.1] mb-2 group-hover:translate-x-1 transition-transform text-shadow-glow">
@@ -287,7 +286,7 @@ export default function FeedPage() {
                   {communities.slice(0, 6).map((c) => (
                     <div
                       key={c.id}
-                      className="group relative cursor-pointer overflow-hidden rounded-[24px] aspect-[4/3] bg-[#0D0D0F] border border-white/5 transition-all hover:border-primary/50 hover:shadow-[0_0_20px_rgba(124,58,237,0.15)]"
+                      className="group relative cursor-pointer overflow-hidden rounded-[24px] aspect-[4/3] bg-[#1F1A3D]/40 backdrop-blur-md border border-[#8F84D9]/20 transition-all hover:border-revallo-purple/50 hover:shadow-[0_0_30px_rgba(143,132,217,0.25)]"
                       onClick={() => router.push(`/communities/${c.id}`)}
                     >
                       <img
@@ -365,7 +364,7 @@ export default function FeedPage() {
                     <Button
                       key={post.id}
                       variant="ghost"
-                      className="h-14 px-4 hover:bg-white/5 flex items-center gap-4 transition-all group rounded-2xl border border-white/10 bg-white/[0.02] shadow-glow-sm"
+                      className="h-14 px-4 hover:bg-revallo-purple/10 flex items-center gap-4 transition-all group rounded-2xl border border-[#8F84D9]/20 bg-[#1F1A3D]/40 backdrop-blur-md shadow-revallo-glow/10"
                     >
                       <Avatar className="h-10 w-10 border-2 border-primary/20 group-hover:border-primary/50 transition-colors shadow-glow-sm">
                         <AvatarImage src={post.authorPhoto || undefined} />

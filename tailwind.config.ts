@@ -72,6 +72,16 @@ export default {
         lol: "hsl(var(--lol))",
         valorant: "hsl(var(--valorant))",
         bloodstrike: "hsl(var(--bloodstrike))",
+        revallo: {
+          purple: "#8F84D9",
+          highlight: "#A99CFF",
+          glow: "#6C5CE7",
+          dark: "#2A1F5C",
+        },
+        "revallo-bg": "#0B0B0F",
+        "revallo-section": "#0F0F18",
+        "revallo-card": "#15122A",
+        "revallo-hover": "#1F1A3D",
       },
       borderRadius: {
         lg: "var(--radius)",

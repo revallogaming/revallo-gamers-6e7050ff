@@ -80,7 +80,7 @@ export default function LFGPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative h-[400px] flex items-center justify-center overflow-hidden border-b border-white/5">
+      <section className="relative h-[350px] flex items-center justify-center overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-gradient-to-b from-[#b8ff00]/10 to-transparent pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
 
@@ -90,10 +90,10 @@ export default function LFGPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white uppercase mb-4 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter text-white uppercase mb-4 leading-tight">
               ENCONTRE SEU <span className="text-[#b8ff00]">SQUAD</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-8 font-mono uppercase tracking-widest leading-relaxed">
+            <p className="text-base md:text-lg text-gray-400 max-w-2xl mx-auto mb-8 font-mono uppercase tracking-widest leading-relaxed">
               A jornada começa aqui.<br />
               Conecte-se com jogadores e entre na partida.
             </p>
@@ -101,15 +101,15 @@ export default function LFGPage() {
               <CreateLFGDialog>
                 <Button
                   size="lg"
-                  className="bg-[#b8ff00] text-black hover:bg-[#a3e600] font-black uppercase italic h-14 px-8 rounded-none border-b-4 border-black/20"
+                  className="bg-[#b8ff00] text-black hover:bg-[#a3e600] font-black uppercase italic h-12 px-6 rounded-none border-b-4 border-black/20"
                 >
-                  CRIAR MEU SQUAD <ArrowRight className="ml-2 w-5 h-5" />
+                  CRIAR MEU SQUAD <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </CreateLFGDialog>
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white/5 font-black uppercase italic h-14 px-8 rounded-none"
+                className="border-white/20 text-white hover:bg-white/5 font-black uppercase italic h-12 px-6 rounded-none"
                 onClick={scrollToResults}
               >
                 BUSCAR TALENTOS

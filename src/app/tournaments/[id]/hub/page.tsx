@@ -344,7 +344,7 @@ export default function TournamentHubPage() {
             <Trophy className="h-7 w-7 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-black italic uppercase tracking-tighter text-lg truncate leading-tight">
+            <h3 className="font-black italic uppercase tracking-tighter text-lg truncate leading-tight pr-2">
               {tournament?.title}
             </h3>
             <p className="text-[10px] font-black uppercase tracking-widest text-primary italic">
@@ -402,7 +402,7 @@ export default function TournamentHubPage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-black italic uppercase tracking-tighter text-sm truncate">
+                          <p className="font-black italic uppercase tracking-tighter text-sm truncate pr-2">
                             {channel.name}
                           </p>
                           <p className="text-[9px] font-black uppercase tracking-widest text-gray-700 italic">
@@ -716,7 +716,7 @@ export default function TournamentHubPage() {
                  {activeChannel?.type === 'announcement' ? <Megaphone className="h-5 w-5 md:h-6 md:w-6 text-primary" /> : <Hash className="h-5 w-5 md:h-6 md:w-6 text-primary" />}
                </div>
                <div className="min-w-0">
-                  <h4 className="text-base md:text-xl font-black italic uppercase tracking-tighter text-white truncate">
+                  <h4 className="text-base md:text-xl font-black italic uppercase tracking-tighter text-white truncate pr-2">
                     #{activeChannel?.name || "Canal"}
                   </h4>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 italic truncate">

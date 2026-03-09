@@ -36,19 +36,32 @@
     
     --radius: 1rem;
     
+    /* Revallo Visual Identity 2025-2026 */
+    --revallo-purple: 247 50% 68%; /* #8F84D9 */
+    --revallo-highlight: 248 100% 81%; /* #A99CFF */
+    --revallo-glow: 247 77% 63%; /* #6C5CE7 */
+    --revallo-dark: 251 49% 24%; /* #2A1F5C */
+    
+    --revallo-bg: 240 18% 5%; /* #0B0B0F */
+    --revallo-section: 240 12% 8%; /* #0F0F18 */
+    --revallo-card: 245 40% 12%; /* #15122A */
+    --revallo-hover: 245 40% 17%; /* #1F1A3D */
+
     /* Vibrant gradients */
-    --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    --gradient-revallo: linear-gradient(90deg, #6C5CE7, #8F84D9, #A99CFF);
+    --gradient-primary: var(--gradient-revallo);
     --gradient-secondary: linear-gradient(135deg, hsl(280 80% 50%), hsl(258 90% 66%));
     --gradient-accent: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-    --gradient-dark: linear-gradient(180deg, rgba(15, 12, 41, 0.8) 0%, rgba(48, 43, 99, 0.4) 100%);
-    --gradient-card: linear-gradient(145deg, rgba(20, 15, 45, 0.7) 0%, rgba(10, 8, 30, 0.9) 100%);
-    --gradient-subtle: linear-gradient(135deg, hsl(258 90% 66% / 0.1), hsl(258 90% 66% / 0.05));
+    --gradient-dark: linear-gradient(180deg, rgba(11, 11, 15, 0.8) 0%, rgba(21, 18, 42, 0.4) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(21, 18, 42, 0.7) 0%, rgba(11, 11, 15, 0.9) 100%);
+    --gradient-subtle: linear-gradient(135deg, rgba(143, 132, 217, 0.1), rgba(143, 132, 217, 0.05));
     
     /* Shadows & Glows */
     --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.5);
     --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.6);
     --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.7);
-    --shadow-primary: 0 0 20px hsl(258 90% 66% / 0.3);
+    --shadow-primary: 0 0 20px rgba(108, 92, 231, 0.3);
+    --shadow-revallo-glow: 0 0 40px rgba(143, 132, 217, 0.35);
     --shadow-accent: 0 0 20px hsl(142 76% 45% / 0.3);
     
     /* Game colors */
@@ -56,17 +69,17 @@
     --fortnite: 199 89% 48%;
     --cod: 30 80% 50%;
     --lol: 45 90% 50%;
-    --valorant: 142 76% 45%; /* Using the toxic green/mint for Valorant as in the image */
+    --valorant: 142 76% 45%; 
     --bloodstrike: 185 90% 50%;
     
-    --sidebar-background: 250 43% 3%;
+    --sidebar-background: 240 18% 4%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 258 90% 66%;
+    --sidebar-primary: 247 50% 68%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 250 30% 12%;
+    --sidebar-accent: 245 40% 12%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 250 30% 10%;
-    --sidebar-ring: 258 90% 66%;
+    --sidebar-border: 245 40% 10%;
+    --sidebar-ring: 247 77% 63%;
   }
 }
 
@@ -76,25 +89,33 @@
   }
   
   body {
-    background-color: #05040a;
+    background-color: #0B0B0F;
     background-image: 
-      radial-gradient(circle at 15% 25%, rgba(139, 92, 246, 0.4) 0%, transparent 60%), 
-      radial-gradient(circle at 85% 75%, rgba(52, 211, 153, 0.3) 0%, transparent 60%),
-      radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.2) 0%, transparent 80%),
+      radial-gradient(circle at top right, rgba(143, 132, 217, 0.35), transparent 70%),
+      radial-gradient(circle at 15% 25%, rgba(108, 92, 231, 0.4) 0%, transparent 60%), 
+      radial-gradient(circle at 85% 75%, rgba(108, 92, 231, 0.25) 0%, transparent 60%),
+      radial-gradient(circle at 50% 90%, rgba(143, 132, 217, 0.2) 0%, transparent 70%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
       url('/galactic-bg.png');
     background-attachment: fixed;
-    background-size: cover;
+    background-size: cover, 150px 150px, cover;
     background-position: center;
-    background-blend-mode: screen, screen, screen, normal;
-    color: hsl(var(--foreground));
-    @apply font-body antialiased; /* Kept font and antialiasing */
+    background-blend-mode: screen, screen, screen, screen, overlay, normal;
+    color: #FFFFFF;
+    @apply font-body antialiased; 
   }
 
   /* Glassmorphism Refinements */
   .bg-glass {
-    background: rgba(13, 10, 30, 0.4);
+    background: rgba(21, 18, 42, 0.5);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(143, 132, 217, 0.15);
+  }
+  
+  .bg-glass-light {
+    background: rgba(143, 132, 217, 0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(143, 132, 217, 0.25);
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -153,6 +174,10 @@
   .bg-gradient-primary {
     background: var(--gradient-primary);
   }
+
+  .bg-revallo-gradient {
+    background: var(--gradient-revallo);
+  }
   
   .bg-gradient-card {
     background: var(--gradient-card);
@@ -164,6 +189,18 @@
   
   .shadow-primary {
     box-shadow: var(--shadow-primary);
+  }
+
+  .shadow-revallo-glow {
+    box-shadow: var(--shadow-revallo-glow);
+  }
+
+  .hero-halo {
+    background: radial-gradient(
+      circle at 30% 50%,
+      rgba(143, 132, 217, 0.25),
+      transparent 60%
+    );
   }
 
   .shadow-glow-sm {

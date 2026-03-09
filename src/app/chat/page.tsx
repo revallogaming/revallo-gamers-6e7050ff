@@ -132,7 +132,7 @@ function ChatContent() {
         {/* Channel List */}
         <aside className="w-64 border-r border-white/5 bg-[#0D0D0F] flex flex-col h-full shrink-0">
           <div className="p-6 border-b border-white/5">
-            <h2 className="text-xs font-black italic uppercase tracking-[0.2em] text-gray-500 mb-4 truncate">
+            <h2 className="text-xs font-black italic uppercase tracking-[0.2em] text-gray-500 mb-4 truncate pr-2">
               {activeCommunity?.name || "Comunidade"}
             </h2>
             <div className="relative">
@@ -160,7 +160,7 @@ function ChatContent() {
                   }`}
                 >
                   <Hash className={`w-4 h-4 ${activeChannelId === channel.id ? "text-primary" : "text-gray-700"}`} />
-                  <span className="text-xs font-black italic uppercase tracking-tighter truncate">
+                  <span className="text-xs font-black italic uppercase tracking-tighter truncate pr-2">
                     {channel.name}
                   </span>
                   {channel.type === 'broadcast' && (
@@ -180,10 +180,10 @@ function ChatContent() {
                 <div className="flex items-center gap-3">
                   <div className={`w-2 h-2 rounded-full ${activeChannel?.type === 'broadcast' ? 'bg-primary shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-blue-500'} animate-pulse`} />
                   <div className="flex flex-col">
-                    <h3 className="text-xs font-black italic uppercase tracking-widest text-white mb-0.5">
+                    <h3 className="text-xs font-black italic uppercase tracking-widest text-white mb-0.5 pr-2">
                       {activeCommunity?.name || "Chat Arena"}
                     </h3>
-                    <span className="text-sm font-black italic uppercase truncate">
+                    <span className="text-sm font-black italic uppercase truncate pr-2">
                       #{activeChannel?.name}
                     </span>
                     {activeChannel?.type === 'broadcast' && (

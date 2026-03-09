@@ -146,7 +146,7 @@ export default function CommunitiesPage() {
         {/* Hero Section */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 md:gap-8 mb-10 md:mb-16">
           <div className="max-w-2xl px-2">
-            <h1 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter mb-4 leading-none">
+            <h1 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter mb-4 leading-none pr-2">
               Comuni<span className="text-primary">dades</span>
             </h1>
             <p className="text-gray-400 font-medium text-base md:text-lg leading-relaxed">
@@ -198,7 +198,7 @@ export default function CommunitiesPage() {
                 className="bg-[#0D0D0F]/80 border-white/5 overflow-hidden group hover:border-primary/50 transition-all duration-500 rounded-[24px] md:rounded-[28px] hover:-translate-y-2 shadow-2xl flex flex-col h-full"
               >
                 <Link
-                  href={community.type === 'tournament' ? `/tournaments/${community.tournament_id}/hub` : `/communities/${community.id}`}
+                  href={community.type === 'tournament' && community.tournament_id ? `/tournaments/${community.tournament_id}/hub` : `/communities/${community.id}`}
                   className="block relative aspect-video shrink-0"
                 >
                   <img
@@ -241,7 +241,7 @@ export default function CommunitiesPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                       <Link href={community.type === 'tournament' ? `/tournaments/${community.tournament_id}/hub` : `/communities/${community.id}`} className="flex-1">
+                       <Link href={community.type === 'tournament' && community.tournament_id ? `/tournaments/${community.tournament_id}/hub` : `/communities/${community.id}`} className="flex-1">
                         <Button
                           variant="ghost"
                           size="sm"

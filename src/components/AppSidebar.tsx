@@ -53,9 +53,9 @@ export function AppSidebar() {
 
   return (
     <aside
-      className="hidden lg:flex w-[130px] flex-col h-screen sticky top-0 shrink-0 z-40 select-none bg-black/40 backdrop-blur-3xl"
+      className="hidden lg:flex w-[130px] flex-col h-screen sticky top-0 shrink-0 z-40 select-none bg-[#0B0B0F]/80 backdrop-blur-3xl"
       style={{
-        borderRight: "1px solid hsl(var(--border) / 0.5)",
+        borderRight: "1px solid rgba(143, 132, 217, 0.1)",
       }}
     >
       {/* Logo */}
@@ -75,15 +75,15 @@ export function AppSidebar() {
               href={href}
               className={cn(
                 "flex flex-col items-center justify-center gap-2 py-5 rounded-2xl transition-all duration-300 group relative",
-                active ? "text-white bg-white/5" : "text-gray-600 hover:text-gray-400 hover:bg-white/[0.02]",
+                active ? "text-white bg-revallo-purple/10 shadow-[inset_0_0_20px_rgba(143,132,217,0.1)]" : "text-gray-600 hover:text-gray-400 hover:bg-white/[0.02]",
               )}
             >
               {active && (
                 <div
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-8 rounded-r-full"
                   style={{
-                    background: "hsl(var(--primary))",
-                    boxShadow: "0 0 15px hsl(var(--primary) / 0.5)",
+                    background: "#8F84D9",
+                    boxShadow: "0 0 15px rgba(143, 132, 217, 0.5)",
                   }}
                 />
               )}

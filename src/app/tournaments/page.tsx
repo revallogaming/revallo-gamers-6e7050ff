@@ -215,7 +215,7 @@ function TournamentsContent() {
           <div className="flex items-center justify-between gap-4 px-6 py-4 mt-3 border-b border-white/5 bg-black/40 backdrop-blur-md">
             <div className="flex items-center gap-3 min-w-0">
               <Trophy className="h-5 w-5 text-primary shrink-0" />
-              <h1 className="font-black italic uppercase tracking-tighter text-lg text-white leading-none truncate">
+              <h1 className="font-black italic uppercase tracking-tighter text-lg text-white leading-none truncate pr-2">
                 {gameTitle ? gameTitle : "Torneios"}
               </h1>
             </div>

@@ -170,7 +170,7 @@ export default function CommunityDetailPage({ params }: PageProps) {
             {community?.name?.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-black italic uppercase tracking-tighter text-white truncate">
+            <h2 className="text-lg font-black italic uppercase tracking-tighter text-white truncate pr-2">
               {community?.name}
             </h2>
             <div className="flex flex-col gap-2 mt-4">
@@ -257,7 +257,7 @@ export default function CommunityDetailPage({ params }: PageProps) {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-black italic uppercase tracking-tighter text-sm truncate">
+                        <p className="font-black italic uppercase tracking-tighter text-sm truncate pr-2">
                           {channel.name}
                         </p>
                         <p className="text-[9px] font-black uppercase tracking-widest text-gray-700 italic">
@@ -655,7 +655,7 @@ export default function CommunityDetailPage({ params }: PageProps) {
                 {currentChannel?.type === 'announcement' ? <Megaphone className="h-5 w-5 text-primary" /> : <Hash className="h-5 w-5 text-primary" />}
               </div>
               <div className="min-w-0">
-                <h3 className="text-base md:text-lg font-black italic uppercase tracking-tighter text-white truncate">
+                <h3 className="text-base md:text-lg font-black italic uppercase tracking-tighter text-white truncate pr-2">
                   {currentChannel?.name || "Hub Principal"}
                 </h3>
                 <p className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] text-gray-700 italic truncate">

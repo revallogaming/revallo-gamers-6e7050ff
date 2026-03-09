@@ -76,7 +76,7 @@ export function TournamentFilters({ filters, onFiltersChange }: TournamentFilter
             placeholder="Buscar torneio por nome..."
             value={searchValue}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9 h-9 bg-card border-border/50"
+            className="pl-9 h-9 bg-revallo-purple/5 border-revallo-purple/50 focus:border-revallo-purple/80 focus:ring-revallo-highlight/60 focus:shadow-[0_0_15px_rgba(143,132,217,0.15)] rounded-xl transition-all shadow-[0_0_10px_rgba(143,132,217,0.05)]"
           />
         </div>
         <Button type="submit" size="sm" variant="secondary" className="h-9">

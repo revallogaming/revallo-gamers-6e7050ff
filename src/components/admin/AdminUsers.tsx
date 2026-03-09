@@ -257,7 +257,7 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                   placeholder="Buscar usuário..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-64"
+                  className="pl-9 w-64 border-revallo-purple/50 bg-revallo-purple/5 focus:border-revallo-purple/80 focus:ring-revallo-highlight/60 focus:shadow-[0_0_15px_rgba(143,132,217,0.15)] rounded-xl transition-all shadow-[0_0_10px_rgba(143,132,217,0.05)]"
                 />
               </div>
               <Button variant="outline" size="icon" onClick={onRefresh}>

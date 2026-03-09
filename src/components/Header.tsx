@@ -42,7 +42,7 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
       <div className="container mx-auto px-4 flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
           <RevalloLogo size={32} />
-          <span className="font-black italic text-xl uppercase tracking-tighter text-white group-hover:text-primary transition-colors">
+          <span className="font-black italic text-xl uppercase tracking-tighter text-white group-hover:text-primary transition-colors pr-1">
             REVALLO
           </span>
         </Link>
@@ -59,7 +59,7 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
                 placeholder={searchPlaceholder || "BUSCAR..."}
                 value={searchQuery || ""}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full h-10 pl-11 pr-4 bg-white/[0.03] border border-white/5 rounded-2xl text-[11px] font-black italic uppercase tracking-wider text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:bg-white/[0.07] transition-all"
+                className="block w-full h-10 pl-11 pr-4 bg-revallo-purple/5 border border-revallo-purple/50 rounded-2xl text-[11px] font-black italic uppercase tracking-wider text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-revallo-highlight/60 focus:border-revallo-purple/80 focus:bg-revallo-purple/10 focus:shadow-[0_0_15px_rgba(143,132,217,0.15)] transition-all shadow-[0_0_10px_rgba(143,132,217,0.05)]"
               />
             </div>
           )}
