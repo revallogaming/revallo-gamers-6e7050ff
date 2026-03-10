@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppSidebar } from "@/components/AppSidebar";
+import { VisitorTracker } from "@/components/VisitorTracker";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,7 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-transparent">
       <AppSidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <div className="absolute inset-0 bg-[#010001]/995 pointer-events-none z-0" />
+        <div className="absolute inset-0 bg-[#0E0E12]/95 pointer-events-none z-0" />
         <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-y-auto">
           {children}
         </div>
@@ -57,6 +58,7 @@ export default function ClientLayout({
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <LayoutShell>{children}</LayoutShell>
+        <VisitorTracker />
         <Toaster />
         <Sonner />
       </AuthProvider>

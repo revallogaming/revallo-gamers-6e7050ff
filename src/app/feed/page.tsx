@@ -47,27 +47,27 @@ export default function FeedPage() {
   const { data: lfgPosts, isLoading: loadingLFG } = useLFG();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const allTournaments = tournamentsData?.pages.flatMap((p: any) => p.tournaments) ?? [];
-  
-  const filteredTournaments = allTournaments.filter(t => 
-    t.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const allTournaments =
+    tournamentsData?.pages.flatMap((p: any) => p.tournaments) ?? [];
+
+  const filteredTournaments = allTournaments.filter((t) =>
+    t.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const featuredTournament = filteredTournaments.find(t => t.is_highlighted) || filteredTournaments[0];
+  const featuredTournament =
+    filteredTournaments.find((t) => t.is_highlighted) || filteredTournaments[0];
   const firstCommunity = communities?.[0];
   const squadPosts = lfgPosts?.slice(0, 3) ?? [];
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <Header 
-        searchQuery={searchQuery} 
-        setSearchQuery={setSearchQuery} 
+      <Header
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
         searchPlaceholder="BUSCAR TORNEIO PELO NOME..."
       />
 
-      <div
-        className="flex-1 overflow-y-auto bg-transparent relative"
-      >
+      <div className="flex-1 overflow-y-auto bg-transparent relative">
         {/* Subtle atmospheric glows for depth */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-revallo-purple/25 blur-[120px] rounded-full" />
@@ -92,15 +92,18 @@ export default function FeedPage() {
                   "radial-gradient(circle at left, #3A2F7C 0%, transparent 70%), radial-gradient(ellipse at 70% 30%, rgba(143, 132, 217, 0.25), transparent 50%)",
               }}
             />
-            <div className="relative z-10 flex items-stretch min-h-[160px]">
-              <div className="flex-1 flex flex-col justify-center px-10 py-4">
-                <p className="text-[9px] font-black mb-1 italic text-[#34D399] uppercase tracking-[0.3em] pr-2">
+            <div className="relative z-10 flex items-stretch min-h-[140px] md:min-h-[160px]">
+              <div className="flex-1 flex flex-col justify-center px-6 md:px-10 py-6 md:py-4">
+                <p className="text-[8px] md:text-[9px] font-black mb-1 italic text-[#34D399] uppercase tracking-[0.3em] pr-2">
                   Bem-vindo, {profile?.nickname || "jogador"}!
                 </p>
-                <h1 className="text-3xl font-black leading-[1.1] mb-0.5 italic tracking-tighter text-white text-shadow-glow pr-2">
-                  Explore torneios <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-primary py-0.5">emocionantes</span>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black leading-[1.1] mb-0.5 italic tracking-tighter text-white text-shadow-glow pr-2">
+                  Explore torneios{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-primary py-0.5">
+                    emocionantes
+                  </span>
                 </h1>
-                <h2 className="text-lg font-black leading-tight mb-4 italic tracking-tighter text-white/90 pr-2">
+                <h2 className="text-base sm:text-lg font-black leading-tight mb-4 italic tracking-tighter text-white/90 pr-2">
                   e encontre novas comunidades
                 </h2>
                 {!user ? (
@@ -128,7 +131,8 @@ export default function FeedPage() {
                 <div
                   className="absolute inset-0 z-10"
                   style={{
-                    background: "linear-gradient(to right, #010002 0%, transparent 40%)",
+                    background:
+                      "linear-gradient(to right, #010002 0%, transparent 40%)",
                   }}
                 />
                 <img
@@ -140,7 +144,8 @@ export default function FeedPage() {
                 <div
                   className="absolute inset-0"
                   style={{
-                    background: "radial-gradient(ellipse at center, rgba(16,185,129,0.15), transparent 70%)",
+                    background:
+                      "radial-gradient(ellipse at center, rgba(16,185,129,0.15), transparent 70%)",
                   }}
                 />
               </div>
@@ -162,8 +167,6 @@ export default function FeedPage() {
                     Ver todos <ChevronRight size={12} />
                   </Link>
                 </div>
-                
-                
               </div>
 
               {loadingTournaments ? (
@@ -184,30 +187,41 @@ export default function FeedPage() {
                 >
                   <div className="absolute inset-0 z-0 overflow-hidden">
                     <img
-                      src={featuredTournament.banner_url || `/banners/${featuredTournament.game ?? 'freefire'}.png`}
+                      src={
+                        featuredTournament.banner_url ||
+                        `/banners/${featuredTournament.game ?? "freefire"}.png`
+                      }
                       className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/banners/freefire.png';
+                        (e.target as HTMLImageElement).src =
+                          "/banners/freefire.png";
                       }}
                     />
                     {/* Dark gradient for text readability and smooth blend */}
                     <div className="absolute inset-0 bg-gradient-to-r from-[#020106] via-[#020106]/80 to-transparent z-[1]" />
                   </div>
-                  <div className="relative z-10 p-10 flex items-center justify-between h-full">
-                    <div className="max-w-[60%]">
-                      <p className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-2 italic drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] pr-2">
-                        TORNEIO {String(featuredTournament.game ?? "VALORANT").replace("_", " ").toUpperCase()}
+                  <div className="relative z-10 p-6 md:p-10 flex items-center justify-between h-full">
+                    <div className="max-w-full md:max-w-[60%]">
+                      <p className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-3 md:mb-2 italic drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] pr-2">
+                        TORNEIO{" "}
+                        {String(featuredTournament.game ?? "VALORANT")
+                          .replace("_", " ")
+                          .toUpperCase()}
                       </p>
-                      <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white leading-[1.1] mb-2 group-hover:translate-x-1 transition-transform text-shadow-glow">
+                      <h3 className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter text-white leading-[1.3] md:leading-tight mb-4 md:mb-2 group-hover:translate-x-1 transition-transform text-shadow-glow">
                         {featuredTournament.title}
                       </h3>
                       <p className="text-lg font-black italic text-white flex items-center gap-2 mb-6 drop-shadow-lg">
-                        <Trophy size={20} className="text-emerald-400 fill-emerald-400/20" />
+                        <Trophy
+                          size={20}
+                          className="text-emerald-400 fill-emerald-400/20"
+                        />
                         {featuredTournament.prize_amount > 0
-                          ? `R$ ${featuredTournament.prize_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                          : (featuredTournament.prize_description && featuredTournament.prize_description.trim() !== ""
-                              ? featuredTournament.prize_description 
-                              : "Sem premiação")}
+                          ? `R$ ${featuredTournament.prize_amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                          : featuredTournament.prize_description &&
+                              featuredTournament.prize_description.trim() !== ""
+                            ? featuredTournament.prize_description
+                            : "Sem premiação"}
                       </p>
                       <button
                         className="flex items-center gap-2 px-8 h-10 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95 shadow-glow-sm"
@@ -235,13 +249,15 @@ export default function FeedPage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#020106] via-[#020106]/60 to-transparent" />
                   </div>
-                  <div className="relative z-10 p-10 flex items-center h-full">
-                    <div className="max-w-[50%]">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2 italic">
-                        DESTAQUE SEU TRABALHO
+                  <div className="relative z-10 p-6 md:p-10 flex items-center h-full">
+                    <div className="max-w-full md:max-w-[50%]">
+                      <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-3 md:mb-2 italic">
+                        DESTAQUE SEU CAMPEONATO
                       </p>
-                      <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white leading-[1.1] mb-4 text-shadow-glow">
-                        Anuncie aqui e ganhe <span className="text-primary">visibilidade</span> para seus torneios
+                      <h3 className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter text-white leading-[1.3] md:leading-tight mb-6 md:mb-4 text-shadow-glow">
+                        Anuncie aqui e ganhe{" "}
+                        <span className="text-primary">visibilidade</span> para
+                        seus torneios
                       </h3>
                       <button
                         className="flex items-center gap-2 px-8 h-10 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95 shadow-glow-sm"
@@ -290,16 +306,21 @@ export default function FeedPage() {
                       onClick={() => router.push(`/communities/${c.id}`)}
                     >
                       <img
-                        src={c.banner_url || c.icon_url || "/fictitious-community.png"}
+                        src={
+                          c.banner_url ||
+                          c.icon_url ||
+                          "/fictitious-community.png"
+                        }
                         className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
                       <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <Link href={`/communities/${c.id}`} className="flex items-center gap-2 mb-1 relative z-10">
-                          <Avatar
-                            className="h-10 w-10 shrink-0 border-2 border-primary/20 group-hover:border-primary/50 transition-colors shadow-glow-sm"
-                          >
+                        <Link
+                          href={`/communities/${c.id}`}
+                          className="flex items-center gap-2 mb-1 relative z-10"
+                        >
+                          <Avatar className="h-10 w-10 shrink-0 border-2 border-primary/20 group-hover:border-primary/50 transition-colors shadow-glow-sm">
                             <AvatarImage src={c.banner_url || undefined} />
                             <AvatarFallback className="bg-primary/20 text-primary text-[8px] font-black">
                               {c.name?.charAt(0)}
@@ -317,15 +338,16 @@ export default function FeedPage() {
                   ))}
                 </div>
               ) : (
-                <div
-                  className="flex flex-col items-center justify-center rounded-[32px] gap-4 py-16 text-center bg-white/[0.02] border border-dashed border-white/10 relative overflow-hidden group"
-                >
+                <div className="flex flex-col items-center justify-center rounded-[32px] gap-4 py-16 text-center bg-white/[0.02] border border-dashed border-white/10 relative overflow-hidden group">
                   <img
                     src="/fictitious-community.png"
                     className="absolute inset-0 w-full h-full object-cover opacity-10 filter grayscale group-hover:grayscale-0 group-hover:opacity-20 transition-all duration-700"
                   />
                   <div className="relative z-10 flex flex-col items-center">
-                    <Users size={48} className="text-primary mb-2 shadow-glow-sm" />
+                    <Users
+                      size={48}
+                      className="text-primary mb-2 shadow-glow-sm"
+                    />
                     <p className="text-[12px] font-black uppercase tracking-widest text-white italic">
                       Hubs da Comunidade
                     </p>
@@ -385,17 +407,18 @@ export default function FeedPage() {
                           {post.game}
                         </p>
                       </div>
-                      <button className="px-5 h-10 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase italic text-white hover:bg-white/10 transition-all">
+                      <button className="hidden sm:block px-5 h-10 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase italic text-white hover:bg-white/10 transition-all">
                         Entrar em contato
+                      </button>
+                      <button className="sm:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all">
+                        <ChevronRight size={14} />
                       </button>
                     </Button>
                   ))
                 ) : (
-                  <div 
-                    className="flex flex-col items-center justify-center py-12 rounded-[24px] bg-white/[0.02] border border-dashed border-white/10 relative overflow-hidden group"
-                  >
-                    <img 
-                      src="/fictitious-squad.png" 
+                  <div className="flex flex-col items-center justify-center py-12 rounded-[24px] bg-white/[0.02] border border-dashed border-white/10 relative overflow-hidden group">
+                    <img
+                      src="/fictitious-squad.png"
                       className="absolute inset-0 w-full h-full object-cover opacity-10 filter grayscale group-hover:grayscale-0 group-hover:opacity-20 transition-all duration-700"
                     />
                     <div className="relative z-10 flex flex-col items-center">

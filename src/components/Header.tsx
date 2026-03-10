@@ -168,8 +168,40 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-white/5 bg-background py-6 px-4 animate-in slide-in-from-top duration-300">
+        <div className="md:hidden border-t border-white/5 bg-[#0D0D0F] py-6 px-4 animate-in slide-in-from-top duration-300 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <nav className="flex flex-col gap-6">
+            {/* Primary Nav Links */}
+            <div className="flex flex-col gap-4 border-b border-white/5 pb-6">
+              <Link
+                href="/feed"
+                className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Feed
+              </Link>
+              <Link
+                href="/tournaments"
+                className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Torneios
+              </Link>
+              <Link
+                href="/communities"
+                className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Comunidades
+              </Link>
+              <Link
+                href="/lfg"
+                className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                LFG
+              </Link>
+            </div>
+
             {user ? (
               <div className="flex flex-col gap-6">
                 <Link

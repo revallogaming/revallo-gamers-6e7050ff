@@ -32,6 +32,7 @@ import { AdminMiniTournaments } from "@/components/admin/AdminMiniTournaments";
 import { AdminTransactions } from "@/components/admin/AdminTransactions";
 import { AdminReports } from "@/components/admin/AdminReports";
 import { AdminWithdrawals } from "@/components/admin/AdminWithdrawals";
+import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 
 interface UserWithCredits {
   id: string;
@@ -228,6 +229,10 @@ export default function Admin() {
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Estatísticas</span>
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Usuários</span>
@@ -256,6 +261,10 @@ export default function Admin() {
 
           <TabsContent value="stats">
             <AdminStats />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AdminAnalytics />
           </TabsContent>
 
           <TabsContent value="users">

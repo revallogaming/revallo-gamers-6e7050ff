@@ -20,7 +20,15 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Plus,
+  Filter,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -221,6 +229,54 @@ function TournamentsContent() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {/* Mobile Filter Trigger */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="xl:hidden h-9 px-3 rounded-2xl border-white/10 bg-white/5 text-[11px] font-black uppercase italic tracking-widest gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span className="hidden xs:inline">Filtros</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[280px] bg-[#0D0D0F] border-white/5 p-0">
+                  <div className="p-6">
+                    <SheetHeader className="mb-8">
+                      <SheetTitle className="text-xl font-black italic uppercase tracking-tighter text-white">Filtrar Jogo</SheetTitle>
+                    </SheetHeader>
+                    <nav className="space-y-1">
+                      <button
+                        onClick={() => handleGameChange("all")}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm ${
+                          filters.game === "all"
+                            ? "bg-primary text-white font-black italic shadow-lg shadow-primary/20"
+                            : "text-gray-500 hover:bg-white/5 hover:text-white font-bold"
+                        }`}
+                      >
+                        <Gamepad2 className="h-4 w-4 shrink-0" />
+                        <span className="text-left flex-1 text-xs uppercase tracking-tight">
+                          Todos os Jogos
+                        </span>
+                      </button>
+                      {(Object.keys(GAME_INFO) as GameType[]).map((game) => (
+                        <button
+                          key={game}
+                          onClick={() => handleGameChange(game)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm ${
+                            filters.game === game
+                              ? "bg-primary text-white font-black italic shadow-lg shadow-primary/20"
+                              : "text-gray-500 hover:bg-white/5 hover:text-white font-bold"
+                          }`}
+                        >
+                          <GameIcon game={game} className="h-4 w-4 shrink-0" />
+                          <span className="text-left flex-1 text-xs uppercase tracking-tight">
+                            {GAME_INFO[game].name}
+                          </span>
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
               {user ? (
                 <CreateTournamentDialog>
                   <Button className="bg-primary hover:opacity-90 h-9 px-4 rounded-2xl font-black italic uppercase text-[11px] shadow-lg shadow-primary/20 flex items-center gap-2">

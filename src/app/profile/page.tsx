@@ -83,14 +83,14 @@ export default function ProfilePage() {
       <main className="container py-12 mx-auto px-4 max-w-7xl">
         {/* Profile Header */}
         <section className="mb-12">
-          <div className="flex flex-col md:flex-row items-center gap-8 bg-[#0D0B1A] border border-white/5 p-10 rounded-[40px] relative overflow-hidden">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 bg-[#12121B] border border-white/5 p-6 md:p-10 rounded-[32px] md:rounded-[40px] relative overflow-hidden text-center md:text-left">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
 
             {/* Avatar */}
             <div className="relative shrink-0 group">
-              <Avatar className="h-40 w-40 border-4 border-primary/20 shadow-2xl transition-transform group-hover:scale-95 duration-500">
+              <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-primary/20 shadow-2xl transition-transform group-hover:scale-95 duration-500">
                 <AvatarImage src={profile.avatar_url || undefined} className="object-cover" />
-                <AvatarFallback className="bg-primary/10 text-4xl font-black italic text-primary">
+                <AvatarFallback className="bg-primary/10 text-3xl md:text-4xl font-black italic text-primary">
                   {profile.nickname?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
@@ -109,17 +109,17 @@ export default function ProfilePage() {
             </div>
 
             {/* Info */}
-            <div className="flex-1 text-center md:text-left">
+            <div className="flex-1 min-w-0">
               <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                <h1 className="text-4xl font-black italic uppercase tracking-tighter">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black italic uppercase tracking-tighter truncate md:max-w-md">
                   {profile.nickname}
                 </h1>
-                <div className="flex items-center justify-center md:justify-start gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 italic">
-                  <span className="flex items-center gap-2">
-                    <span className="text-white text-lg tracking-tighter">0</span> Seguidores
+                <div className="flex items-center justify-center md:justify-start gap-4 md:gap-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 italic">
+                  <span className="flex items-center gap-1.5 md:gap-2">
+                    <span className="text-white text-base md:text-lg tracking-tighter">0</span> Seguidores
                   </span>
-                  <span className="flex items-center gap-2">
-                    <span className="text-white text-lg tracking-tighter">0</span> Seguindo
+                  <span className="flex items-center gap-1.5 md:gap-2">
+                    <span className="text-white text-base md:text-lg tracking-tighter">0</span> Seguindo
                   </span>
                 </div>
               </div>
