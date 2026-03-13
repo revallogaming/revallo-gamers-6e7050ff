@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    await adminDb.runTransaction(async (transaction) => {
+    await adminDb.runTransaction(async (transaction: any) => {
       // 1. Verify Organizer
       const tournamentRef = adminDb.collection("tournaments").doc(tournamentId);
       const tournamentDoc = await transaction.get(tournamentRef);
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       // 2. Delete old results for this fall (for re-reporting)
       const oldResultsQuery = adminDb.collection("fall_results").where("fall_id", "==", fallId);
       const oldResultsSnap = await transaction.get(oldResultsQuery);
-      oldResultsSnap.docs.forEach(d => transaction.delete(d.ref));
+      oldResultsSnap.docs.forEach((d: any) => transaction.delete(d.ref));
 
       // 3. Add new results
       results.forEach((res: any) => {
@@ -55,14 +55,14 @@ export async function POST(req: NextRequest) {
       const fallsSnap = await adminDb.collection("tournament_falls")
         .where("tournament_id", "==", tournamentId)
         .get();
-      const fallIds = fallsSnap.docs.map(d => d.id);
+      const fallIds = fallsSnap.docs.map((d: any) => d.id);
 
       // Get all results for these falls
       // Note: In a transaction, we use transaction.get()
-      const resultsQuery = adminDb.collection("fall_results").where("fall_id", "in", fallIds);
-      const resultsSnap = await transaction.get(resultsQuery);
+      const resultsSubQuery = adminDb.collection("fall_results").where("fall_id", "in", fallIds);
+      const resultsSnap = await transaction.get(resultsSubQuery);
       
-      const allResults = resultsSnap.docs.map(d => d.data());
+      const allResults = resultsSnap.docs.map((d: any) => d.data());
       // Plus the new results we JUST set (since they aren't in the snapshot yet)
       results.forEach((r: any) => allResults.push(r));
 

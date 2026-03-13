@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     let allSuccessful = true;
 
-    await adminDb.runTransaction(async (transaction) => {
+    await adminDb.runTransaction(async (transaction: any) => {
       const tournamentRef = adminDb
         .collection("mini_tournaments")
         .doc(tournament_id);

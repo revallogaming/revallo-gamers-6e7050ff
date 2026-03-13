@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     switch (action) {
       case "add_credits":
-        await adminDb.runTransaction(async (transaction) => {
+        await adminDb.runTransaction(async (transaction: any) => {
           const creditsRef = adminDb.collection("user_credits").doc(userId);
           const creditsDoc = await transaction.get(creditsRef);
           const currentBalance = creditsDoc.exists
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
           .where("user_id", "==", userId)
           .get();
         const batch = adminDb.batch();
-        userRoles.docs.forEach((doc) => batch.delete(doc.ref));
+        userRoles.docs.forEach((doc: any) => batch.delete(doc.ref));
         await batch.commit();
         break;
       }

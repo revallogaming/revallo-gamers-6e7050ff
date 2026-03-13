@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
        return NextResponse.json({ error: "Missing tournament_id or user_id" }, { status: 400 });
     }
 
-    await adminDb.runTransaction(async (transaction) => {
+    await adminDb.runTransaction(async (transaction: any) => {
       const tournamentRef = adminDb
         .collection("mini_tournaments")
         .doc(tournament_id);

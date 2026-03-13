@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const userCreditsRef = adminDb.collection("user_credits").doc(user_id);
 
-    await adminDb.runTransaction(async (transaction) => {
+    await adminDb.runTransaction(async (transaction: any) => {
       const userCreditsDoc = await transaction.get(userCreditsRef);
 
       if (!userCreditsDoc.exists) {

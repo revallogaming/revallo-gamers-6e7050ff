@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         const userId = metadata.user_id;
 
         // Update payment and add credits in a transaction
-        await adminDb.runTransaction(async (transaction) => {
+        await adminDb.runTransaction(async (transaction: any) => {
           const paymentsQuery = await adminDb
             .collection("pix_payments")
             .where("mercadopago_id", "==", String(paymentId))
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
         const userId = metadata.user_id;
         const tournamentId = metadata.tournament_id;
 
-        await adminDb.runTransaction(async (transaction) => {
+        await adminDb.runTransaction(async (transaction: any) => {
           const regPaymentsQuery = await adminDb
             .collection("registration_payments")
             .where("mercadopago_id", "==", String(paymentId))
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
       } else if (metadata?.type === "prize_deposit") {
         const tournamentId = metadata.tournament_id;
 
-        await adminDb.runTransaction(async (transaction) => {
+        await adminDb.runTransaction(async (transaction: any) => {
           const depositQuery = await adminDb
             .collection("prize_deposits")
             .where("mercadopago_id", "==", String(paymentId))

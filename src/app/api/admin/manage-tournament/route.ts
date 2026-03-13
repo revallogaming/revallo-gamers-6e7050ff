@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
           .where("tournament_id", "==", tournamentId)
           .get();
         const batch = adminDb.batch();
-        participants.docs.forEach((doc) => batch.delete(doc.ref));
+        participants.docs.forEach((doc: any) => batch.delete(doc.ref));
         await batch.commit();
         break;
       }

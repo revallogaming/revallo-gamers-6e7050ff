@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const CUSTOM_AVATAR_COST = 50;
 
     // Use a transaction for atomic credit deduction and profile update
-    await adminDb.runTransaction(async (transaction) => {
+    await adminDb.runTransaction(async (transaction: any) => {
       const profileRef = adminDb.collection("profiles").doc(userId);
       const creditsRef = adminDb.collection("user_credits").doc(userId);
 
