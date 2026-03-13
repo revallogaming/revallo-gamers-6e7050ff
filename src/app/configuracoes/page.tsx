@@ -20,6 +20,7 @@ import {
   Loader2,
   ChevronRight,
   AlertTriangle,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { SEO } from "@/components/SEO";
@@ -27,12 +28,13 @@ import { db, auth } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { toast } from "sonner";
+import { PixKeyForm } from "@/components/PixKeyForm";
 
 export default function SettingsPage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth();
   const router = useRouter();
 
-  const [activeSection, setActiveSection] = useState<"account" | "security">("account");
+  const [activeSection, setActiveSection] = useState<"account" | "security" | "financial">("account");
   const [nickname, setNickname] = useState("");
   const [bio, setBio] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -104,6 +106,7 @@ export default function SettingsPage() {
   const sections = [
     { id: "account" as const, label: "Conta", icon: User },
     { id: "security" as const, label: "Segurança", icon: Lock },
+    { id: "financial" as const, label: "Financeiro", icon: Wallet },
   ];
 
   return (
@@ -293,6 +296,12 @@ export default function SettingsPage() {
                     )}
                   </Button>
                 </Card>
+              </div>
+            )}
+
+            {activeSection === "financial" && (
+              <div className="space-y-6">
+                <PixKeyForm />
               </div>
             )}
           </div>

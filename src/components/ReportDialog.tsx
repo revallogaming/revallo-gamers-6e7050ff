@@ -68,7 +68,7 @@ const REPORT_REASONS = {
 
 const TARGET_LABELS = {
   tournament: "torneio",
-  mini_tournament: "mini torneio",
+  mini_tournament: "Apostados FF",
   user: "usuário",
   community: "hub",
 };

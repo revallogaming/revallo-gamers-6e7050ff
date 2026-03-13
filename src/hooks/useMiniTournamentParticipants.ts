@@ -98,22 +98,18 @@ export function useMiniTournamentParticipants(tournamentId: string) {
           throw new Error('Inscrições fechadas para este torneio');
         }
 
-        // Check if already participant
-        const participantQuery = query(
-          collection(db, 'mini_tournament_participants'),
-          where('tournament_id', '==', tournamentId),
-          where('player_id', '==', user.uid),
-          limit(1)
-        );
-        const participantSnap = await getDocs(participantQuery);
-        if (!participantSnap.empty) {
+        // Use a deterministic ID to prevent duplicate registrations naturally
+        const participantId = `${tournamentId}_${user.uid}`;
+        const participantRef = doc(db, 'mini_tournament_participants', participantId);
+        const participantDoc = await transaction.get(participantRef);
+        
+        if (participantDoc.exists()) {
           throw new Error('Você já está inscrito neste torneio');
         }
 
         // Logic for credits check would go here if needed
         // For now, simple join
-        const newParticipantRef = doc(collection(db, 'mini_tournament_participants'));
-        transaction.set(newParticipantRef, {
+        transaction.set(participantRef, {
           tournament_id: tournamentId,
           player_id: user.uid,
           registered_at: new Date().toISOString(),
@@ -142,20 +138,15 @@ export function useMiniTournamentParticipants(tournamentId: string) {
       if (!user) throw new Error('Não autenticado');
 
       await runTransaction(db, async (transaction) => {
-        const participantQuery = query(
-          collection(db, 'mini_tournament_participants'),
-          where('tournament_id', '==', tournamentId),
-          where('player_id', '==', user.uid),
-          limit(1)
-        );
-        const participantSnap = await getDocs(participantQuery);
+        const participantId = `${tournamentId}_${user.uid}`;
+        const participantRef = doc(db, 'mini_tournament_participants', participantId);
+        const participantDoc = await transaction.get(participantRef);
         
-        if (participantSnap.empty) {
+        if (!participantDoc.exists()) {
           throw new Error('Inscrição não encontrada');
         }
 
-        const participantDoc = participantSnap.docs[0];
-        transaction.delete(doc(db, 'mini_tournament_participants', participantDoc.id));
+        transaction.delete(participantRef);
 
         const tournamentRef = doc(db, 'mini_tournaments', tournamentId);
         const tournamentDoc = await transaction.get(tournamentRef);

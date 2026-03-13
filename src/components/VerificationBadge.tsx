@@ -16,7 +16,7 @@ export function VerificationBadge({
   className,
   showText = false
 }: VerificationBadgeProps) {
-  if (!type || type === "none") return null;
+  if (!type || type === "none" || type === "verified") return null;
 
   const config = {
     admin: {
@@ -26,21 +26,14 @@ export function VerificationBadge({
       icon: ShieldCheck,
       label: "Staff",
     },
-    verified: {
-      color: "text-primary",
-      bg: "bg-primary/10",
-      border: "border-primary/20",
-      icon: CheckCircle2,
-      label: "Verificado",
-    },
     influencer: {
       color: "text-[#FFD700]", // Gold
       bg: "bg-[#FFD700]/10",
       border: "border-[#FFD700]/20",
       icon: CheckCircle2,
-      label: "Influencer",
+      label: "Influenciador",
     },
-  }[type];
+  }[type as "admin" | "influencer"];
 
   const Icon = config.icon;
   

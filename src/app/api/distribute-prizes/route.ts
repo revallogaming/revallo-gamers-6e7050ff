@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
             user_id: res.player_id,
             amount: prizeAmount,
             type: "prize_win",
-            description: `Prêmio do mini torneio: ${tournament.title} (${res.placement}º lugar)`,
+            description: `Prêmio do Apostados FF: ${tournament.title} (${res.placement}º lugar)`,
             reference_id: tournament_id,
             created_at: new Date().toISOString(),
           });

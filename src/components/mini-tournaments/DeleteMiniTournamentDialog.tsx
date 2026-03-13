@@ -74,7 +74,7 @@ export function DeleteMiniTournamentDialog({ tournament, onSuccess, children }: 
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Excluir Mini Torneio</AlertDialogTitle>
+          <AlertDialogTitle>Excluir Apostados FF</AlertDialogTitle>
           <AlertDialogDescription>
             Tem certeza que deseja excluir o torneio "{tournament.title}"? 
             Esta ação não pode ser desfeita.

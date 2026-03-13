@@ -46,10 +46,20 @@
     background-size: cover;
     background-position: center;
     background-blend-mode: screen, screen, screen, multiply;
-    @apply text-foreground antialiased;
+    @apply text-foreground antialiased font-sans;
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+  }
+
+  h1, h2 {
+    font-family: var(--font-orbitron), sans-serif;
+    @apply uppercase tracking-tighter;
+  }
+
+  h3, h4, h5, h6, button, .ui-font {
+    font-family: var(--font-rajdhani), sans-serif;
+    @apply font-semibold;
   }
 }
 

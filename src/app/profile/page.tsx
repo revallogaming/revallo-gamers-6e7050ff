@@ -104,14 +104,14 @@ export default function ProfilePage() {
               </button>
               {/* Verification badge — big */}
               <div className="absolute -bottom-2 -right-2 bg-[#0D0B1A] p-1.5 rounded-full border border-white/10">
-                <VerificationBadge type="verified" size="xl" />
+                <VerificationBadge type={profile.verification_type as any} size="xl" />
               </div>
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black italic uppercase tracking-tighter truncate md:max-w-md">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black italic uppercase tracking-tighter break-words max-w-full">
                   {profile.nickname}
                 </h1>
                 <div className="flex items-center justify-center md:justify-start gap-4 md:gap-6 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 italic">

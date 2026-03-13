@@ -30,7 +30,7 @@ interface MiniTournament {
   current_participants: number;
   max_participants: number;
   prize_pool_brl: number;
-  entry_fee_credits: number;
+  entry_fee_brl: number;
   start_date: string;
   organizer_nickname?: string;
 }
@@ -88,7 +88,7 @@ export function AdminMiniTournaments() {
       await updateDoc(doc(db, 'mini_tournaments', id), { status });
     },
     onSuccess: () => {
-      toast.success("Mini torneio atualizado");
+      toast.success("Apostados FF atualizado");
       queryClient.invalidateQueries({ queryKey: ['admin-mini-tournaments'] });
       setEditDialogOpen(false);
     },
@@ -102,7 +102,7 @@ export function AdminMiniTournaments() {
       await deleteDoc(doc(db, 'mini_tournaments', id));
     },
     onSuccess: () => {
-      toast.success("Mini torneio removido");
+      toast.success("Apostados FF removido");
       queryClient.invalidateQueries({ queryKey: ['admin-mini-tournaments'] });
       setDeleteDialogOpen(false);
     },
@@ -128,10 +128,10 @@ export function AdminMiniTournaments() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Gamepad2 className="h-5 w-5 text-purple-500" />
-                Gerenciar Mini Torneios
+                Gerenciar Apostados FF
               </CardTitle>
               <CardDescription>
-                Edite ou remova mini torneios da Apostados
+                Edite ou remova Apostados FF da Apostados
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export function AdminMiniTournaments() {
             <Table>
               <TableHeader className="sticky top-0 bg-muted/50">
                 <TableRow>
-                  <TableHead>Mini Torneio</TableHead>
+                  <TableHead>Apostados FF</TableHead>
                   <TableHead>Organizador</TableHead>
                   <TableHead>Jogo</TableHead>
                   <TableHead>Status</TableHead>
@@ -169,7 +169,7 @@ export function AdminMiniTournaments() {
                 {filteredTournaments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Nenhum mini torneio encontrado
+                      Nenhum Apostados FF encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -199,7 +199,7 @@ export function AdminMiniTournaments() {
                         <TableCell>
                           <div className="flex items-center gap-1 text-green-500">
                             <Coins className="h-4 w-4" />
-                            R$ {Number(t.prize_pool_brl).toFixed(2)}
+                            R$ {Number(t.prize_pool_brl || 0).toFixed(2)}
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
@@ -246,7 +246,7 @@ export function AdminMiniTournaments() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle>Editar Mini Torneio</DialogTitle>
+            <DialogTitle>Editar Apostados FF</DialogTitle>
             <DialogDescription>
               Altere o status de "{selectedTournament?.title}"
             </DialogDescription>
@@ -283,7 +283,7 @@ export function AdminMiniTournaments() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-destructive">Remover Mini Torneio</DialogTitle>
+            <DialogTitle className="text-destructive">Remover Apostados FF</DialogTitle>
             <DialogDescription>
               Tem certeza que deseja remover "{selectedTournament?.title}"? Esta ação é irreversível.
             </DialogDescription>

@@ -91,7 +91,7 @@ interface Notification {
 
 export default function FastTournamentsPage() {
   const queryClient = useQueryClient();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [gameFilter, setGameFilter] = useState<GameType | "all">("all");
   const [formatFilter, setFormatFilter] = useState<
@@ -182,7 +182,7 @@ export default function FastTournamentsPage() {
               id: `${participantId}-${Date.now()}`,
               message: `${player?.nickname || "Jogador"} entrou no torneio`,
               tournamentId: newParticipant.tournament_id,
-              tournamentTitle: tournament?.title || "Torneio",
+              tournamentTitle: tournament?.title || "Campeonato",
               playerName: player?.nickname || "Jogador",
               timestamp: new Date(),
               read: false,
@@ -262,8 +262,8 @@ export default function FastTournamentsPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0C] text-white">
       <SEO
-        title="Apostados - Revallo"
-        description="Participe de mini torneios comunitários e ganhe prêmios instantâneos."
+        title="Apostados FF - Revallo"
+        description="Participe de Apostados FF comunitários e ganhe prêmios instantâneos."
       />
       <Header />
 
@@ -280,10 +280,10 @@ export default function FastTournamentsPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase mb-2">
-              Fast <span className="text-primary">Tournaments</span>
+              Apostados <span className="text-primary">FF</span>
             </h1>
             <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">
-              Mini torneios com premiação garantida em R$
+              Apostados FF com premiação em R$
             </p>
           </div>
 
@@ -405,7 +405,7 @@ export default function FastTournamentsPage() {
               <CreateMiniTournamentDialog>
                 <Button className="bg-primary hover:opacity-90 text-white font-black uppercase italic rounded-xl px-8 h-12 shadow-lg shadow-primary/20">
                   <Plus className="h-4 w-4 mr-2" />
-                  Novo Torneio
+                  Novo Campeonato
                 </Button>
               </CreateMiniTournamentDialog>
             )}
@@ -432,7 +432,7 @@ export default function FastTournamentsPage() {
                 className="rounded-xl px-8 font-black uppercase italic text-[11px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white h-11"
               >
                 <Gamepad2 className="h-4 w-4 mr-2" />
-                Meus Torneios
+                Meus Campeonatos
                 {myTournaments && myTournaments.length > 0 && (
                   <Badge className="ml-2 bg-white/10 text-white h-5 px-2 border-0 font-black text-[9px]">
                     {myTournaments.length}
@@ -455,7 +455,7 @@ export default function FastTournamentsPage() {
                       {tournaments?.length || 0}
                     </p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">
-                      Torneios Ativos
+                      Campeonatos Ativos
                     </p>
                   </div>
                 </CardContent>
@@ -543,7 +543,7 @@ export default function FastTournamentsPage() {
                   value="all"
                   className="bg-transparent p-0 font-black uppercase text-[10px] tracking-[0.2em] text-gray-600 data-[state=active]:text-primary border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2"
                 >
-                  Todos os Torneios
+                  Todos os Campeonatos
                 </TabsTrigger>
               </TabsList>
 
@@ -561,7 +561,7 @@ export default function FastTournamentsPage() {
                   <div className="text-center py-32 bg-white/2 border border-dashed border-white/5 rounded-[40px]">
                     <Trophy className="h-16 w-16 mx-auto mb-6 text-gray-800" />
                     <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white mb-2">
-                      Sem torneios ativos
+                      Sem campeonatos ativos
                     </h3>
                     <p className="text-gray-600 font-bold uppercase tracking-widest text-[10px]">
                       Tente outros filtros ou crie o seu!
@@ -747,10 +747,10 @@ function MyTournamentsList({
       <div className="text-center py-24 bg-white/2 border border-dashed border-white/5 rounded-[40px]">
         <Trophy className="h-16 w-16 mx-auto mb-6 text-gray-800" />
         <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-2">
-          Nenhum torneio
+          Nenhum campeonato
         </h3>
         <p className="text-gray-600 font-bold uppercase tracking-widest text-[10px] mb-8">
-          Crie seu primeiro mini torneio agora!
+          Crie seu primeiro Apostados FF agora!
         </p>
         <CreateMiniTournamentDialog>
           <Button className="bg-primary hover:opacity-90 px-8 rounded-xl font-black italic uppercase h-12">

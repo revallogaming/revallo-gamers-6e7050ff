@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import * as admin from "firebase-admin";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -113,8 +114,85 @@ export async function POST(req: NextRequest) {
             created_at: new Date().toISOString(),
           });
         });
+      } else if (metadata?.type === "tournament_registration") {
+        const userId = metadata.user_id;
+        const tournamentId = metadata.tournament_id;
+
+        await adminDb.runTransaction(async (transaction) => {
+          const regPaymentsQuery = await adminDb
+            .collection("registration_payments")
+            .where("mercadopago_id", "==", String(paymentId))
+            .limit(1)
+            .get();
+
+          if (regPaymentsQuery.empty) throw new Error("Registration payment not found");
+          const regPaymentDoc = regPaymentsQuery.docs[0];
+          const regPaymentData = regPaymentDoc.data();
+
+          if (regPaymentData.status === "confirmed") return;
+
+          // 1. Mark payment as confirmed
+          transaction.update(regPaymentDoc.ref, {
+            status: "confirmed",
+            paid_at: new Date().toISOString(),
+          });
+
+          // 2. Add as participant
+          // 2. Add as participant with metadata from payment intent
+          const participantId = `${tournamentId}_${userId}`;
+          const participantRef = adminDb.collection("tournament_participants").doc(participantId);
+          
+          transaction.set(participantRef, {
+            tournament_id: tournamentId,
+            player_id: userId,
+            team_id: regPaymentData.team_id || null,
+            team_name: regPaymentData.team_name || null,
+            role: regPaymentData.role || "player",
+            pix_key: regPaymentData.pix_key || null,
+            pix_key_type: regPaymentData.pix_key_type || null,
+            participant_email: regPaymentData.email || null,
+            score: 0,
+            registered_at: new Date().toISOString(),
+          });
+
+          // 3. Increment tournament participants
+          const tournamentRef = adminDb.collection("tournaments").doc(tournamentId);
+          transaction.update(tournamentRef, {
+            current_participants: admin.firestore.FieldValue.increment(1),
+            updated_at: new Date().toISOString()
+          });
+        });
+      } else if (metadata?.type === "prize_deposit") {
+        const tournamentId = metadata.tournament_id;
+
+        await adminDb.runTransaction(async (transaction) => {
+          const depositQuery = await adminDb
+            .collection("prize_deposits")
+            .where("mercadopago_id", "==", String(paymentId))
+            .limit(1)
+            .get();
+
+          if (depositQuery.empty) throw new Error("Prize deposit not found");
+          const depositDoc = depositQuery.docs[0];
+          const depositData = depositDoc.data();
+
+          if (depositData.status === "confirmed") return;
+
+          // 1. Mark deposit as confirmed
+          transaction.update(depositDoc.ref, {
+            status: "confirmed",
+            paid_at: new Date().toISOString(),
+          });
+
+          // 2. Mark tournament prize as funded
+          const tournamentRef = adminDb.collection("tournaments").doc(tournamentId);
+          transaction.update(tournamentRef, {
+            prize_funded: true,
+            prize_funded_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        });
       }
-      // Add other types (tournament_registration, etc.) here
     }
 
     return NextResponse.json({ received: true }, { status: 200 });

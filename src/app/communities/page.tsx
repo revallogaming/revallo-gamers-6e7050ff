@@ -37,11 +37,7 @@ import { GameType } from "@/types";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 const GAMES: { value: GameType | ""; label: string }[] = [
-  { value: "", label: "Multigame (Geral)" },
   { value: "freefire", label: "Free Fire" },
-  { value: "valorant", label: "Valorant" },
-  { value: "blood_strike", label: "Blood Strike" },
-  { value: "cod", label: "COD Warzone" },
 ];
 
 export default function CommunitiesPage() {
@@ -56,7 +52,7 @@ export default function CommunitiesPage() {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    game: "" as GameType | "",
+    game: "freefire" as GameType,
     banner_url: "",
   });
   const [isUploading, setIsUploading] = useState(false);
@@ -100,7 +96,7 @@ export default function CommunitiesPage() {
       });
       toast.success("Comunidade criada!");
       setShowCreateDialog(false);
-      setForm({ name: "", description: "", game: "", banner_url: "" });
+      setForm({ name: "", description: "", game: "freefire", banner_url: "" });
       router.push(`/communities/${newId}`);
     } catch {
       toast.error("Houve um erro na criação.");
@@ -133,7 +129,11 @@ export default function CommunitiesPage() {
         title="Comunidades - Revallo"
         description="Hub social gamer da Revallo."
       />
-      <Header />
+      <Header 
+        searchQuery={searchTerm}
+        setSearchQuery={setSearchTerm}
+        searchPlaceholder="BUSCAR COMUNIDADES..."
+      />
       <div className="flex-1 overflow-y-auto py-6 md:py-12 px-4 md:px-8">
         <Link
           href="/"
@@ -158,7 +158,7 @@ export default function CommunitiesPage() {
             <div className="relative group flex-1 sm:min-w-[300px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600 group-focus-within:text-primary transition-colors" />
               <input
-                placeholder="Buscar hubs..."
+                placeholder="Buscar comunidades..."
                 className="w-full pl-12 bg-white/5 border border-white/5 h-12 rounded-xl focus:border-primary/50 text-white font-bold outline-none focus:ring-1 focus:ring-primary/20 transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -337,25 +337,11 @@ export default function CommunitiesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-gray-600 block px-2">
-                  Nível Competitivo
+                  Atividade Principal
                 </Label>
-                <select
-                  value={form.game}
-                  onChange={(e) =>
-                    setForm({ ...form, game: e.target.value as GameType | "" })
-                  }
-                  className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black italic uppercase tracking-widest text-white px-6 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                >
-                  {GAMES.map((g) => (
-                    <option
-                      key={g.value}
-                      value={g.value}
-                      className="bg-[#0A0A0C]"
-                    >
-                      {g.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="h-14 bg-white/5 border border-white/5 rounded-2xl flex items-center px-6 opacity-70">
+                  <span className="text-[10px] font-black italic uppercase tracking-widest text-primary">Free Fire</span>
+                </div>
               </div>
 
               <div className="space-y-3">

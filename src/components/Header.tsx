@@ -12,6 +12,7 @@ import {
   Trophy,
   ChevronDown,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RevalloLogo } from "@/components/RevalloLogo";
@@ -38,7 +39,7 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
   const isAdmin = hasRole("admin");
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/40 backdrop-blur-xl">
+    <header className="sticky top-0 z-[60] w-full border-b border-[#8F84D9]/10 bg-[#0B0B0F]/60 backdrop-blur-xl">
       <div className="container mx-auto px-4 flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
           <RevalloLogo size={32} />
@@ -59,7 +60,7 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
                 placeholder={searchPlaceholder || "BUSCAR..."}
                 value={searchQuery || ""}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full h-10 pl-11 pr-4 bg-revallo-purple/5 border border-revallo-purple/50 rounded-2xl text-[11px] font-black italic uppercase tracking-wider text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-revallo-highlight/60 focus:border-revallo-purple/80 focus:bg-revallo-purple/10 focus:shadow-[0_0_15px_rgba(143,132,217,0.15)] transition-all shadow-[0_0_10px_rgba(143,132,217,0.05)]"
+                className="block w-full h-10 pl-11 pr-4 bg-white/[0.03] border border-white/10 rounded-2xl text-[11px] font-black italic uppercase tracking-wider text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/60 focus:bg-white/[0.05] focus:shadow-[0_0_20px_rgba(143,132,217,0.1)] transition-all"
               />
             </div>
           )}
@@ -86,7 +87,7 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="h-14 px-4 hover:bg-white/5 flex items-center gap-4 transition-all group rounded-2xl border border-white/10 bg-white/[0.02]"
+                    className="h-14 px-4 hover:bg-white/5 flex items-center gap-4 transition-all group rounded-2xl border border-[#8F84D9]/20 bg-gradient-to-br from-white/[0.05] to-transparent backdrop-blur-md shadow-xl hover:shadow-primary/5 active:scale-[0.98]"
                   >
                     <Avatar className="h-10 w-10 border-2 border-primary/20 group-hover:border-primary/50 transition-colors shadow-lg shadow-primary/10">
                       <AvatarImage src={profile?.avatar_url || undefined} />
@@ -134,7 +135,13 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
                     className="rounded-xl px-4 py-3 text-gray-400 hover:bg-white/5 cursor-pointer text-xs font-black uppercase italic tracking-widest group"
                     onClick={() => router.push("/organizer")}
                   >
-                    <Trophy size={16} className="mr-3 text-gray-600 group-hover:text-primary transition-colors" /> Meus Torneios
+                    <Trophy size={16} className="mr-3 text-gray-600 group-hover:text-primary transition-colors" /> Meus Campeonatos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="rounded-xl px-4 py-3 text-gray-400 hover:bg-white/5 cursor-pointer text-xs font-black uppercase italic tracking-widest group"
+                    onClick={() => router.push("/fast-tournaments")}
+                  >
+                    <Zap size={16} className="mr-3 text-gray-600 group-hover:text-primary transition-colors" /> Meus Apostados
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator className="bg-white/5 my-2" />
@@ -150,7 +157,7 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
             </div>
           ) : (
             <Link href="/auth">
-              <Button className="bg-gradient-primary hover:scale-105 active:scale-95 text-white font-black uppercase italic tracking-widest text-[11px] h-10 px-6 rounded-xl shadow-glow-sm transition-all">
+              <Button className="bg-[#6C5CE7] hover:bg-[#8F84D9] text-white font-black uppercase italic tracking-[0.1em] text-[11px] h-11 px-8 rounded-xl shadow-[0_0_20px_rgba(108,92,231,0.3)] hover:shadow-[0_0_25px_rgba(108,92,231,0.5)] hover:scale-105 active:scale-95 transition-all duration-300 border border-white/10">
                 Entrar
               </Button>
             </Link>
@@ -171,36 +178,46 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
         <div className="md:hidden border-t border-white/5 bg-[#0D0D0F] py-6 px-4 animate-in slide-in-from-top duration-300 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <nav className="flex flex-col gap-6">
             {/* Primary Nav Links */}
-            <div className="flex flex-col gap-4 border-b border-white/5 pb-6">
-              <Link
-                href="/feed"
-                className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Feed
-              </Link>
-              <Link
-                href="/tournaments"
-                className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Torneios
-              </Link>
-              <Link
-                href="/communities"
-                className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Comunidades
-              </Link>
-              <Link
-                href="/lfg"
-                className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                LFG
-              </Link>
-            </div>
+            {/* Primary Nav Links - ONLY FOR AUTHENTICATED USERS */}
+            {user && (
+              <div className="flex flex-col gap-4 border-b border-white/5 pb-6">
+                <Link
+                  href="/feed"
+                  className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Feed
+                </Link>
+                <Link
+                  href="/apostados"
+                  className="text-sm font-black uppercase italic tracking-widest text-primary flex items-center gap-3 py-2 px-3 rounded-xl bg-primary/10 border border-primary/20"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Apostados FF
+                </Link>
+                <Link
+                  href="/tournaments"
+                  className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Campeonatos
+                </Link>
+                <Link
+                  href="/communities"
+                  className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Comunidades
+                </Link>
+                <Link
+                  href="/lfg"
+                  className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  LFG
+                </Link>
+              </div>
+            )}
 
             {user ? (
               <div className="flex flex-col gap-6">
@@ -223,7 +240,14 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
                   className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Trophy size={16} className="text-primary" /> Meus Torneios
+                  <Trophy size={16} className="text-primary" /> Meus Campeonatos
+                </Link>
+                <Link
+                  href="/fast-tournaments"
+                  className="text-sm font-black uppercase italic tracking-widest text-white flex items-center gap-3"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Zap size={16} className="text-primary" /> Meus Apostados
                 </Link>
                 <button
                   onClick={() => {
@@ -237,7 +261,7 @@ export function Header({ searchQuery, setSearchQuery, searchPlaceholder }: Heade
               </div>
             ) : (
               <Link href="/auth" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full bg-primary hover:bg-primary/90 text-white font-black uppercase italic tracking-widest text-xs h-12 rounded-2xl">
+                <Button className="w-full bg-[#6C5CE7] hover:bg-[#8F84D9] text-white font-black uppercase italic tracking-widest text-xs h-12 rounded-2xl shadow-lg border border-white/5">
                   Entrar na Plataforma
                 </Button>
               </Link>

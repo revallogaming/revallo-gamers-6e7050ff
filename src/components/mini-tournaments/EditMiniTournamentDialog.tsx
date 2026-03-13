@@ -95,14 +95,14 @@ export function EditMiniTournamentDialog({ tournament, onSuccess, children }: Pr
       const tournamentRef = doc(db, 'mini_tournaments', tournament.id);
       await updateDoc(tournamentRef, updateData);
 
-      toast.success('Torneio atualizado!');
+      toast.success('Campeonato atualizado!');
       queryClient.invalidateQueries({ queryKey: ['mini-tournament', tournament.id] });
       queryClient.invalidateQueries({ queryKey: ['mini-tournaments'] });
       setOpen(false);
       onSuccess?.();
     } catch (error) {
       console.error('Error updating tournament:', error);
-      toast.error('Erro ao atualizar torneio');
+      toast.error('Erro ao atualizar campeonato');
     } finally {
       setIsLoading(false);
     }
@@ -120,12 +120,12 @@ export function EditMiniTournamentDialog({ tournament, onSuccess, children }: Pr
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar Mini Torneio</DialogTitle>
+          <DialogTitle>Editar Apostados FF</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label>Título do Torneio *</Label>
+            <Label>Título do Campeonato *</Label>
             <Input {...register('title')} />
             {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
           </div>

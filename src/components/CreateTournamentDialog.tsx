@@ -6,10 +6,11 @@ import { collection, addDoc, doc, setDoc } from "firebase/firestore";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { GameType, GAME_INFO, MiniTournamentFormat } from "@/types";
+import { GameType, GAME_INFO, MiniTournamentFormat, TournamentType, ScoringSystemType, SCORING_SYSTEMS } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { normalizeExternalUrl } from "@/lib/links";
+import { Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -38,6 +40,7 @@ import {
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Plus, Loader2, Image as ImageIcon, Star, Coins, CalendarIcon, Trophy, Users, DollarSign, FileText, Key, Gamepad2, Link as LinkIcon, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OrganizerGuide } from "@/components/organizer/OrganizerGuide";
 
 interface CreateTournamentDialogProps {
   children?: React.ReactNode;
@@ -66,7 +69,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    game: "" as GameType | "",
+    game: "freefire" as GameType,
     format: "squad" as MiniTournamentFormat,
     rules: "",
     prize_amount: 0,
@@ -76,6 +79,10 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
     end_date: null as Date | null,
     registration_deadline: null as Date | null,
     organizer_pix_key: "",
+    type: "bracket" as TournamentType,
+    scoring_system: "lbff" as ScoringSystemType,
+    total_falls: 6,
+    fee_type: "per_player" as 'per_player' | 'per_team',
   });
 
   const FORMAT_OPTIONS: { value: MiniTournamentFormat; label: string; size: number }[] = [
@@ -149,7 +156,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error("Você precisa estar logado para criar um torneio");
+      toast.error("Você precisa estar logado para criar um campeonato");
       return;
     }
 
@@ -165,7 +172,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
 
     // Check credits for boost
     if (enableBoost && !hasEnoughCredits) {
-      toast.error("Créditos insuficientes para impulsionar o torneio");
+      toast.error("Créditos insuficientes para impulsionar o campeonato");
       return;
     }
 
@@ -223,6 +230,10 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
         start_date: formData.start_date?.toISOString() || null,
         end_date: formData.end_date?.toISOString() || null,
         registration_deadline: formData.registration_deadline?.toISOString() || null,
+        type: formData.type,
+        fee_type: formData.fee_type,
+        scoring_config: formData.type === 'points' ? SCORING_SYSTEMS[formData.scoring_system as keyof typeof SCORING_SYSTEMS] : null,
+        total_falls: formData.type === 'points' ? formData.total_falls : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -239,7 +250,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
         await spendCredits.mutateAsync({
           amount: selectedBoostPackage.credits,
           type: "tournament_boost",
-          description: `Impulso de torneio: ${formData.title} (${selectedBoostPackage.label})`,
+          description: `Impulso de campeonato: ${formData.title} (${selectedBoostPackage.label})`,
           referenceId: tournamentId,
         });
       }
@@ -280,13 +291,13 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
         console.log("Email not sent:", emailError);
       }
 
-      toast.success("Torneio criado com sucesso!");
+      toast.success("Campeonato criado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["tournaments"] });
       setOpen(false);
       resetForm();
     } catch (error: any) {
-      console.error("Error creating tournament:", error);
-      toast.error(error.message || "Erro ao criar torneio");
+      console.error("Error creating championship:", error);
+      toast.error(error.message || "Erro ao criar campeonato");
     } finally {
       setLoading(false);
     }
@@ -296,7 +307,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
     setFormData({
       title: "",
       description: "",
-      game: "",
+      game: "freefire",
       format: "squad",
       rules: "",
       prize_amount: 0,
@@ -306,6 +317,10 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
       end_date: null,
       registration_deadline: null,
       organizer_pix_key: "",
+      type: "bracket",
+      scoring_system: "lbff",
+      total_falls: 6,
+      fee_type: "per_player",
     });
     setBannerFile(null);
     setBannerPreview(null);
@@ -319,13 +334,13 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
         {children || (
           <Button className="bg-gradient-primary hover:opacity-90 glow-primary font-semibold gap-2">
             <Plus className="h-4 w-4" />
-            Criar Torneio
+            Criar Campeonato
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto bg-gradient-to-b from-card to-background border-border/50 scrollbar-thin">
         <DialogHeader className="pb-4 border-b border-border/30">
-          <DialogTitle className="font-display text-2xl text-gradient-primary">Criar Novo Torneio</DialogTitle>
+          <DialogTitle className="font-display text-2xl text-gradient-primary">Criar Novo Campeonato</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
@@ -333,7 +348,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-display text-secondary">
               <ImageIcon className="h-4 w-4" />
-              <span>Banner do Torneio</span>
+              <span>Banner do Campeonato</span>
             </div>
             <div 
               className={cn(
@@ -390,7 +405,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-xs text-muted-foreground">Título do Torneio *</Label>
+                <Label htmlFor="title" className="text-xs text-muted-foreground">Título do Campeonato *</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -402,21 +417,9 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               </div>
               <div className="space-y-2">
                 <Label htmlFor="game" className="text-xs text-muted-foreground">Jogo *</Label>
-                <Select
-                  value={formData.game}
-                  onValueChange={(value) => setFormData({ ...formData, game: value as GameType })}
-                >
-                  <SelectTrigger className="h-12 bg-muted/30 border-border/50">
-                    <SelectValue placeholder="Selecione o jogo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(GAME_INFO) as GameType[]).map((game) => (
-                      <SelectItem key={game} value={game}>
-                        {GAME_INFO[game].name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="h-12 bg-muted/30 border border-border/50 rounded-md flex items-center px-3 opacity-70">
+                  <span className="text-sm font-medium">Free Fire</span>
+                </div>
               </div>
             </div>
 
@@ -424,7 +427,7 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground flex items-center gap-2">
                 <Swords className="h-3.5 w-3.5" />
-                Formato do Torneio *
+                Formato do Campeonato *
               </Label>
               <div className="grid grid-cols-4 gap-2">
                 {FORMAT_OPTIONS.map((f) => (
@@ -451,10 +454,132 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descreva seu torneio..."
+                placeholder="Descreva seu campeonato..."
                 className="min-h-[80px] bg-muted/30 border-border/50 focus:border-primary/50"
               />
             </div>
+          </div>
+
+          {/* New Section: Format and Scoring */}
+          <div className="space-y-4 p-4 rounded-xl bg-muted/20 border border-border/30">
+            <div className="flex items-center gap-2 text-sm font-display text-primary">
+              <Trophy className="h-4 w-4" />
+              <span>Formato e Pontuação</span>
+            </div>
+
+            <OrganizerGuide type="tournament-types" className="mb-4" />
+
+            <div className="space-y-3">
+              <Label className="text-xs text-muted-foreground">Tipo de Campeonato *</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: 'bracket' })}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2",
+                    formData.type === 'bracket' 
+                      ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(34,197,94,0.1)]" 
+                      : "border-border/30 bg-muted/20 grayscale opacity-60 hover:grayscale-0 hover:opacity-100"
+                  )}
+                >
+                  <Trophy className={cn("h-6 w-6", formData.type === 'bracket' ? "text-primary" : "text-muted-foreground")} />
+                  <span className="text-xs font-black italic uppercase">Eliminatória (Chave)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: 'points' })}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2",
+                    formData.type === 'points' 
+                      ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(34,197,94,0.1)]" 
+                      : "border-border/30 bg-muted/20 grayscale opacity-60 hover:grayscale-0 hover:opacity-100"
+                  )}
+                >
+                  <Users className={cn("h-6 w-6", formData.type === 'points' ? "text-primary" : "text-muted-foreground")} />
+                  <span className="text-xs font-black italic uppercase">Pontos (Battle Royale)</span>
+                </button>
+              </div>
+            </div>
+
+            {formData.type === 'points' && (
+              <>
+                <div className="space-y-3 pt-2">
+                  <Label className="text-xs text-muted-foreground">Sistema de Pontuação *</Label>
+                  <Select
+                    value={formData.scoring_system}
+                    onValueChange={(value) => setFormData({ ...formData, scoring_system: value as ScoringSystemType })}
+                  >
+                    <SelectTrigger className="h-12 bg-muted/30 border-border/50">
+                      <SelectValue placeholder="Selecione o sistema" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lbff">LBFF (Oficial Competitivo)</SelectItem>
+                      <SelectItem value="high_scoring">Amador (Pontuação Alta)</SelectItem>
+                      <SelectItem value="simplified">Simplificado (Scrims)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Detailed Scoring Preview */}
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-primary">
+                        <Info className="h-4 w-4" />
+                        <span className="text-xs font-black uppercase italic">Preview da Pontuação:</span>
+                      </div>
+                      <Badge className="bg-primary/20 text-primary border-primary/30 text-[9px] font-black italic">
+                        {formData.scoring_system.toUpperCase()}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {Object.entries(SCORING_SYSTEMS[formData.scoring_system as keyof typeof SCORING_SYSTEMS].placement_points)
+                        .sort(([a], [b]) => Number(a) - Number(b))
+                        .slice(0, 10)
+                        .map(([pos, pts]) => (
+                          <div key={pos} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
+                            <span className="text-[10px] font-black italic text-gray-500">{pos}º LUGAR</span>
+                            <span className="text-[10px] font-black italic text-primary">{pts} PTS</span>
+                          </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase text-gray-600 italic">Pontos por Abate (Kill)</span>
+                        <span className="text-sm font-black italic text-white">
+                          {SCORING_SYSTEMS[formData.scoring_system as keyof typeof SCORING_SYSTEMS].points_per_kill} PONTOS
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] font-black uppercase text-gray-600 italic">Total de Quedas</span>
+                        <span className="text-sm font-black italic text-white flex items-center justify-end gap-1">
+                          {formData.total_falls} <span className="text-[10px] text-primary">FIXAS</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-muted-foreground leading-relaxed italic border-t border-white/5 pt-2">
+                       {formData.scoring_system === 'lbff' && "🎯 Sistema oficial: valoriza tanto abates quanto sobrevivência estratégica."}
+                       {formData.scoring_system === 'high_scoring' && "🔥 Sistema dinâmico: pontuação inflada para competições amadoras com muitos times."}
+                       {formData.scoring_system === 'simplified' && "⚡ Sistema rápido: ideal para treinos diários e scrims rápidas."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="total_falls" className="text-xs text-muted-foreground">Quantidade de Quedas (Partidas) *</Label>
+                  <Input
+                    id="total_falls"
+                    type="number"
+                    value={formData.total_falls}
+                    onChange={(e) => setFormData({ ...formData, total_falls: parseInt(e.target.value) || 1 })}
+                    min={1}
+                    max={20}
+                    className="h-12 bg-muted/30 border-border/50"
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           {/* Financial Section */}
@@ -463,6 +588,9 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
               <DollarSign className="h-4 w-4" />
               <span>Valores</span>
             </div>
+            
+            <OrganizerGuide type="fees" className="mb-4" />
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="entry_fee_brl" className="text-xs text-muted-foreground">Valor da Inscrição *</Label>
@@ -506,6 +634,44 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
                 </div>
               </div>
             </div>
+
+            {/* Fee Type Selector */}
+            {formData.format !== 'x1' && (
+              <div className="space-y-3 pt-2">
+                <Label className="text-xs text-muted-foreground">Tipo de Cobrança *</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, fee_type: 'per_player' })}
+                    className={cn(
+                      "flex items-center justify-center p-3 rounded-xl border-2 transition-all gap-2",
+                      formData.fee_type === 'per_player' 
+                        ? "border-primary bg-primary/10" 
+                        : "border-border/30 bg-muted/20"
+                    )}
+                  >
+                    <span className="text-[10px] font-black italic uppercase">Por Jogador</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, fee_type: 'per_team' })}
+                    className={cn(
+                      "flex items-center justify-center p-3 rounded-xl border-2 transition-all gap-2",
+                      formData.fee_type === 'per_team' 
+                        ? "border-primary bg-primary/10" 
+                        : "border-border/30 bg-muted/20"
+                    )}
+                  >
+                    <span className="text-[10px] font-black italic uppercase">Por Time / Squad</span>
+                  </button>
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  {formData.fee_type === 'per_player' 
+                    ? "Cada jogador paga individualmente o valor da inscrição ao entrar." 
+                    : "O capitão paga o valor total pelo time ao inscrever a equipe."}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Dates */}
@@ -619,12 +785,12 @@ export function CreateTournamentDialog({ children }: CreateTournamentDialogProps
             
             {/* Rules */}
             <div className="space-y-2">
-              <Label htmlFor="rules" className="text-xs text-muted-foreground">Regras do Torneio</Label>
+              <Label htmlFor="rules" className="text-xs text-muted-foreground">Regras do Campeonato</Label>
               <Textarea
                 id="rules"
                 value={formData.rules}
                 onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
-                placeholder="Descreva as regras do torneio..."
+                placeholder="Descreva as regras do campeonato..."
                 className="min-h-[100px] bg-muted/30 border-border/50 focus:border-primary/50"
               />
             </div>

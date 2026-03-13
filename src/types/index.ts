@@ -1,12 +1,15 @@
-export type GameType = 'freefire' | 'valorant' | 'blood_strike' | 'cod';
+export type GameType = 'freefire' | 'valorant' | 'cod-warzone' | 'blood_strike';
+export type TournamentType = 'bracket' | 'points' | 'duel';
+export type ScoringSystemType = 'lbff' | 'high_scoring' | 'simplified' | 'custom' | 'duel';
 export type MatchStatus = 'pending' | 'in_progress' | 'completed' | 'disputed' | 'cancelled';
 export type MatchRoomStatus = 'not_started' | 'room_created' | 'active' | 'finished';
 export type DisputeStatus = 'open' | 'investigating' | 'resolved' | 'rejected';
 export type TournamentStatus = 'upcoming' | 'open' | 'in_progress' | 'completed' | 'cancelled';
 export type AppRole = 'admin' | 'organizer' | 'player';
 export type PixKeyType = 'cpf' | 'phone' | 'email' | 'random';
-export type MiniTournamentFormat = 'x1' | 'duo' | 'trio' | 'squad';
+export type MiniTournamentFormat = 'x1' | 'duo' | 'trio' | 'squad' | '4v4';
 export type MiniTournamentStatus = 'draft' | 'pending_deposit' | 'open' | 'in_progress' | 'awaiting_result' | 'completed' | 'cancelled';
+export type TournamentRole = 'organizer' | 'admin' | 'participant' | 'viewer';
 
 export interface Community {
   id: string;
@@ -70,6 +73,8 @@ export interface Profile {
   credits?: number;
   is_highlighted: boolean;
   highlighted_until: string | null;
+  verification_type?: 'none' | 'admin' | 'influencer' | 'verified';
+  is_banned?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -80,12 +85,21 @@ export interface AuthContextType {
   roles: UserRole[];
   loading: boolean;
   isGuest: boolean;
-  signIn: (e: string, p: string) => Promise<{error: Error | null}>;
+  signIn: (e: string, p: string, rememberMe?: boolean) => Promise<{error: Error | null}>;
   signUp: (e: string, p: string, n: string) => Promise<{error: Error | null}>;
   signOut: () => Promise<void>;
   resetPassword: (e: string) => Promise<{error: Error | null}>;
   refreshProfile: () => Promise<void>;
   hasRole: (r: 'admin' | 'organizer' | 'player') => boolean;
+}
+
+export interface ScoringSystemConfig {
+  type: ScoringSystemType;
+  placement_points: Record<number, number>;
+  points_per_kill: number;
+  booyah_bonus?: number;
+  top5_bonus?: number;
+  tie_breaker_rules?: string[]; // e.g. ['booyahs', 'kills', 'best_placement', 'last_fall']
 }
 
 export interface Tournament {
@@ -106,7 +120,7 @@ export interface Tournament {
   is_highlighted: boolean;
   highlighted_until: string | null;
   banner_url: string | null;
-  tournament_link: string | null; // Keep for legacy, but favoring internal room info
+  tournament_link: string | null;
   is_team_based?: boolean;
   format?: MiniTournamentFormat;
   min_team_size?: number;
@@ -117,7 +131,14 @@ export interface Tournament {
   organizer?: Profile;
   community_id?: string;
   prize_pool_total?: number;
+  prize_amount?: number;
   prizes_paid_at?: string | null;
+  type: TournamentType;
+  scoring_config?: ScoringSystemConfig;
+  total_falls?: number; 
+  entry_fee_brl?: number;
+  prize_amount_brl?: number;
+  fee_type?: 'per_player' | 'per_team';
 }
 
 export interface OrganizerPaymentInfo {
@@ -142,6 +163,31 @@ export interface TournamentParticipant {
   pix_key?: string | null;
   pix_key_type?: PixKeyType | null;
   player?: Profile;
+  total_kills?: number;
+  booyahs?: number;
+  last_fall_placement?: number;
+  best_placement?: number;
+}
+
+export interface FallResult {
+  id: string;
+  fall_id: string;
+  participant_id: string; // Points to TournamentParticipant
+  placement: number;
+  kills: number;
+  points: number;
+  reported_by: string; // UID of admin/organizer
+  created_at: string;
+}
+
+export interface TournamentFall {
+  id: string;
+  tournament_id: string;
+  fall_number: number; // 1, 2, 3...
+  map?: string;
+  status: 'pending' | 'live' | 'completed';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Match {
@@ -252,7 +298,7 @@ export interface MiniTournament {
   game: GameType;
   format: MiniTournamentFormat;
   max_participants: number;
-  entry_fee_credits: number;
+  entry_fee_brl: number;
   prize_pool_brl: number;
   prize_distribution: PrizeDistributionConfig[];
   rules: string | null;
@@ -267,7 +313,10 @@ export interface MiniTournament {
   prizes_distributed_at: string | null;
   created_at: string;
   updated_at: string;
+  banner_url?: string;
+  map?: string | null;
   organizer?: Profile;
+  fee_type?: 'per_player' | 'per_team';
 }
 
 export interface MiniTournamentParticipant {
@@ -324,9 +373,53 @@ export interface PrizeDistribution {
 export const GAME_INFO: Record<GameType, { name: string; color: string }> = {
   freefire: { name: 'Free Fire', color: 'freefire' },
   valorant: { name: 'Valorant', color: 'valorant' },
+  'cod-warzone': { name: 'Warzone', color: 'cod' },
   blood_strike: { name: 'Blood Strike', color: 'bloodstrike' },
-  cod: { name: 'COD Warzone', color: 'cod' },
 };
+
+// Duel System Types
+export type MatchDuelStatus = 'open' | 'matched' | 'playing' | 'finished' | 'disputed' | 'cancelled';
+
+export interface MatchDuel {
+  id: string;
+  game: GameType;
+  mode: string; // e.g., '4v4'
+  entry_fee_brl: number;
+  prize_pool_brl: number;
+  platform_fee_brl: number;
+  title: string;
+  banner_url?: string;
+  format: string; // e.g., 'MD3'
+  map: string; // e.g., 'Bermuda'
+  status: MatchDuelStatus;
+  teamA_id: string;
+  teamB_id?: string;
+  creator_id: string;
+  creator?: Profile;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MatchDuelResult {
+  id: string;
+  match_id: string;
+  team_id: string;
+  rounds_won: number;
+  kills: number;
+  screenshots: string[];
+  submitted_by: string;
+  created_at: string;
+}
+
+export interface MatchDuelPayout {
+  id: string;
+  player_id: string;
+  match_id: string;
+  amount_brl: number;
+  status: 'pending' | 'paid';
+  created_at: string;
+  paid_at?: string;
+}
 
 export const STATUS_INFO: Record<TournamentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {
   upcoming: { label: 'Inscrições abertas', variant: 'default', color: '#22c55e' },
@@ -350,7 +443,8 @@ export const FORMAT_INFO: Record<MiniTournamentFormat, { label: string; players:
   x1: { label: 'X1 (1v1)', players: 1 },
   duo: { label: 'Duo (2v2)', players: 2 },
   trio: { label: 'Trio (3v3)', players: 3 },
-  squad: { label: 'Squad (4v4)', players: 4 },
+  squad: { label: 'Squad (Battle Royale)', players: 4 },
+  '4v4': { label: '4v4 (Apostado)', players: 4 },
 };
 
 export const PIX_KEY_TYPE_INFO: Record<PixKeyType, { label: string; placeholder: string; pattern: RegExp }> = {
@@ -358,4 +452,31 @@ export const PIX_KEY_TYPE_INFO: Record<PixKeyType, { label: string; placeholder:
   phone: { label: 'Telefone', placeholder: '+55 11 99999-9999', pattern: /^\+?\d{10,15}$/ },
   email: { label: 'E-mail', placeholder: 'exemplo@email.com', pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
   random: { label: 'Chave Aleatória', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', pattern: /^[a-f0-9-]{32,36}$/i },
+};
+
+export const SCORING_SYSTEMS: Record<Exclude<ScoringSystemType, 'custom'>, ScoringSystemConfig> = {
+  lbff: {
+    type: 'lbff',
+    placement_points: { 1: 12, 2: 9, 3: 8, 4: 7, 5: 6, 6: 5, 7: 4, 8: 3, 9: 2, 10: 1, 11: 0, 12: 0 },
+    points_per_kill: 1,
+    tie_breaker_rules: ['booyahs', 'kills', 'best_placement', 'last_fall']
+  },
+  high_scoring: {
+    type: 'high_scoring',
+    placement_points: { 1: 1000, 2: 750, 3: 500, 4: 400, 5: 350, 6: 300, 7: 250, 8: 200, 9: 150, 10: 100 },
+    points_per_kill: 25,
+    tie_breaker_rules: ['booyahs', 'kills', 'best_placement', 'last_fall']
+  },
+  simplified: {
+    type: 'simplified',
+    placement_points: { 1: 10, 2: 8, 3: 7, 4: 6, 5: 5 },
+    points_per_kill: 1,
+    tie_breaker_rules: ['booyahs', 'kills', 'best_placement', 'last_fall']
+  },
+  duel: {
+    type: 'duel',
+    placement_points: {},
+    points_per_kill: 0,
+    tie_breaker_rules: ['rounds_won', 'kills']
+  }
 };

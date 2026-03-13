@@ -65,7 +65,7 @@ export function PixKeyForm() {
         <CardDescription>
           {hasPixKey 
             ? 'Sua chave PIX está cadastrada para receber premiações.'
-            : 'Cadastre sua chave PIX para receber premiações de mini torneios.'
+            : 'Cadastre sua chave PIX para receber premiações de Apostados FF.'
           }
         </CardDescription>
       </CardHeader>

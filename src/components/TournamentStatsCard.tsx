@@ -34,7 +34,7 @@ export function TournamentStatsCard({ tournaments }: Props) {
   const stats = [
     {
       icon: Trophy,
-      label: "Total de Torneios",
+      label: "Total de Campeonatos",
       value: tournaments.length,
       color: "text-primary",
       bgColor: "bg-primary/10",
@@ -48,15 +48,15 @@ export function TournamentStatsCard({ tournaments }: Props) {
     },
     {
       icon: Calendar,
-      label: "Torneios Ativos",
+      label: "Campeonatos Ativos",
       value: activeTournaments.length,
       color: "text-accent",
       bgColor: "bg-accent/10",
     },
     {
       icon: Coins,
-      label: "Receita Total (créditos)",
-      value: totalRevenue.toLocaleString("pt-BR"),
+      label: "Receita Total (BRL)",
+      value: `R$ ${(totalRevenue / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
       color: "text-green-500",
       bgColor: "bg-green-500/10",
     },
@@ -69,7 +69,7 @@ export function TournamentStatsCard({ tournaments }: Props) {
     },
     {
       icon: Clock,
-      label: "Próximo Torneio",
+      label: "Próximo Campeonato",
       value: timeUntilNext !== null 
         ? timeUntilNext === 0 
           ? "Hoje!" 

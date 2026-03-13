@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUserPixKey } from "@/hooks/useUserPixKey";
 import {
   Wallet,
   ArrowLeft,
@@ -36,12 +37,11 @@ import { OrganizerPaymentInfo } from "@/types";
 export default function FinanceiroPage() {
   const { user, profile, loading } = useAuth();
   const { transactions } = useCredits();
+  const { pixKey, isLoading: loadingPix, savePixKey } = useUserPixKey();
   const router = useRouter();
 
-  const [pixKey, setPixKey] = useState("");
+  const [pixKeyInput, setPixKeyInput] = useState("");
   const [isSavingPix, setIsSavingPix] = useState(false);
-  const [loadingPaymentInfo, setLoadingPaymentInfo] = useState(true);
-  const [paymentInfo, setPaymentInfo] = useState<OrganizerPaymentInfo | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -50,42 +50,21 @@ export default function FinanceiroPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    async function fetchPaymentInfo() {
-      if (!user?.uid) return;
-      try {
-        const docRef = doc(db, "organizer_payment_info", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as OrganizerPaymentInfo;
-          setPaymentInfo(data);
-          setPixKey(data.pix_key || "");
-        }
-      } catch (error) {
-        console.error("Error fetching payment info:", error);
-      } finally {
-        setLoadingPaymentInfo(false);
-      }
+    if (pixKey) {
+      setPixKeyInput(pixKey.pix_key || "");
     }
-    fetchPaymentInfo();
-  }, [user]);
+  }, [pixKey]);
 
   const handleSavePixKey = async () => {
     if (!user?.uid) return;
     setIsSavingPix(true);
     try {
-      await setDoc(
-        doc(db, "organizer_payment_info", user.uid),
-        {
-          organizer_id: user.uid,
-          pix_key: pixKey,
-          updated_at: new Date().toISOString(),
-        },
-        { merge: true },
-      );
-      toast.success("Chave PIX salva com sucesso!");
+      await savePixKey.mutateAsync({
+        pixKeyType: 'random', // Default or allow selection
+        pixKey: pixKeyInput,
+      });
     } catch (error) {
       console.error("Error saving PIX key:", error);
-      toast.error("Erro ao salvar chave PIX");
     } finally {
       setIsSavingPix(false);
     }
@@ -187,8 +166,8 @@ export default function FinanceiroPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-gray-700 italic ml-1">Chave Registrada</Label>
                     <Input
-                      value={pixKey}
-                      onChange={(e) => setPixKey(e.target.value)}
+                      value={pixKeyInput}
+                      onChange={(e) => setPixKeyInput(e.target.value)}
                       placeholder="CPF, Email, Telefone..."
                       className="bg-white/5 border-white/10 rounded-none h-12 text-sm font-bold placeholder:text-gray-800"
                     />
@@ -196,13 +175,13 @@ export default function FinanceiroPage() {
 
                   <Button
                     onClick={handleSavePixKey}
-                    disabled={isSavingPix || loadingPaymentInfo}
+                    disabled={isSavingPix || loadingPix}
                     className="w-full h-12 bg-white/5 hover:bg-white/10 text-white rounded-none border border-white/10 text-[10px] font-black uppercase italic tracking-widest transition-all"
                   >
                     {isSavingPix ? <Loader2 className="h-4 w-4 animate-spin" /> : "Atualizar Chave PIX"}
                   </Button>
 
-                  {paymentInfo?.pix_key && (
+                  {pixKey?.pix_key && (
                     <div className="p-4 bg-green-500/5 border border-green-500/10 flex items-start gap-3">
                       <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
                       <p className="text-[9px] font-black italic text-green-700 uppercase leading-relaxed">Sua conta está configurada para receber repasses automáticos de torneios.</p>

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, Mail, Trophy, Copy, CheckCircle, ArrowLeft, Clock, Users, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -131,6 +132,8 @@ export function JoinTournamentDialog({
     }
   };
 
+  const [pixData, setPixData] = useState<any>(null);
+
   const registerForTournament = async () => {
     if (!user?.email) {
       toast.error("Erro: E-mail não encontrado no seu perfil.");
@@ -154,21 +157,36 @@ export function JoinTournamentDialog({
     setLoading(true);
     try {
       // 2. Idempotency check — prevent double registration
-      const existingQ = query(
-        collection(db, "tournament_participants"),
-        where("tournament_id", "==", tournament.id),
-        where("player_id", "==", userId),
-        limit(1)
-      );
-      const existingSnap = await getDocs(existingQ);
-      if (!existingSnap.empty) {
-        toast.error("Você já está inscrito neste torneio!");
-        onOpenChange(false);
+      const participantId = `${tournament.id}_${userId}`;
+      
+      if (isPaidTournament) {
+        // GENERATE PIX QR CODE
+        const response = await fetch("/api/create-tournament-registration-pix", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tournament_id: tournament.id,
+            email: user.email,
+            amount_brl: entryFeeInBRL,
+            team_id: selectedTeamId || null,
+            team_name: assignedTeamName || teamName || null,
+            role: assignedRole || (selectedTeamId || teamName ? 'captain' : selectedRole),
+            pix_key: pixKey,
+            pix_key_type: pixKeyType
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Erro ao gerar PIX para inscrição");
+        }
+
+        const data = await response.json();
+        setPixData(data);
+        setStep("pending");
         return;
       }
 
-      // 3. Add participant using deterministic ID (prevents race condition duplicates)
-      const participantId = `${tournament.id}_${userId}`;
+      // FREE TOURNAMENT REGISTRATION
       await setDoc(doc(db, "tournament_participants", participantId), {
         tournament_id: tournament.id,
         player_id: userId,
@@ -189,21 +207,6 @@ export function JoinTournamentDialog({
         current_participants: increment(1),
       });
 
-      // Email logic (non-blocking)
-      try {
-        await fetch("/api/send-tournament-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "registration",
-            email: user.email,
-            tournamentTitle: tournament.title,
-            startDate: tournament.start_date,
-            entryFee: tournament.entry_fee,
-          }),
-        });
-      } catch (emailError) {}
-
       toast.success("Inscrição realizada com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["tournament", tournament.id] });
       queryClient.invalidateQueries({ queryKey: ["tournaments"] });
@@ -216,17 +219,24 @@ export function JoinTournamentDialog({
     }
   };
 
+  const copyPixCode = () => {
+    if (pixData?.qr_code) {
+      navigator.clipboard.writeText(pixData.qr_code);
+      toast.success("Código PIX copiado!");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-[#0D0B1A] border-white/10 text-white rounded-none">
+      <DialogContent className="max-w-md bg-[#0D0B1A]/95 border-white/10 text-white rounded-[2rem] backdrop-blur-2xl">
         <DialogHeader className="pb-4 border-b border-white/5">
-          <DialogTitle className="font-black italic uppercase tracking-tighter text-xl flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
+          <DialogTitle className="font-black italic uppercase tracking-tighter text-2xl flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-primary" />
             Compita na Revallo
           </DialogTitle>
           <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-gray-600 italic">
             {isPaidTournament
-              ? `Inscrição: R$ ${entryFeeInBRL.toFixed(2).replace(".", ",")}`
+              ? `Taxa de Inscrição: R$ ${entryFeeInBRL.toFixed(2).replace(".", ",")}`
               : "Inscrição Gratuita — Entre no jogo"}
           </DialogDescription>
         </DialogHeader>
@@ -240,17 +250,17 @@ export function JoinTournamentDialog({
               <div className="grid grid-cols-1 gap-3">
                 <Button 
                   onClick={() => setStep("select_team")}
-                  className="h-16 bg-white/5 border border-white/5 hover:border-primary/50 hover:bg-primary/5 rounded-2xl flex flex-col items-center justify-center gap-0.5 group"
+                  className="h-20 bg-white/2 border border-white/5 hover:border-primary/50 hover:bg-primary/5 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 group transition-all"
                 >
-                  <Users className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] font-black uppercase italic tracking-widest">Minhas Equipes</span>
+                  <Users className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-black uppercase italic tracking-widest text-white">Minhas Equipes</span>
                 </Button>
                 <Button 
                   onClick={() => setStep("create_team")}
-                  className="h-16 bg-white/5 border border-white/5 hover:border-primary/50 hover:bg-primary/5 rounded-2xl flex flex-col items-center justify-center gap-0.5 group"
+                  className="h-20 bg-white/2 border border-white/5 hover:border-primary/50 hover:bg-primary/5 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 group transition-all"
                 >
-                  <UserPlus className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] font-black uppercase italic tracking-widest">Criar Nova Equipe</span>
+                  <UserPlus className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-black uppercase italic tracking-widest text-white">Criar Nova Equipe</span>
                 </Button>
               </div>
             </div>
@@ -281,16 +291,16 @@ export function JoinTournamentDialog({
                         setSelectedTeamId(team.id);
                         setStep("invite_members");
                       }}
-                      className="w-full p-4 rounded-xl bg-white/2 border border-white/5 hover:border-primary/50 hover:bg-primary/5 transition-all text-left flex items-center gap-4 group"
+                      className="w-full p-4 rounded-2xl bg-white/2 border border-white/5 hover:border-primary/50 hover:bg-primary/5 transition-all text-left flex items-center gap-4 group"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors shrink-0">
-                        <Users className="w-5 h-5 text-gray-500 group-hover:text-primary" />
+                      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors shrink-0">
+                        <Users className="w-6 h-6 text-gray-500 group-hover:text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black italic uppercase tracking-tighter truncate">{team.name}</p>
+                        <p className="text-sm font-black italic uppercase tracking-tighter truncate text-white">{team.name}</p>
                         <p className="text-[8px] font-black uppercase text-gray-600 tracking-widest">{team.members_count} Membros</p>
                       </div>
-                      <CheckCircle className={`h-4 w-4 ${selectedTeamId === team.id ? "text-primary opacity-100" : "opacity-0"} transition-opacity`} />
+                      <CheckCircle className={`h-5 w-5 ${selectedTeamId === team.id ? "text-primary opacity-100" : "opacity-0"} transition-opacity`} />
                     </button>
                   ))
                 )}
@@ -307,7 +317,7 @@ export function JoinTournamentDialog({
                   </Button>
                   <span className="text-[10px] font-black uppercase italic tracking-widest text-white">Membros da Equipe</span>
                 </div>
-                <Badge variant="outline" className="text-[8px] font-black uppercase italic tracking-widest border-primary/20 text-primary">
+                <Badge className="text-[9px] font-black uppercase italic tracking-widest bg-primary/20 text-primary border-0 rounded-full px-3">
                   {teamMembers.data?.length || 1}/{tournament.max_team_size || '∞'}
                 </Badge>
               </div>
@@ -318,12 +328,12 @@ export function JoinTournamentDialog({
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="E-mail do jogador"
-                    className="h-10 bg-white/2 border-white/5 text-xs flex-1"
+                    className="h-12 bg-white/2 border-white/5 text-xs flex-1 rounded-xl"
                   />
                   <select
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}
-                    className="h-10 bg-black/40 border border-white/10 rounded-lg text-[10px] font-black uppercase px-2 outline-none focus:ring-1 focus:ring-primary"
+                    className="h-12 bg-black/60 border border-white/5 rounded-xl text-[10px] font-black uppercase px-3 outline-none focus:ring-1 focus:ring-primary text-white"
                   >
                     <option value="player">Player</option>
                     <option value="coach">Coach</option>
@@ -333,28 +343,31 @@ export function JoinTournamentDialog({
                 <Button 
                   type="submit" 
                   disabled={inviteMemberByEmail.isPending}
-                  className="w-full bg-primary hover:opacity-90 font-black uppercase italic tracking-widest text-[9px] h-10 rounded-xl"
+                  className="w-full bg-primary hover:opacity-90 font-black uppercase italic tracking-widest text-[10px] h-12 rounded-xl shadow-lg shadow-primary/10"
                 >
-                  {inviteMemberByEmail.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Enviar Convite Notificação + E-mail"}
+                  {inviteMemberByEmail.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar Convite Notificação + E-mail"}
                 </Button>
               </form>
 
               <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
                 {teamMembers.data?.map((member: any) => (
-                  <div key={member.id} className="flex items-center justify-between p-3 rounded-xl bg-white/2 border border-white/5">
+                  <div key={member.id} className="flex items-center justify-between p-4 rounded-xl bg-white/2 border border-white/5">
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-black italic">
-                        {member.user?.nickname?.[0] || "?"}
-                      </div>
-                      <span className="text-[10px] font-black uppercase italic tracking-tighter truncate max-w-[120px]">
+                      <Avatar className="w-8 h-8 rounded-lg">
+                        <AvatarImage src={member.user?.avatar_url} />
+                        <AvatarFallback className="bg-primary/10 text-[10px] font-black italic text-primary">
+                          {member.user?.nickname?.[0] || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-[10px] font-black uppercase italic tracking-tighter truncate max-w-[120px] text-white">
                         {member.user?.nickname || "Convidado"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-[8px] font-black uppercase tracking-widest italic px-2 py-0.5 rounded border ${
-                        member.role === 'captain' ? 'border-primary/30 text-primary' : 
-                        member.role === 'coach' ? 'border-amber-500/30 text-amber-500' :
-                        member.role === 'analista' ? 'border-blue-500/30 text-blue-500' :
+                        member.role === 'captain' ? 'border-primary/30 text-primary bg-primary/5' : 
+                        member.role === 'coach' ? 'border-amber-500/30 text-amber-500 bg-amber-500/5' :
+                        member.role === 'analista' ? 'border-blue-500/30 text-blue-500 bg-blue-500/5' :
                         'border-white/10 text-gray-500'
                       }`}>
                         {member.role === 'captain' ? 'CAPITÃO' : member.role?.toUpperCase() || 'PLAYER'}
@@ -365,18 +378,19 @@ export function JoinTournamentDialog({
               </div>
 
               {tournament?.min_team_size > 1 && (teamMembers.data?.length || 1) < tournament.min_team_size && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-                  <p className="text-[9px] font-black uppercase text-amber-400 tracking-widest italic">
-                    ⚠️ Equipe incompleta: {teamMembers.data?.length || 1}/{tournament.min_team_size} membros
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
+                  <p className="text-[9px] font-black uppercase text-amber-500 tracking-widest italic flex items-center justify-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Equipe incompleta: {teamMembers.data?.length || 1}/{tournament.min_team_size} MEMBROS
                   </p>
                 </div>
               )}
 
               <Button 
                 onClick={() => setStep("confirmation")}
-                className="w-full h-12 bg-white text-black hover:bg-primary hover:text-white font-black uppercase italic tracking-widest text-[10px] rounded-xl transition-all"
+                className="w-full h-14 bg-white text-black hover:bg-primary hover:text-white font-black uppercase italic tracking-widest text-[11px] rounded-2xl transition-all shadow-xl"
               >
-                Prosseguir para Inscrição
+                PROSSEGUIR PARA INSCRIÇÃO
               </Button>
             </div>
           )}
@@ -396,7 +410,7 @@ export function JoinTournamentDialog({
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder="Ex: Black Dragons"
-                  className="h-12 bg-white/2 border-white/5 focus:border-primary/50 rounded-xl"
+                  className="h-14 bg-white/2 border-white/5 focus:border-primary/50 rounded-[1.2rem] text-sm"
                   required
                 />
               </div>
@@ -404,7 +418,7 @@ export function JoinTournamentDialog({
               <Button 
                 type="submit" 
                 disabled={loading}
-                className="w-full h-12 bg-white text-black hover:bg-primary hover:text-white font-black uppercase italic tracking-widest text-[10px] rounded-xl transition-all"
+                className="w-full h-14 bg-white text-black hover:bg-primary hover:text-white font-black uppercase italic tracking-widest text-[11px] rounded-2xl transition-all shadow-xl"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar e Prosseguir"}
               </Button>
@@ -413,37 +427,39 @@ export function JoinTournamentDialog({
 
           {step === "confirmation" && (
             <div className="space-y-6 animate-in zoom-in-95 duration-200">
-              <div className="p-6 rounded-[2rem] bg-primary/5 border border-primary/10 text-center space-y-3">
-                <CheckCircle className="h-10 w-10 text-primary mx-auto" />
-                <h3 className="text-lg font-black italic uppercase tracking-tighter">Quase lá!</h3>
-                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest italic leading-relaxed">
-                  Ao confirmar, você será registrado como participante oficial.<br/>
-                  Sua conta: <span className="text-white">{user?.email}</span>
-                </p>
+              <div className="p-8 rounded-[2.5rem] bg-primary/5 border border-primary/10 text-center space-y-4 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 blur-3xl rounded-full" />
+                <CheckCircle className="h-12 w-12 text-primary mx-auto drop-shadow-[0_0_10px_rgba(108,92,231,0.5)]" />
+                <div className="space-y-1">
+                   <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">Quase lá!</h3>
+                   <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest italic leading-relaxed">
+                    Você será registrado com: <span className="text-primary">{user?.email}</span>
+                   </p>
+                </div>
               </div>
 
               {tournament.is_team_based && teamDetails.data && (
-                <div className="p-4 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between">
+                <div className="p-5 rounded-2xl bg-white/2 border border-white/5 flex items-center justify-between group hover:border-primary/20 transition-all">
                   <div>
-                    <p className="text-[8px] font-black uppercase text-gray-500 tracking-widest mb-1">Sua Equipe</p>
-                    <p className="text-sm font-black italic uppercase tracking-tighter">{teamDetails.data.name}</p>
+                    <p className="text-[8px] font-black uppercase text-gray-500 tracking-widest mb-1 italic">SUA EQUIPE SELECIONADA</p>
+                    <p className="text-base font-black italic uppercase tracking-tighter text-white">{teamDetails.data.name}</p>
                   </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setStep("invite_members")} className="text-[9px] font-black text-primary hover:text-white underline">Gerenciar Time</Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setStep("invite_members")} className="text-[9px] font-black text-primary hover:text-white underline italic">GERENCIAR TIME</Button>
                 </div>
               )}
 
               {!tournament.is_team_based && (
-                <div className="space-y-3 p-4 rounded-xl bg-white/2 border border-white/5">
+                <div className="space-y-3 p-5 rounded-2xl bg-white/2 border border-white/5">
                   <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest italic mb-1">Qual seu papel neste torneio?</p>
                   <div className="grid grid-cols-3 gap-2">
                     {['player', 'coach', 'analista'].map((role) => (
                       <button
                         key={role}
                         onClick={() => setSelectedRole(role)}
-                        className={`h-10 rounded-lg text-[9px] font-black uppercase italic border transition-all ${
+                        className={`h-11 rounded-xl text-[10px] font-black uppercase italic border transition-all ${
                           selectedRole === role 
-                            ? "bg-primary border-primary text-white" 
-                            : "bg-black/20 border-white/5 text-gray-600 hover:border-white/10"
+                            ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
+                            : "bg-black/40 border-white/5 text-gray-600 hover:border-white/10"
                         }`}
                       >
                         {role === 'player' ? '🎮 Player' : role === 'coach' ? '🏫 Coach' : '📋 Analista'}
@@ -453,42 +469,42 @@ export function JoinTournamentDialog({
                 </div>
               )}
 
-              <div className="space-y-4 p-4 rounded-xl bg-white/2 border border-white/5">
+              <div className="space-y-4 p-5 rounded-2xl bg-white/2 border border-white/5">
                 <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest italic mb-2">Dados para Recebimento de Prêmios (PIX)</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-[8px] font-black uppercase tracking-widest text-gray-600 italic">Tipo de Chave</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-gray-600 italic">TIPO DE CHAVE</Label>
                     <select 
                       value={pixKeyType}
                       onChange={(e) => setPixKeyType(e.target.value)}
-                      className="w-full h-10 bg-black/40 border border-white/10 rounded-lg text-xs px-2 focus:ring-1 focus:ring-primary outline-none"
+                      className="w-full h-11 bg-black/60 border border-white/5 rounded-xl text-[10px] font-black uppercase px-3 focus:ring-1 focus:ring-primary outline-none text-white"
                     >
                       <option value="cpf">CPF</option>
                       <option value="email">E-mail</option>
                       <option value="phone">Telefone</option>
-                      <option value="random">Chave Aleatória</option>
+                      <option value="random">Aleatória</option>
                     </select>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[8px] font-black uppercase tracking-widest text-gray-600 italic">Chave PIX</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-gray-600 italic">CHAVE PIX</Label>
                     <Input 
                       value={pixKey}
                       onChange={(e) => setPixKey(e.target.value)}
-                      placeholder="Sua chave aqui"
-                      className="h-10 bg-black/40 border-white/10 text-xs"
+                      placeholder="Sua chave"
+                      className="h-11 bg-black/60 border-white/5 text-xs rounded-xl focus:border-primary/50"
                       required
                     />
                   </div>
                 </div>
-                <p className="text-[8px] text-gray-500 italic">* Necessário para automação de premiações via Mercado Pago.</p>
+                <p className="text-[8px] text-gray-600 italic font-medium leading-normal">* Necessário para automação de pagamentos. Verifique antes de confirmar.</p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-4 pt-2">
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={() => onOpenChange(false)}
-                  className="flex-1 rounded-xl hover:bg-white/5 font-black uppercase italic text-[10px]"
+                  className="flex-1 h-14 rounded-2xl hover:bg-white/5 font-black uppercase italic text-[11px] text-gray-500"
                 >
                   Cancelar
                 </Button>
@@ -496,11 +512,67 @@ export function JoinTournamentDialog({
                   type="button"
                   onClick={registerForTournament}
                   disabled={loading}
-                  className="flex-[2] bg-primary text-white hover:opacity-90 font-black uppercase italic tracking-widest text-[10px] rounded-xl h-12 shadow-lg shadow-primary/20"
+                  className="flex-[2] h-14 bg-primary text-white hover:opacity-90 font-black uppercase italic tracking-widest text-[11px] rounded-2xl shadow-xl shadow-primary/20 transition-all border-b-4 border-primary-foreground/20 active:border-b-0 active:translate-y-1"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Finalizar Inscrição"}
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (isPaidTournament ? "IR PARA PAGAMENTO" : "FINALIZAR INSCRIÇÃO")}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {step === "pending" && (
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+               <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                     <Clock className="h-8 w-8 text-primary animate-pulse" />
+                  </div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">Pagamento Pendente</h3>
+                  <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest italic leading-relaxed">
+                    Efetue o pagamento do PIX abaixo para<br/>confirmar sua vaga no torneio.
+                  </p>
+               </div>
+
+               <div className="p-8 bg-white rounded-[2rem] flex flex-col items-center gap-6 shadow-2xl">
+                  {pixData?.qr_code_base64 ? (
+                    <img src={`data:image/png;base64,${pixData.qr_code_base64}`} alt="QR Code PIX" className="w-48 h-48" />
+                  ) : (
+                    <div className="w-48 h-48 bg-gray-100 flex items-center justify-center rounded-xl animate-pulse">
+                      <Loader2 className="h-8 w-8 animate-spin text-gray-300" />
+                    </div>
+                  )}
+                  
+                  <div className="w-full space-y-3">
+                    <p className="text-[10px] font-black uppercase text-gray-400 text-center italic tracking-widest">Copia e Cola</p>
+                    <div className="relative group">
+                       <Input 
+                        value={pixData?.qr_code || ""} 
+                        readOnly 
+                        className="h-12 bg-gray-50 border-gray-100 text-[10px] font-mono pr-12 text-black rounded-xl"
+                       />
+                       <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        onClick={copyPixCode}
+                        className="absolute right-1 top-1 h-10 w-10 text-primary hover:bg-primary/10"
+                       >
+                         <Copy className="h-4 w-4" />
+                       </Button>
+                    </div>
+                  </div>
+               </div>
+
+               <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10">
+                  <p className="text-[10px] font-black uppercase text-primary tracking-widest italic text-center leading-relaxed">
+                    Após o pagamento, sua inscrição será<br/>processada automaticamente.
+                  </p>
+               </div>
+
+               <Button 
+                onClick={() => onOpenChange(false)}
+                className="w-full h-14 bg-white/5 border border-white/5 hover:bg-white/10 text-white font-black uppercase italic tracking-widest text-[11px] rounded-2xl"
+               >
+                 FECHAR E AGUARDAR
+               </Button>
             </div>
           )}
         </div>

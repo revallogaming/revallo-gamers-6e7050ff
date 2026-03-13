@@ -44,13 +44,6 @@ function normalizeGameParam(raw: string | null | undefined): GameType | 'all' {
     all: 'all',
     freefire: 'freefire',
     free_fire: 'freefire',
-    valorant: 'valorant',
-    blood_strike: 'blood_strike',
-    bloodstrike: 'blood_strike',
-    blood: 'blood_strike',
-    cod: 'cod',
-    cod_warzone: 'cod',
-    warzone: 'cod',
   };
   return aliases[s] ?? 'all';
 }
@@ -65,10 +58,8 @@ function TournamentsContent() {
   });
 
   const [filters, setFilters] = useState<FilterType>(() => {
-    const rawGame = searchParams?.get("game");
-    const game = normalizeGameParam(rawGame) as GameType | "all";
     const search = searchParams?.get("search") || undefined;
-    return { game: game || "all", search };
+    return { game: "freefire", search };
   });
 
   const { data, isLoading } = useInfiniteTournaments(filters);
@@ -153,130 +144,39 @@ function TournamentsContent() {
     return range;
   };
 
-  const gameTitle =
-    filters.game && filters.game !== "all"
-      ? GAME_INFO[filters.game]?.name
-      : undefined;
+  const gameTitle = "Free Fire";
 
   return (
     <>
       <SEO
-        title={gameTitle ? `Torneios de ${gameTitle}` : "Todos os Torneios"}
+        title={gameTitle ? `Campeonatos de ${gameTitle}` : "Todos os Campeonatos"}
         structuredData={getBreadcrumbStructuredData([
           { name: "Início", url: "https://revallo.com.br" },
           {
-            name: gameTitle ? `Torneios de ${gameTitle}` : "Torneios",
+            name: gameTitle ? `Campeonatos de ${gameTitle}` : "Campeonatos",
             url: "https://revallo.com.br/tournaments",
           },
         ])}
       />
 
       <div className="flex flex-1 min-h-0 bg-transparent">
-        {/* ── Game Filter Sidebar (tournament-specific only) ── */}
-        <aside className="hidden xl:flex w-52 flex-col border-r border-white/5 bg-[#0D0D0F]/60 sticky top-16 h-[calc(100vh-4rem)] shrink-0">
-          <div className="p-4 overflow-y-auto flex-1">
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-700 px-2 mb-4 italic">
-              Filtrar por Jogo
-            </p>
-            <nav className="space-y-0.5">
-              <button
-                onClick={() => handleGameChange("all")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${
-                  filters.game === "all"
-                    ? "bg-primary/10 text-primary font-black italic border border-primary/10"
-                    : "text-gray-500 hover:bg-white/5 hover:text-white font-bold"
-                }`}
-              >
-                <Gamepad2 className="h-4 w-4 shrink-0" />
-                <span className="text-left flex-1 text-xs uppercase tracking-tight">
-                  Todos os Jogos
-                </span>
-              </button>
-              {(Object.keys(GAME_INFO) as GameType[]).map((game) => (
-                <button
-                  key={game}
-                  onClick={() => handleGameChange(game)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${
-                    filters.game === game
-                      ? "bg-primary/10 text-primary font-black italic border border-primary/20"
-                      : "text-gray-500 hover:bg-white/5 hover:text-white font-bold"
-                  }`}
-                >
-                  <GameIcon game={game} className="h-4 w-4 shrink-0" />
-                  <span className="text-left flex-1 text-xs uppercase tracking-tight">
-                    {GAME_INFO[game].name}
-                  </span>
-                </button>
-              ))}
-            </nav>
-          </div>
-        </aside>
-
         {/* ── Main Content ── */}
         <main className="flex-1 flex flex-col min-w-0 overflow-auto">
           <Header 
             searchQuery={filters.search} 
             setSearchQuery={(q) => handleFiltersChange({ ...filters, search: q })}
-            searchPlaceholder="BUSCAR TORNEIO PELO NOME..."
+            searchPlaceholder="BUSCAR CAMPEONATO PELO NOME..."
           />
           {/* Compact Inline Header - Just Title and Create Button */}
           <div className="flex items-center justify-between gap-4 px-6 py-4 mt-3 border-b border-white/5 bg-black/40 backdrop-blur-md">
             <div className="flex items-center gap-3 min-w-0">
               <Trophy className="h-5 w-5 text-primary shrink-0" />
               <h1 className="font-black italic uppercase tracking-tighter text-lg text-white leading-none truncate pr-2">
-                {gameTitle ? gameTitle : "Torneios"}
+                {gameTitle}
               </h1>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {/* Mobile Filter Trigger */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="xl:hidden h-9 px-3 rounded-2xl border-white/10 bg-white/5 text-[11px] font-black uppercase italic tracking-widest gap-2">
-                    <Filter className="h-4 w-4" />
-                    <span className="hidden xs:inline">Filtros</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] bg-[#0D0D0F] border-white/5 p-0">
-                  <div className="p-6">
-                    <SheetHeader className="mb-8">
-                      <SheetTitle className="text-xl font-black italic uppercase tracking-tighter text-white">Filtrar Jogo</SheetTitle>
-                    </SheetHeader>
-                    <nav className="space-y-1">
-                      <button
-                        onClick={() => handleGameChange("all")}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm ${
-                          filters.game === "all"
-                            ? "bg-primary text-white font-black italic shadow-lg shadow-primary/20"
-                            : "text-gray-500 hover:bg-white/5 hover:text-white font-bold"
-                        }`}
-                      >
-                        <Gamepad2 className="h-4 w-4 shrink-0" />
-                        <span className="text-left flex-1 text-xs uppercase tracking-tight">
-                          Todos os Jogos
-                        </span>
-                      </button>
-                      {(Object.keys(GAME_INFO) as GameType[]).map((game) => (
-                        <button
-                          key={game}
-                          onClick={() => handleGameChange(game)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm ${
-                            filters.game === game
-                              ? "bg-primary text-white font-black italic shadow-lg shadow-primary/20"
-                              : "text-gray-500 hover:bg-white/5 hover:text-white font-bold"
-                          }`}
-                        >
-                          <GameIcon game={game} className="h-4 w-4 shrink-0" />
-                          <span className="text-left flex-1 text-xs uppercase tracking-tight">
-                            {GAME_INFO[game].name}
-                          </span>
-                        </button>
-                      ))}
-                    </nav>
-                  </div>
-                </SheetContent>
-              </Sheet>
-
               {user ? (
                 <CreateTournamentDialog>
                   <Button className="bg-primary hover:opacity-90 h-9 px-4 rounded-2xl font-black italic uppercase text-[11px] shadow-lg shadow-primary/20 flex items-center gap-2">
@@ -393,10 +293,10 @@ function TournamentsContent() {
                   <Trophy className="h-10 w-10 text-gray-800" />
                 </div>
                 <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-2">
-                  Nenhum Torneio
+                  Nenhum Campeonato
                 </h3>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 italic max-w-xs leading-relaxed">
-                  Tente ajustar os filtros de busca ou crie o primeiro torneio.
+                  Tente ajustar os filtros de busca ou crie o primeiro campeonato.
                 </p>
                 {user && (
                   <Button
@@ -404,7 +304,7 @@ function TournamentsContent() {
                     className="mt-8 bg-primary hover:opacity-90 h-12 px-10 rounded-2xl font-black italic uppercase text-sm shadow-xl shadow-primary/20 flex items-center gap-3"
                   >
                     <Plus className="h-5 w-5" />
-                    Criar Torneio
+                    Criar Campeonato
                   </Button>
                 )}
               </div>

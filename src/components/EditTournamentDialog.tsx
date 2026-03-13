@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { GameType, GAME_INFO } from "@/types";
+import { GameType, GAME_INFO, TournamentType, ScoringSystemType, SCORING_SYSTEMS } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { normalizeExternalUrl } from "@/lib/links";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { Info, Swords, Trophy } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -70,6 +72,9 @@ interface EditTournamentDialogProps {
     max_team_size?: number;
     room_info_visible?: boolean;
     organizer_id?: string;
+    type?: TournamentType;
+    scoring_config?: any;
+    total_falls?: number;
   };
   children: React.ReactNode;
 }
@@ -105,6 +110,9 @@ export function EditTournamentDialog({
     min_team_size: 1,
     max_team_size: 1,
     room_info_visible: true,
+    type: "bracket" as TournamentType,
+    scoring_system: "lbff" as ScoringSystemType,
+    total_falls: 6,
   });
 
   useEffect(() => {
@@ -153,6 +161,9 @@ export function EditTournamentDialog({
         min_team_size: tournament.min_team_size || (tournament.is_team_based ? 2 : 1),
         max_team_size: tournament.max_team_size || (tournament.is_team_based ? 5 : 1),
         room_info_visible: tournament.room_info_visible ?? true,
+        type: tournament.type || "bracket",
+        scoring_system: tournament.scoring_config?.type || "lbff",
+        total_falls: tournament.total_falls || 6,
       });
       setBannerPreview(tournament.banner_url || null);
       setBannerFile(null);
@@ -254,6 +265,9 @@ export function EditTournamentDialog({
         min_team_size: formData.is_team_based ? formData.min_team_size : 1,
         max_team_size: formData.is_team_based ? formData.max_team_size : 1,
         room_info_visible: formData.room_info_visible,
+        type: formData.type,
+        scoring_config: formData.type === 'points' ? SCORING_SYSTEMS[formData.scoring_system as keyof typeof SCORING_SYSTEMS] : null,
+        total_falls: formData.type === 'points' ? formData.total_falls : null,
         updated_at: new Date().toISOString(),
       });
 
@@ -396,19 +410,124 @@ export function EditTournamentDialog({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-600 italic px-1">
-                Descrição da Competição
-              </Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Conte mais sobre seu torneio..."
-                className="bg-white/2 border-white/5 focus:border-primary/50 focus:bg-primary/5 rounded-xl text-sm font-bold resize-none min-h-[100px] transition-all"
-              />
             </div>
 
+          </div>
+
+          {/* New Section: Format and Scoring */}
+          <div className="space-y-6">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic px-1 flex items-center gap-2">
+              <span className="w-8 h-[1px] bg-primary/30" /> Formato & Pontuação
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: 'bracket' })}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2",
+                    formData.type === 'bracket' 
+                      ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(34,197,94,0.1)]" 
+                      : "border-white/5 bg-white/2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100"
+                  )}
+                >
+                  <Trophy className={cn("h-6 w-6", formData.type === 'bracket' ? "text-primary" : "text-gray-600")} />
+                  <span className="text-xs font-black italic uppercase tracking-tighter">Eliminatória</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: 'points' })}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2",
+                    formData.type === 'points' 
+                      ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(34,197,94,0.1)]" 
+                      : "border-white/5 bg-white/2 grayscale opacity-40 hover:grayscale-0 hover:opacity-100"
+                  )}
+                >
+                  <Users className={cn("h-6 w-6", formData.type === 'points' ? "text-primary" : "text-gray-600")} />
+                  <span className="text-xs font-black italic uppercase tracking-tighter">Pontos (BR)</span>
+                </button>
+            </div>
+
+            {formData.type === 'points' && (
+              <div className="space-y-4 p-4 rounded-3xl bg-white/2 border border-white/5 animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-600 italic px-1">
+                    Sistema de Pontuação
+                  </Label>
+                  <Select
+                    value={formData.scoring_system}
+                    onValueChange={(v) => setFormData({ ...formData, scoring_system: v as ScoringSystemType })}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/5 h-12 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0D0B1A] border-white/10 text-white rounded-xl">
+                      <SelectItem value="lbff" className="focus:bg-primary/10 py-3">LBFF (Oficial)</SelectItem>
+                      <SelectItem value="high_scoring" className="focus:bg-primary/10 py-3">Amador (Alta)</SelectItem>
+                      <SelectItem value="simplified" className="focus:bg-primary/10 py-3">Simplificado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Detailed Scoring Preview */}
+                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-primary">
+                      <Info className="h-4 w-4" />
+                      <span className="text-[10px] font-black uppercase italic">Preview da Pontuação:</span>
+                    </div>
+                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[9px] font-black italic">
+                      {formData.scoring_system.toUpperCase()}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {Object.entries(SCORING_SYSTEMS[formData.scoring_system as keyof typeof SCORING_SYSTEMS].placement_points)
+                      .sort(([a], [b]) => Number(a) - Number(b))
+                      .slice(0, 8)
+                      .map(([pos, pts]) => (
+                        <div key={pos} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
+                          <span className="text-[9px] font-black italic text-gray-600">{pos}º LUG</span>
+                          <span className="text-[9px] font-black italic text-primary">{pts} PTS</span>
+                        </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[8px] font-black uppercase text-gray-700 italic">Pontos por Abate</span>
+                      <span className="text-xs font-black italic text-white leading-tight">
+                        {SCORING_SYSTEMS[formData.scoring_system as keyof typeof SCORING_SYSTEMS].points_per_kill} PONTOS
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[8px] font-black uppercase text-gray-700 italic">Total Previsto</span>
+                      <span className="text-xs font-black italic text-white flex items-center justify-end gap-1 leading-tight">
+                        {formData.total_falls} <span className="text-[10px] text-primary">QUEDAS</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-[9px] text-gray-500 font-bold uppercase leading-relaxed tracking-tight border-t border-white/5 pt-2">
+                    {formData.scoring_system === 'lbff' && "🎯 SISTEMA LBFF: VALORIZA TANTO ABATES QUANTO SOBREVIVÊNCIA ESTRATÉGICA."}
+                    {formData.scoring_system === 'high_scoring' && "🔥 SISTEMA DINÂMICO: PONTUAÇÃO INFLADA PARA COMPETIÇÕES AMADORAS."}
+                    {formData.scoring_system === 'simplified' && "⚡ SISTEMA RÁPIDO: IDEAL PARA TREINOS DIÁRIOS E SCRIMS."}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-600 italic px-1">
+                    Número de Quedas
+                  </Label>
+                  <Input
+                    type="number"
+                    value={formData.total_falls}
+                    onChange={(e) => setFormData({ ...formData, total_falls: parseInt(e.target.value) || 1 })}
+                    className="bg-white/5 border-white/5 h-12 rounded-xl"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Configuration */}

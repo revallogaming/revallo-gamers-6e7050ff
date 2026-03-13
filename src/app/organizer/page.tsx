@@ -61,6 +61,8 @@ interface Tournament {
   is_private?: boolean;
 }
 
+import { OrganizerGuide } from "@/components/organizer/OrganizerGuide";
+
 export default function DashboardTournamentsPage() {
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
@@ -156,14 +158,16 @@ export default function DashboardTournamentsPage() {
       <Header />
 
       <main className="container py-12 mx-auto px-4 relative z-10 max-w-6xl">
+        <OrganizerGuide type="dashboard-welcome" className="mb-8 border-purple-500/20 bg-purple-500/5" />
+        
         <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <Link
-              href="/painel"
+              href="/profile"
               className="inline-flex items-center gap-2 text-gray-500 hover:text-white mb-4 transition-colors text-[10px] font-black uppercase tracking-widest"
             >
               <ArrowLeft className="h-3 w-3" />
-              Voltar ao Painel
+              Voltar ao Perfil
             </Link>
             <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">
               Meus Torneios

@@ -46,16 +46,16 @@ export async function POST(req: NextRequest) {
         throw new Error("Torneio lotado");
       }
 
-      const entryFee = tournament.entry_fee_credits || 0;
+      const entryFee = tournament.entry_fee_brl || 0;
       const userBalance = userCreditsDoc.data()?.balance || 0;
 
-      if (userBalance < entryFee) {
-        throw new Error("Saldo de créditos insuficiente");
+      if (userBalance < (entryFee * 100)) { // Assuming balance is in 'cents' or credits where 100 units = 1 R$
+        throw new Error("Saldo insuficiente para pagar a inscrição");
       }
 
-      // Deduct credits
+      // Deduct credits (converting BRL to credit units)
       transaction.update(userCreditsRef, {
-        balance: userBalance - entryFee,
+        balance: userBalance - (entryFee * 100),
         updated_at: new Date().toISOString(),
       });
 
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         user_id,
         amount: -Math.abs(entryFee), // Ensure it's a deduction
         type: "entry_fee",
-        description: `Inscrição no mini torneio: ${tournament.title}`,
+        description: `Inscrição no Apostados FF: ${tournament.title}`,
         reference_id: tournament_id,
         created_at: new Date().toISOString(),
       });

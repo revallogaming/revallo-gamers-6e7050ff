@@ -106,14 +106,14 @@ export function AdminStats() {
       bgColor: "bg-green-500/10"
     },
     { 
-      label: "Mini Torneios", 
+      label: "Apostados FF", 
       value: stats?.totalMiniTournaments || 0, 
       icon: Gamepad2, 
       color: "text-purple-500",
       bgColor: "bg-purple-500/10"
     },
     { 
-      label: "Mini Ativos", 
+      label: "Apostados FF Ativos", 
       value: stats?.activeMiniTournaments || 0, 
       icon: TrendingUp, 
       color: "text-orange-500",

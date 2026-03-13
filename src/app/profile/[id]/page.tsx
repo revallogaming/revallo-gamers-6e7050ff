@@ -238,9 +238,9 @@ export default function PublicProfilePage({ params }: PageProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white flex items-center justify-center gap-3">
-                      {profile.nickname}
-                      <VerificationBadge type={(profile as any).verification_type || "verified"} size="md" showText />
+                    <h2 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-white flex flex-wrap items-center justify-center gap-3 px-4">
+                      <span className="break-words max-w-full">{profile.nickname}</span>
+                      <VerificationBadge type={(profile as any).verification_type || "verified"} size="md" />
                       {profile.is_highlighted && (
                         <Star className="h-6 w-6 text-primary fill-primary" />
                       )}

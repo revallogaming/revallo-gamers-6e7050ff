@@ -20,11 +20,11 @@ import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-im
 import 'react-image-crop/dist/ReactCrop.css';
 
 const GALLERY_AVATARS = [
-  "/avatars/avatar_hacker.png",
-  "/avatars/avatar_mage.png",
-  "/avatars/avatar_ninja.png",
-  "/avatars/avatar_sniper.png",
-  "/avatars/avatar_warrior.png",
+  "https://res.cloudinary.com/db8uqft43/image/upload/v1773369243/avatars/wz9vm2agdkvcchvbrgxh.png",
+  "https://res.cloudinary.com/db8uqft43/image/upload/v1773369245/avatars/lyashwzjesfulynrnr7v.png",
+  "https://res.cloudinary.com/db8uqft43/image/upload/v1773369246/avatars/h9lota7vcdkj97i9xqww.png",
+  "https://res.cloudinary.com/db8uqft43/image/upload/v1773369247/avatars/mzlcf4s7n6oy4n9chcju.png",
+  "https://res.cloudinary.com/db8uqft43/image/upload/v1773369248/avatars/kekvu2ltqvuaxllbfiec.png",
 ];
 
 const CUSTOM_AVATAR_COST = 50;

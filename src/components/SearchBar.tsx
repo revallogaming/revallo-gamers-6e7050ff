@@ -196,7 +196,7 @@ export const SearchBar = () => {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  Data do Torneio
+                  Data do Campeonato
                 </Label>
                 <div className="flex gap-2">
                   <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
@@ -398,7 +398,7 @@ export const SearchBar = () => {
               <div className="px-3 py-2 bg-muted/30 border-b border-border/50">
                 <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   <Trophy className="h-3 w-3" />
-                  Torneios ({data.tournaments.length})
+                  Campeonatos ({data.tournaments.length})
                 </div>
               </div>
               <div className="py-1">

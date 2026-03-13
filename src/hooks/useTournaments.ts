@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import { Tournament, GameType, Profile, TournamentParticipant } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { normalizeTournamentData } from '@/lib/tournamentUtils';
 
 // Cache durations for performance optimization
 const STALE_TIME = 1000 * 60 * 2; // 2 minutes - data considered fresh
@@ -33,25 +34,36 @@ export function useTournaments(game?: GameType) {
       );
       
       const snapshot = await getDocs(q);
-      const tournaments = await Promise.all(
-        snapshot.docs.map(async (docSnap) => {
-          const data = docSnap.data();
-          let organizer: Profile | undefined = undefined;
-          
-          if (data.organizer_id) {
-            const orgDoc = await getDoc(doc(db, 'profiles', data.organizer_id));
-            if (orgDoc.exists()) {
-              organizer = { id: orgDoc.id, ...orgDoc.data() } as Profile;
-            }
-          }
+      
+      // Collect unique organizer IDs for bulk fetching
+      const organizerIds = Array.from(new Set(
+        snapshot.docs
+          .map(doc => doc.data().organizer_id)
+          .filter(id => !!id)
+      ));
 
-          return {
-            id: docSnap.id,
-            ...data,
-            organizer,
-          } as Tournament;
-        })
-      );
+      // Fetch profiles in bulk
+      const organizerMap = new Map<string, Profile>();
+      if (organizerIds.length > 0) {
+        // Chunk to 10 IDs (Firestore limit)
+        for (let i = 0; i < organizerIds.length; i += 10) {
+          const chunk = organizerIds.slice(i, i + 10);
+          const profilesSnap = await getDocs(query(collection(db, 'profiles'), where('id', 'in', chunk)));
+          profilesSnap.docs.forEach(doc => {
+            organizerMap.set(doc.id, { id: doc.id, ...doc.data() } as Profile);
+          });
+        }
+      }
+
+      const tournaments = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as any;
+        const normalized = normalizeTournamentData(data);
+        return {
+          ...normalized,
+          id: docSnap.id,
+          organizer: organizerMap.get(data.organizer_id) || null,
+        } as Tournament;
+      });
 
       // Client-side game filter
       const filtered = game && (game as string) !== 'all'
@@ -79,7 +91,7 @@ export function useTournament(id: string) {
       const docSnap = await getDoc(doc(db, 'tournaments', id));
       if (!docSnap.exists()) return null;
       
-      const data = docSnap.data();
+      const data = docSnap.data() as any;
       let organizer: Profile | undefined = undefined;
       
       if (data.organizer_id) {
@@ -89,9 +101,11 @@ export function useTournament(id: string) {
         }
       }
 
+      const normalized = normalizeTournamentData(data);
+
       return {
+        ...normalized,
         id: docSnap.id,
-        ...data,
         organizer,
       } as Tournament;
     },
@@ -179,25 +193,34 @@ export function useTournamentParticipants(tournamentId: string) {
       );
       
       const snapshot = await getDocs(q);
-      const participants = await Promise.all(
-        snapshot.docs.map(async (docSnap) => {
-          const data = docSnap.data();
-          let player: Profile | undefined = undefined;
-          
-          if (data.player_id) {
-            const playerDoc = await getDoc(doc(db, 'profiles', data.player_id));
-            if (playerDoc.exists()) {
-              player = { id: playerDoc.id, ...playerDoc.data() } as Profile;
-            }
-          }
+      
+      // Collect unique player IDs for bulk fetching
+      const playerIds = Array.from(new Set(
+        snapshot.docs
+          .map(doc => doc.data().player_id)
+          .filter(id => !!id)
+      ));
 
-          return {
-            id: docSnap.id,
-            ...data,
-            player,
-          } as TournamentParticipant;
-        })
-      );
+      // Fetch profiles in bulk
+      const playerMap = new Map<string, Profile>();
+      if (playerIds.length > 0) {
+        for (let i = 0; i < playerIds.length; i += 10) {
+          const chunk = playerIds.slice(i, i + 10);
+          const profilesSnap = await getDocs(query(collection(db, 'profiles'), where('id', 'in', chunk)));
+          profilesSnap.docs.forEach(doc => {
+            playerMap.set(doc.id, { id: doc.id, ...doc.data() } as Profile);
+          });
+        }
+      }
+
+      const participants = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          player: playerMap.get(data.player_id) || null,
+        } as TournamentParticipant;
+      });
       
       return participants;
     },

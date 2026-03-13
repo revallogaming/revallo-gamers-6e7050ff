@@ -155,4 +155,4 @@ export const CREDIT_PACKAGES = [
   { brl: 150, credits: 2250, bonus: 750 },
 ];
 
-export const MINI_TOURNAMENT_CREATION_FEE = 15;
+export const MINI_TOURNAMENT_CREATION_FEE = 0;

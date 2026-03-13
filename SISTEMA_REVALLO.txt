@@ -1,0 +1,153 @@
+================================================================================
+                         DOCUMENTAÇÃO TÉCNICA - REVALLO
+                         "POR DEBAIXO DOS PANOS"
+================================================================================
+
+1. ARQUITETURA E FLUXO DE DADOS
+------------------------------
+A Revallo opera como uma Single Page Application (SPA) utilizando Next.js 14+, 
+Firebase (Firestore, Auth, Storage) e React Query para sincronização de estado.
+
+2. FLUXO DE AUTENTICAÇÃO E ACESSO (O PASSO A PASSO)
+--------------------------------------------------
+1. O usuário acessa a plataforma (Landing Page).
+2. O middleware/componente de proteção verifica o estado do 'auth' via Firebase.
+3. Se deslogado: Redireciona para '/' (Landing Page).
+4. Se logado: Libera o '/feed'.
+5. O perfil do usuário é carregado do Firestore e mantido em cache pelo React Query.
+
+3. SISTEMA DE APOSTADOS (SISTEMA CRÍTICO)
+-----------------------------------------
+Como garantimos que não haja erros de inscrição ou saldo?
+
+A. TRANSAÇÃO ATÔMICA (runTransaction):
+   Sempre que um jogador clica em "Participar", o sistema executa uma transação 
+   no banco de dados que faz três coisas simultaneamente:
+   - Lê o estado atual do torneio (vagas, status).
+   - Verifica se o torneio ainda está 'open' e se há vagas disponíveis.
+   - Cria o registro de participante E incrementa o contador global de inscritos 
+     ao mesmo tempo. Se um bit da operação falhar, tudo é cancelado.
+
+B. IDs DETERMINÍSTICOS:
+   O ID do documento de inscrição é gerado como 'IDdoTorneio_IDdoUsuario'. 
+   Isso impede tecnicamente que um usuário se inscreva duas vezes no mesmo 
+   torneio, pois o segundo 'setDoc' apenas sobrescreveria o primeiro com 
+   os mesmos dados.
+
+C. SEGURANÇA DE CRÉDITOS:
+   - O gasto de créditos não ocorre diretamente no cliente. 
+   - O app chama uma API Route segura (`/api/spend-credits`).
+   - A API verifica o ID Token do usuário, consulta o saldo real no servidor 
+     e processa o desconto de forma segura antes de confirmar a inscrição.
+
+4. FLUXO FINANCEIRO (PIX E CRÉDITOS)
+------------------------------------
+A. ADIÇÃO DE SALDO:
+   1. Usuário seleciona um pacote de créditos.
+   2. O frontend chama `/api/create-pix-payment`.
+   3. A API gera uma intenção de pagamento no provedor (MercadoPago/Outro).
+   4. Um QR Code é retornado ao usuário.
+   5. Quando o pagamento é confirmado, um Webhook (notificação do servidor) 
+      atualiza o saldo do usuário no Firestore de forma automatizada.
+
+B. SAQUES (CASH OUT):
+   1. O usuário solicita o saque de sua premiação (saldo sacável).
+   2. O sistema verifica as chaves PIX cadastradas e salva em 'withdrawal_requests'.
+   3. Staff admin revisa e processa o pagamento via painel interno.
+
+5. O CORAÇÃO DA COMPETIÇÃO: HUB DE TORNEIOS
+-------------------------------------------
+Quando o torneio começa, os participantes entram no "Hub do Torneio".
+
+A. LOGÍSTICA DE PARTIDAS (Timeline):
+   - O sistema organiza o torneio em "Quedas" (Falls).
+   - O organizador inicializa as quedas, criando documentos na subcoleção 'falls'.
+   - Cada queda possui um status: 'pending', 'live' ou 'completed'.
+
+B. RANKING LIVE (LBFF v1.2):
+   - O sistema calcula a pontuação em tempo real utilizando a lógica LBFF:
+     * Pontos por Colocação (ex: 12 pts para o 1º, 9 pts para o 2º, etc.)
+     * Pontos por Abate (Kills): 1 ponto por cada kill.
+   - O `points-tournament-logic.ts` processa todos os resultados de todas as 
+     quedas finalizadas para gerar a tabela de classificação instantânea.
+
+C. REPORT E VALIDAÇÃO DE RESULTADOS (ENTRADA MANUAL):
+   - O sistema NÃO adivinha quem ganhou. O organizador é responsável por 
+     preencher os resultados de cada partida/queda nas seguintes páginas:
+     
+     * PARA APOSTADOS FF: Na própria página do desafio (`/apostados/[id]`), 
+       o criador verá o botão "Submeter Resultados" para definir o 1º, 
+       2º e 3º lugares.
+       
+     * PARA CAMPEONATOS (PONTOS): Na página do torneio (`/tournaments/[id]`), 
+       na aba "PARTIDAS", o organizador clica em "Reportar Resultado" 
+       em cada queda individual.
+       
+   - O sistema então calcula os pontos na hora com base na regra (LBFF) e gera 
+     o ranking live somando esses relatórios.
+   - Validação: O sistema impede que o organizador salve duas vezes a mesma 
+     posição (ex: não permite dois 1º lugares).
+
+6. DISTRIBUIÇÃO AUTOMATIZADA DE PRÊMIOS
+---------------------------------------
+A. PROCESSAMENTO SERVER-SIDE:
+   - Ao finalizar um Apostado, o frontend chama `/api/distribute-prizes`.
+   - O servidor verifica a 'prize_distribution' (ex: 70% para o 1º, 30% para o 2º).
+   - O prêmio é calculado sobre o 'prize_pool_brl' (total arrecadado - taxa).
+   - Os créditos são injetados nas contas dos vencedores e o status do torneio
+     é marcado como 'prizes_distributed'.
+
+7. INTERAÇÃO EM TEMPO REAL
+--------------------------
+A. REAL-TIME CHAT:
+   Utiliza `onSnapshot` do Firestore para escuta ativa. Mensagens enviadas no 
+   chat do hub aparecem instantaneamente para todos os membros do squad.
+
+8. REGRAS DE SEGURANÇA (FIRESTORE RULES)
+----------------------------------------
+- Profiles: Apenas o dono ou admins podem editar.
+- User Credits: Leitura apenas pelo dono/admin. Edição EXCLUSIVA por admin.
+- Chat: Apenas participantes inscritos no torneio X podem ler o chat X.
+- Tournaments: Somente admins podem criar ou alterar status.
+
+9. PAINEL STAFF (CONTROLE TOTAL)
+--------------------------------
+O painel administrativo utiliza uma coleção especial 'user_roles' para 
+validar permissões. Todas as ações críticas (banimento, ajuste de saldo) são 
+auditadas e protegidas por regras de backend rigorosas.
+
+10. GUIA DE NAVEGAÇÃO E PÁGINAS DE PROCESSO
+-----------------------------------------
+Como o usuário e o organizador navegam pelo sistema durante um evento:
+
+A. PROCESSO DE APOSTADOS FF (`/apostados/[id]`):
+   1. PÁGINA DE ESPERA (LOBBY): Antes do desafio lotar, os jogadores entram, 
+      pagam a taxa e aguardam outros competidores. O chat já fica liberado.
+   2. SALA E SENHA: Assim que o Apostado lota, uma área especial aparece no Hub 
+      exibindo o "ID da Sala" e a "Senha" fornecidos pelo organizador.
+   3. DISPUTA: Os jogadores entram no Free Fire. O Hub mantém o chat ativo para 
+      suporte e coordenação rápida.
+   4. FINALIZAÇÃO: O vencedor tira print. O organizador clica em "Submeter 
+      Resultados", seleciona os vencedores e o sistema paga o PIX na hora.
+
+B. PROCESSO DE CAMPEONATOS (`/tournaments/[id]`):
+   1. VISÃO GERAL: Onde o time se inscreve e vê o regulamento completo.
+   2. ABA "PARTIDAS": É o cronograma do dia. Exibe quais quedas estão pendentes, 
+      em andamento (LIVE) ou finalizadas. 
+      - O Organizador usa esta aba para abrir o `BatchReportDialog` em cada queda.
+   3. RANKING LIVE: Conforme o organizador preenche os abates de cada queda na 
+      aba Partidas, a tabela de classificação principal é recalculada 
+      instantaneamente.
+   4. FINAL: Ao fim de todas as quedas, o sistema gera o resultado final 
+      baseado na soma total de pontos.
+
+11. ONDE ENCONTRAR OS CONTROLES?
+--------------------------------
+- O Organizador verá botões como "Inicializar Partidas", "Reportar Resultado" 
+  e "Submeter Resultados" que são INVISÍVEIS para jogadores comuns.
+- Esses controles aparecem automaticamente quando o `userId` logado coincide 
+  com o `organizer_id` do evento no Firestore.
+
+================================================================================
+                            REVALLO - LEVEL UP YOUR GAME
+================================================================================

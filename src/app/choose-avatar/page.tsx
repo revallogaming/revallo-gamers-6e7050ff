@@ -12,31 +12,31 @@ import { Button } from "@/components/ui/button";
 const AVATARS = [
   {
     id: "warrior",
-    src: "/avatars/avatar_warrior.png",
+    src: "https://res.cloudinary.com/db8uqft43/image/upload/v1773369248/avatars/kekvu2ltqvuaxllbfiec.png",
     name: "Guerreiro Cyber",
     color: "from-blue-500/40 to-cyan-500/20",
   },
   {
     id: "ninja",
-    src: "/avatars/avatar_ninja.png",
+    src: "https://res.cloudinary.com/db8uqft43/image/upload/v1773369246/avatars/h9lota7vcdkj97i9xqww.png",
     name: "Ninja das Sombras",
     color: "from-purple-500/40 to-indigo-500/20",
   },
   {
     id: "hacker",
-    src: "/avatars/avatar_hacker.png",
+    src: "https://res.cloudinary.com/db8uqft43/image/upload/v1773369243/avatars/wz9vm2agdkvcchvbrgxh.png",
     name: "Hacker Verde",
     color: "from-green-500/40 to-emerald-500/20",
   },
   {
     id: "sniper",
-    src: "/avatars/avatar_sniper.png",
+    src: "https://res.cloudinary.com/db8uqft43/image/upload/v1773369247/avatars/mzlcf4s7n6oy4n9chcju.png",
     name: "Atiradora de Elite",
     color: "from-red-500/40 to-rose-500/20",
   },
   {
     id: "mage",
-    src: "/avatars/avatar_mage.png",
+    src: "https://res.cloudinary.com/db8uqft43/image/upload/v1773369245/avatars/lyashwzjesfulynrnr7v.png",
     name: "Mago Arcano",
     color: "from-amber-500/40 to-yellow-500/20",
   },

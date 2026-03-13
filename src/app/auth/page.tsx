@@ -62,6 +62,7 @@ function AuthForm() {
   const [nicknameOk, setNicknameOk] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [termsConfirmed, setTermsConfirmed] = useState(false);
 
@@ -88,7 +89,7 @@ function AuthForm() {
 
     try {
       if (mode === "login") {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(email, password, rememberMe);
         if (error) throw error;
         toast({ title: "Bem-vindo de volta!" });
         router.push("/tournaments");
@@ -291,6 +292,24 @@ function AuthForm() {
                       Senha deve ter pelo menos 6 caracteres
                     </p>
                   )}
+              </div>
+            )}
+
+            {mode === "login" && (
+              <div className="flex items-center gap-2 px-1">
+                <input
+                  id="rememberMe"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 accent-primary rounded border-white/10 bg-white/5 cursor-pointer"
+                />
+                <Label
+                  htmlFor="rememberMe"
+                  className="text-xs font-bold text-gray-400 cursor-pointer select-none"
+                >
+                  Lembrar-me
+                </Label>
               </div>
             )}
 

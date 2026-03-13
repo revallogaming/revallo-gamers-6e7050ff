@@ -1101,7 +1101,7 @@ export default function TournamentHubPage() {
                {isCaptain && userTeamName && (
                   <div className="p-4 border-t border-white/5 bg-primary/5">
                      <div className="mb-3 px-1">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-primary italic">Painel do Capitão</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-primary italic">Controle do Capitão</p>
                         <p className="text-[11px] font-black italic uppercase text-white truncate">{userTeamName}</p>
                      </div>
                      <Button 
@@ -1167,7 +1167,7 @@ export default function TournamentHubPage() {
 
       {/* Management Overlay Panel */}
       {showManagement && isOrganizer && (
-        <div className="fixed inset-y-0 right-0 w-[450px] bg-[#0D0D0F] border-l border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] z-[100] animate-in slide-in-from-right duration-500 flex flex-col pt-20">
+        <div className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-[#0D0D0F] border-l border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] z-[100] animate-in slide-in-from-right duration-500 flex flex-col pt-20">
            <header className="p-8 border-b border-white/5">
               <div className="flex items-center justify-between mb-2">
                  <Badge className="bg-primary/20 text-primary border-primary/20 font-black italic uppercase text-[10px]">Organizer Tools</Badge>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Trophy,
@@ -13,6 +14,7 @@ import {
   Search,
   Settings,
   ArrowRight,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -21,7 +23,8 @@ import { useCommunities } from "@/hooks/useCommunities";
 
 const NAV_ITEMS = [
   { icon: Home, label: "Feed", href: "/feed" },
-  { icon: Trophy, label: "Torneios", href: "/tournaments" },
+  { icon: Zap, label: "Apostados FF", href: "/apostados" },
+  { icon: Trophy, label: "Campeonatos", href: "/tournaments" },
   { icon: Users, label: "Comunidades", href: "/communities" },
   { icon: MessageSquare, label: "Conversas", href: "/chat" },
   { icon: Search, label: "Explorar", href: "/lfg" },
@@ -42,7 +45,14 @@ export function Sidebar() {
           className="flex items-center gap-3 mb-10 cursor-pointer"
           onClick={() => router.push("/")}
         >
-          <img src="/revallo-logo-hd.svg" alt="Revallo" className="h-10 w-auto" />
+          <NextImage 
+            src="/revallo-logo-hd.svg" 
+            alt="Revallo" 
+            width={140} 
+            height={40} 
+            className="h-10 w-auto" 
+            priority 
+          />
           <span className="font-black italic text-2xl uppercase tracking-tighter text-primary">
             Revallo
           </span>

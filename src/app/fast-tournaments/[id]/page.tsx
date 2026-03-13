@@ -210,10 +210,10 @@ export default function FastTournamentDetailsPage() {
                   "Participar Agora"
                 )}
                 {!joinTournament.isPending &&
-                  tournament.entry_fee_credits > 0 && (
-                    <span className="ml-2 bg-black/20 px-2 py-0.5 rounded-lg text-[9px]">
-                      {tournament.entry_fee_credits} credits
-                    </span>
+                  tournament.entry_fee_brl > 0 && (
+                    <Badge variant="outline" className="text-primary border-primary/20">
+                      R$ {tournament.entry_fee_brl.toFixed(2)}
+                    </Badge>
                   )}
               </Button>
             ) : (
@@ -251,7 +251,7 @@ export default function FastTournamentDetailsPage() {
                     {tournament.deposit_confirmed ? (
                       <Badge className="bg-green-500/10 text-green-500 border border-green-500/20 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest italic h-10 w-fit">
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        PREMIAÇÃO GARANTIDA
+                        PREMIAÇÃO CONFIRMADA
                       </Badge>
                     ) : (
                       <Badge className="bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest italic h-10 w-fit">
@@ -282,8 +282,8 @@ export default function FastTournamentDetailsPage() {
                       Entrada
                     </p>
                     <p className="text-xl font-black italic text-white mt-1">
-                      {tournament.entry_fee_credits > 0
-                        ? `${tournament.entry_fee_credits} cr`
+                      {tournament.entry_fee_brl > 0
+                        ? `R$ ${tournament.entry_fee_brl.toFixed(2)}`
                         : "Grátis"}
                     </p>
                   </div>
@@ -522,7 +522,7 @@ export default function FastTournamentDetailsPage() {
                       Tipo de Entrada
                     </span>
                     <span className="font-black italic uppercase tracking-tighter text-white">
-                      {tournament.entry_fee_credits > 0
+                      {tournament.entry_fee_brl > 0
                         ? "Paga"
                         : "Acesso Livre"}
                     </span>

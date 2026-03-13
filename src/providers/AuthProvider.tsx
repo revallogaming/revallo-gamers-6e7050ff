@@ -6,6 +6,9 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from "firebase/auth";
 import {
   doc,
@@ -114,8 +117,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, rememberMe: boolean = true) => {
       try {
+        await setPersistence(
+          auth,
+          rememberMe ? browserLocalPersistence : browserSessionPersistence
+        );
         await signInWithEmailAndPassword(auth, email, password);
         return { error: null };
       } catch (error: unknown) {
@@ -188,9 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await firebaseSignOut(auth);
-    setUser(null);
-    setProfile(null);
-    setRoles([]);
+    // Force a full page reload to clear all state and redirect to landing
+    window.location.replace('/');
   }, []);
 
   const refreshProfile = useCallback(async () => {

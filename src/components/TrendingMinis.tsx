@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Zap } from "lucide-react";
+import { ChevronRight, Zap, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useMiniTournaments } from "@/hooks/useMiniTournaments";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +20,7 @@ export function TrendingMinis() {
           Rápidos
         </h2>
         <Link
-          href="/minitorneios"
+          href="/apostados"
           className="text-[10px] text-gray-500 hover:text-white transition-colors font-bold uppercase"
         >
           Ver todos
@@ -36,19 +36,19 @@ export function TrendingMinis() {
           trending.map((mini) => (
             <div
               key={mini.id}
-              onClick={() => router.push(`/minitorneios/${mini.id}`)}
-              className="group flex items-center gap-4 p-3 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-primary/50 transition-all cursor-pointer overflow-hidden relative shadow-sm hover:shadow-glow-sm"
+              onClick={() => router.push(`/apostados/${mini.id}`)}
+              className="group flex items-center gap-4 p-3 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-primary/50 transition-all cursor-pointer overflow-hidden relative shadow-sm hover:shadow-glow-sm hover:scale-[1.02] active:scale-[0.98]"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               
               <div className="h-14 w-14 rounded-xl overflow-hidden shrink-0 border border-white/10 bg-white/5 flex items-center justify-center">
                 {mini.game ? (
                    <img
-                   src={`/games/${mini.game}.png`}
+                   src={`/images/games/${mini.game}.png`}
                    alt={mini.title}
                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                    onError={(e) => {
-                     (e.target as HTMLImageElement).src = "/tournament-placeholder.png";
+                     (e.target as HTMLImageElement).src = "/fictitious-tournament.png";
                    }}
                  />
                 ) : (
@@ -57,12 +57,12 @@ export function TrendingMinis() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <h4 className="text-[11px] font-black text-white uppercase italic truncate">
+                <h4 className="text-[11px] font-black text-white uppercase italic line-clamp-2 leading-tight">
                   {mini.title}
                 </h4>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] font-bold text-primary italic">
-                    {mini.entry_fee_credits === 0 ? "GRÁTIS" : `${mini.entry_fee_credits} Cr`}
+                    {(Number(mini.entry_fee_brl) > 0) ? `R$ ${Number(mini.entry_fee_brl).toFixed(2).replace('.', ',')}` : "GRÁTIS"}
                   </span>
                   <span className="h-1 w-1 rounded-full bg-white/10" />
                   <span className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">
@@ -92,7 +92,7 @@ export function TrendingMinis() {
                 Prepare-se para o Combate
               </p>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-tight">
-                Mini torneios emocionantes <br /> estão chegando!
+                Apostados FF emocionantes <br /> estão chegando!
               </p>
             </div>
           </div>

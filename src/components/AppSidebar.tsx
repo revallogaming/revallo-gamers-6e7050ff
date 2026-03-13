@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import NextImage from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Film,
@@ -14,6 +15,7 @@ import {
   Shield,
   LayoutDashboard,
   Gamepad2,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,8 +28,13 @@ const NAV_ITEMS = [
     icon: <LayoutDashboard size={20} />,
   },
   {
+    href: "/apostados",
+    label: "Apostados FF",
+    icon: <Zap size={20} />,
+  },
+  {
     href: "/tournaments",
-    label: "Torneios",
+    label: "Campeonatos",
     icon: <Trophy size={20} />,
   },
   {
@@ -61,7 +68,14 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="flex items-center justify-center shrink-0 pt-4 pb-2">
         <Link href="/" className="flex items-center gap-2 group">
-          <img src="/revallo-logo-hd.svg" alt="Revallo" className="h-8 w-auto" />
+          <NextImage 
+            src="/revallo-logo-hd.svg" 
+            alt="Revallo" 
+            width={80} 
+            height={32} 
+            className="h-8 w-auto" 
+            priority 
+          />
         </Link>
       </div>
 
@@ -148,7 +162,7 @@ export function AppSidebar() {
       <div className="px-3 pb-6 shrink-0">
         {user ? (
           <div
-            className="rounded-2xl p-3 space-y-4 shadow-2xl relative overflow-hidden group"
+            className="rounded-2xl p-2 flex flex-col items-center gap-3 shadow-2xl relative overflow-hidden group transition-all duration-300 hover:bg-white/[0.04]"
             style={{
               background: "rgba(255,255,255,0.02)",
               border: "1px solid rgba(255,255,255,0.05)",
@@ -156,36 +170,30 @@ export function AppSidebar() {
           >
             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             
-            <Link href="/profile" className="flex flex-col items-center gap-2 relative z-10">
+            <Link href="/profile" className="relative z-10">
               <Avatar
-                className="h-10 w-10 shrink-0 border-2 border-primary/20 group-hover:border-primary/50 transition-colors"
+                className="h-12 w-12 shrink-0 border-2 border-primary/20 group-hover:border-primary/50 transition-all duration-500 shadow-glow-sm"
               >
-                <AvatarImage
-                  src={profile?.avatar_url || undefined}
-                />
-                <AvatarFallback
-                  className="text-[10px] font-black italic text-primary bg-primary/10"
-                >
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="text-[12px] font-black italic text-primary bg-primary/10">
                   {profile?.nickname?.charAt(0) || user.email?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div className="text-center w-full">
-                <p className="text-[10px] font-black text-white italic truncate px-1">
-                  {profile?.nickname || "Player"}
-                </p>
-                <p className="text-[8px] font-bold text-primary uppercase tracking-widest mt-0.5">
-                  {profile?.credits || 0} CR
-                </p>
-              </div>
             </Link>
 
-            <div className="flex items-center justify-between px-1 relative z-10 pt-2 border-t border-white/5">
-              <Link href="/profile?tab=settings" className="text-gray-600 hover:text-white transition-colors p-1" title="Configurações">
+            <div className="text-center w-full relative z-10">
+              <p className="text-[10px] font-black text-primary italic tracking-widest leading-none">
+                {profile?.credits || 0} CR
+              </p>
+            </div>
+
+            <div className="flex items-center justify-around w-full relative z-10 pt-2 border-t border-white/5">
+              <Link href="/profile?tab=settings" className="text-gray-600 hover:text-white transition-colors p-1.5" title="Configurações">
                 <Settings size={14} />
               </Link>
               <button
                 onClick={signOut}
-                className="text-gray-600 hover:text-red-500 transition-colors p-1"
+                className="text-gray-600 hover:text-red-500 transition-colors p-1.5"
                 title="Sair"
               >
                 <LogOut size={14} />

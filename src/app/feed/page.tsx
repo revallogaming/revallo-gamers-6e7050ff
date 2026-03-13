@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { TrendingMinis } from "@/components/TrendingMinis";
 import { useMiniTournaments } from "@/hooks/useMiniTournaments";
@@ -33,13 +33,12 @@ const GAME_COLORS: Record<string, string> = {
 };
 
 function getGameColor(game?: string) {
-  if (!game) return "#A78BFA";
-  return GAME_COLORS[game.toLowerCase().replace(" ", "_")] ?? "#A78BFA";
+  return "#FF6B00"; // Always Free Fire color
 }
 
 export default function FeedPage() {
-  const { user, profile } = useAuth();
   const router = useRouter();
+  const { user, profile } = useAuth();
 
   const { data: tournamentsData, isLoading: loadingTournaments } =
     useInfiniteTournaments();
@@ -64,42 +63,42 @@ export default function FeedPage() {
       <Header
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        searchPlaceholder="BUSCAR TORNEIO PELO NOME..."
+        searchPlaceholder="BUSCAR CAMPEONATO PELO NOME..."
       />
 
       <div className="flex-1 overflow-y-auto bg-transparent relative">
         {/* Subtle atmospheric glows for depth */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-revallo-purple/25 blur-[120px] rounded-full" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-revallo-glow/20 blur-[120px] rounded-full" />
-          <div className="absolute top-[30%] right-[-5%] w-[30%] h-[30%] bg-revallo-highlight/15 blur-[100px] rounded-full" />
+          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-revallo-purple/20 blur-[150px] rounded-full animate-pulse" />
+          <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-revallo-glow/15 blur-[120px] rounded-full" />
+          <div className="absolute bottom-[10%] left-[20%] w-[35%] h-[35%] bg-primary/10 blur-[100px] rounded-full" />
+          <div className="absolute bottom-[20%] right-[10%] w-[50%] h-[50%] bg-[#8F84D9]/10 blur-[140px] rounded-full" />
         </div>
         <div className="max-w-[1200px] mx-auto px-6 pt-8 pb-5 space-y-5">
           {/* ── Hero Banner (Consolidated & Refined) ── */}
           <div
-            className="relative rounded-[32px] overflow-hidden group shadow-revallo-glow"
+            className="relative rounded-[32px] overflow-hidden group shadow-revallo-glow border border-[#8F84D9]/20 hover:border-[#8F84D9]/40 transition-all duration-500"
             style={{
-              background: "#0F0F18",
-              border: "1px solid rgba(143, 132, 217, 0.25)",
+              background: "linear-gradient(135deg, #0F0F18 0%, #06060A 100%)",
               minHeight: 160,
             }}
           >
-            <div className="absolute inset-0 hero-halo pointer-events-none opacity-60" />
+            <div className="absolute inset-0 hero-halo pointer-events-none opacity-40" />
             <div
-              className="absolute inset-0 opacity-50 group-hover:opacity-60 transition-opacity duration-700"
+              className="absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-700"
               style={{
                 backgroundImage:
-                  "radial-gradient(circle at left, #3A2F7C 0%, transparent 70%), radial-gradient(ellipse at 70% 30%, rgba(143, 132, 217, 0.25), transparent 50%)",
+                  "radial-gradient(circle at left, #3A2F7C 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(143, 132, 217, 0.15), transparent 40%)",
               }}
             />
             <div className="relative z-10 flex items-stretch min-h-[140px] md:min-h-[160px]">
               <div className="flex-1 flex flex-col justify-center px-6 md:px-10 py-6 md:py-4">
-                <p className="text-[8px] md:text-[9px] font-black mb-1 italic text-[#34D399] uppercase tracking-[0.3em] pr-2">
+                <p className="text-[8px] md:text-[9px] font-black mb-1 italic text-primary uppercase tracking-[0.3em] pr-2">
                   Bem-vindo, {profile?.nickname || "jogador"}!
                 </p>
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-black leading-[1.1] mb-0.5 italic tracking-tighter text-white text-shadow-glow pr-2">
-                  Explore torneios{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-primary py-0.5">
+                  Explore campeonatos{" "}
+                  <span className="text-transparent bg-clip-text bg-revallo-gradient py-0.5">
                     emocionantes
                   </span>
                 </h1>
@@ -109,21 +108,21 @@ export default function FeedPage() {
                 {!user ? (
                   <button
                     onClick={() => router.push("/auth")}
-                    className="w-fit px-8 h-10 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 hover:brightness-110 active:scale-95 shadow-revallo-glow bg-revallo-gradient"
+                    className="w-fit px-8 h-10 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(143,132,217,0.4)] active:scale-95 bg-revallo-gradient"
                   >
                     Criar conta gratuita
                   </button>
                 ) : (
                   <button
                     onClick={() => router.push("/tournaments")}
-                    className="w-fit px-6 h-9 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95"
+                    className="w-fit px-6 h-9 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95 group-hover:bg-white/10"
                     style={{
                       background: "rgba(255,255,255,0.05)",
                       border: "1px solid rgba(255,255,255,0.1)",
                       backdropFilter: "blur(10px)",
                     }}
                   >
-                    Ver Torneios
+                    Ver Campeonatos
                   </button>
                 )}
               </div>
@@ -132,21 +131,14 @@ export default function FeedPage() {
                   className="absolute inset-0 z-10"
                   style={{
                     background:
-                      "linear-gradient(to right, #010002 0%, transparent 40%)",
+                      "linear-gradient(to right, #0F0F18 0%, transparent 40%)",
                   }}
                 />
                 <img
                   src="/premium_hero_banner.png"
                   alt="Hero"
-                  className="w-full h-full object-cover object-center scale-110 group-hover:scale-115 transition-transform duration-1000"
+                  className="w-full h-full object-cover object-center scale-110 group-hover:scale-105 transition-transform duration-1000"
                   style={{ opacity: 0.9 }}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(ellipse at center, rgba(16,185,129,0.15), transparent 70%)",
-                  }}
                 />
               </div>
             </div>
@@ -203,10 +195,7 @@ export default function FeedPage() {
                   <div className="relative z-10 p-6 md:p-10 flex items-center justify-between h-full">
                     <div className="max-w-full md:max-w-[60%]">
                       <p className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-emerald-400 mb-3 md:mb-2 italic drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] pr-2">
-                        TORNEIO{" "}
-                        {String(featuredTournament.game ?? "VALORANT")
-                          .replace("_", " ")
-                          .toUpperCase()}
+                        CAMPEONATO FREE FIRE
                       </p>
                       <h3 className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter text-white leading-[1.3] md:leading-tight mb-4 md:mb-2 group-hover:translate-x-1 transition-transform text-shadow-glow">
                         {featuredTournament.title}
@@ -229,7 +218,7 @@ export default function FeedPage() {
                           background: "var(--gradient-primary)",
                         }}
                       >
-                        Ver torneio <ChevronRight size={12} className="ml-1" />
+                        Ver campeonato <ChevronRight size={12} className="ml-1" />
                       </button>
                     </div>
                   </div>
@@ -257,7 +246,7 @@ export default function FeedPage() {
                       <h3 className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter text-white leading-[1.3] md:leading-tight mb-6 md:mb-4 text-shadow-glow">
                         Anuncie aqui e ganhe{" "}
                         <span className="text-primary">visibilidade</span> para
-                        seus torneios
+                        visibilidade para seus campeonatos
                       </h3>
                       <button
                         className="flex items-center gap-2 px-8 h-10 rounded-xl text-[10px] font-black italic uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95 shadow-glow-sm"
@@ -313,9 +302,9 @@ export default function FeedPage() {
                         }
                         className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-500 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
 
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 transform group-hover:-translate-y-1 transition-transform">
                         <Link
                           href={`/communities/${c.id}`}
                           className="flex items-center gap-2 mb-1 relative z-10"
@@ -348,6 +337,12 @@ export default function FeedPage() {
                       size={48}
                       className="text-primary mb-2 shadow-glow-sm"
                     />
+                    <div>
+                  <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white font-orbitron">
+                    Feed Global
+                  </h2>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic">Atividade em tempo real</p>
+                </div>
                     <p className="text-[12px] font-black uppercase tracking-widest text-white italic">
                       Hubs da Comunidade
                     </p>
@@ -383,10 +378,9 @@ export default function FeedPage() {
                   ))
                 ) : squadPosts.length > 0 ? (
                   squadPosts.map((post) => (
-                    <Button
+                    <div
                       key={post.id}
-                      variant="ghost"
-                      className="h-14 px-4 hover:bg-revallo-purple/10 flex items-center gap-4 transition-all group rounded-2xl border border-[#8F84D9]/20 bg-[#1F1A3D]/40 backdrop-blur-md shadow-revallo-glow/10"
+                      className="h-14 px-4 hover:bg-revallo-purple/10 flex items-center gap-4 transition-all group rounded-2xl border border-[#8F84D9]/20 bg-[#1F1A3D]/40 backdrop-blur-md shadow-revallo-glow/10 cursor-pointer"
                     >
                       <Avatar className="h-10 w-10 border-2 border-primary/20 group-hover:border-primary/50 transition-colors shadow-glow-sm">
                         <AvatarImage src={post.authorPhoto || undefined} />
@@ -394,17 +388,17 @@ export default function FeedPage() {
                           {post.authorName?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pr-2">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-[13px] font-black text-white italic truncate">
+                          <h4 className="text-[13px] font-black text-white italic truncate max-w-[150px]">
                             {post.authorName}
                           </h4>
                           <span className="text-[10px] font-bold text-gray-600">
                             12
                           </span>
                         </div>
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5 truncate flex items-center gap-2">
-                          {post.game}
+                        <p className="text-[8px] font-bold text-primary tracking-widest leading-none mt-0.5">
+                          FREE FIRE
                         </p>
                       </div>
                       <button className="hidden sm:block px-5 h-10 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase italic text-white hover:bg-white/10 transition-all">
@@ -413,7 +407,7 @@ export default function FeedPage() {
                       <button className="sm:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all">
                         <ChevronRight size={14} />
                       </button>
-                    </Button>
+                    </div>
                   ))
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 rounded-[24px] bg-white/[0.02] border border-dashed border-white/10 relative overflow-hidden group">

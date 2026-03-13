@@ -67,7 +67,7 @@ const REASON_LABELS: Record<string, string> = {
 
 const TYPE_INFO: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   tournament: { label: "Torneio", icon: Trophy },
-  mini_tournament: { label: "Mini Torneio", icon: Gamepad2 },
+  mini_tournament: { label: "Apostados FF", icon: Gamepad2 },
   user: { label: "Usuário", icon: User },
 };
 
@@ -128,7 +128,7 @@ export function AdminReports() {
         if (r.report_type === "tournament") {
           targetName = tournamentMap.get(r.target_id) || "Torneio removido";
         } else if (r.report_type === "mini_tournament") {
-          targetName = miniTournamentMap.get(r.target_id) || "Mini torneio removido";
+          targetName = miniTournamentMap.get(r.target_id) || "Apostados FF removido";
         } else if (r.report_type === "user") {
           targetName = userMap.get(r.target_id) || "Usuário removido";
         }

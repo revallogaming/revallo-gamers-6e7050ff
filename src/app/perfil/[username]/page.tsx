@@ -151,13 +151,13 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
                         </AvatarFallback>
                     </Avatar>
                     <div className="absolute -bottom-2 -right-2 bg-[#0D0B1A] p-1 rounded-full">
-                        <VerificationBadge type="verified" size="lg" />
+                        <VerificationBadge type={profile.verification_type as any} size="lg" />
                     </div>
                 </div>
 
                 <div className="flex-1 text-center md:text-left">
                     <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                        <h1 className="text-4xl font-black italic uppercase tracking-tighter">
+                        <h1 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter break-words max-w-full">
                             {profile.nickname}
                         </h1>
                         <div className="flex items-center justify-center md:justify-start gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 italic">
@@ -178,7 +178,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
                         {isOwnProfile ? (
                             <Link href="/profile">
                                 <Button className="bg-primary h-12 px-10 rounded-2xl font-black uppercase italic tracking-widest text-[11px] shadow-lg shadow-primary/20">
-                                    Meu Painel
+                                    Meu Perfil
                                 </Button>
                             </Link>
                         ) : (
