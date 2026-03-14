@@ -10,52 +10,66 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      return isAuthenticated() && 
-        exists(/databases/$(database)/documents/user_roles/$(request.auth.uid + "_admin"));
+    // Permanent Admin (Zeus_Apollo)
+    function isSystemOwner() {
+      return isAuthenticated() && (
+        request.auth.uid == 'tjYoxEwnOAf1WmCJpWG0'
+      );
     }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        isSystemOwner() ||
+        exists(/databases/$(database)/documents/user_roles/$(request.auth.uid + "_admin")) ||
+        (exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.verification_type == 'admin')
+      );
+    }
+
+    // Client-side access is now READ-ONLY for most collections to prevent bypassing the Admin Proxy
+    // All administrative WRITES must go through the /api/admin/proxy which uses the Admin SDK.
 
     // Profiles
     match /profiles/{userId} {
       allow read: if true;
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId); // Admins use Proxy
+      allow delete: if false; // Admins use Proxy
     }
 
     // User Roles
     match /user_roles/{roleId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if false; // Admins use Proxy
     }
 
-    // User Credits - MODIFIED BY ANTIGRAVITY v3
+    // User Credits
     match /user_credits/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.balance == 0;
-      allow update, delete: if isAdmin();
+      allow update, delete: if false; // Admins use Proxy
     }
 
     // Tournaments
     match /tournaments/{tournamentId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if false; // Admins use Proxy
     }
 
     // Tournament Participants
     match /tournament_participants/{participantId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
+      allow update, delete: if false; // Admins use Proxy
     }
 
     // Mini Tournaments
     match /mini_tournaments/{tournamentId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update: if isAdmin() || 
-                      isOwner(resource.data.organizer_id) ||
+      allow update: if isOwner(resource.data.organizer_id) ||
                       (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['current_participants']));
-      allow delete: if isAdmin();
+      allow delete: if false; // Admins use Proxy
     }
 
     match /mini_tournament_participants/{participantId} {
@@ -71,19 +85,22 @@ service cloud.firestore {
     // Communities
     match /communities/{communityId} {
       allow read: if true;
-      allow write: if isAuthenticated(); // Broadly open for now, could be tightened to owner
+      allow write: if isAuthenticated();
     }
 
+    // Community Members
     match /community_members/{memberId} {
       allow read: if true;
       allow write: if isAuthenticated();
     }
 
+    // Channels
     match /channels/{channelId} {
       allow read: if true;
       allow write: if isAuthenticated();
     }
 
+    // Messages
     match /messages/{messageId} {
       allow read: if true;
       allow create: if isAuthenticated();
@@ -93,7 +110,7 @@ service cloud.firestore {
     match /lfg_ads/{adId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow update, delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
     }
 
     // Notifications
@@ -106,10 +123,9 @@ service cloud.firestore {
     match /matches/{matchId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update: if isAdmin() || 
-                      isOwner(resource.data.creator_id) || 
-                      (isAuthenticated() && resource.data.status == 'open'); // Allows accepting a duel
-      allow delete: if isAdmin();
+      allow update: if isOwner(resource.data.creator_id) || 
+                      (isAuthenticated() && resource.data.status == 'open');
+      allow delete: if false; // Admins use Proxy
     }
 
     // Followers
@@ -118,31 +134,37 @@ service cloud.firestore {
       allow create, delete: if isAuthenticated();
     }
 
-    // Site Stats (Visitor Tracking)
+    // Site Stats
     match /site_stats/{date} {
       allow read: if true;
-      allow write: if true; // Allows VisitorTracker to work for guests and users
+      allow write: if false; // Admins use Proxy
     }
 
     // Recent Activities
     match /recent_activities/{activityId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if false; // Admins use Proxy
     }
 
     // PIX Keys
     match /user_pix_keys/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+      allow read, write: if isOwner(userId);
     }
 
     match /organizer_payment_info/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+      allow read, write: if isOwner(userId);
     }
 
-    // Default allow read for unknown collections to prevent crashes, write restricted
+    // System config
+    match /config/{document=**} {
+      allow read: if true;
+      allow write: if false; // Admins use Proxy
+    }
+
+    // Default
     match /{collection}/{document=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if false;
     }
   }
 }

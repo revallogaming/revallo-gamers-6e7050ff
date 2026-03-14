@@ -18,6 +18,8 @@ export function VerificationBadge({
 }: VerificationBadgeProps) {
   if (!type || type === "none" || type === "verified") return null;
 
+  const isInfluencer = type === "influencer";
+
   const config = {
     admin: {
       color: "text-purple-500",
@@ -53,7 +55,7 @@ export function VerificationBadge({
       className
     )}>
       <Icon className={cn(sizeClasses, config.color)} />
-      {showText && (
+      {showText && !isInfluencer && (
         <span className={cn(
           "text-[10px] font-black uppercase tracking-widest italic",
           config.color

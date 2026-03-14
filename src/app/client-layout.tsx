@@ -29,6 +29,9 @@ const NO_SIDEBAR_ROUTES = [
   "/politica-de-privacidade",
   "/choose-avatar",
   "/invite",
+  "/admin",
+  "/admin/login",
+  "/admin/dashboard",
 ];
 
 function shouldShowSidebar(pathname: string): boolean {

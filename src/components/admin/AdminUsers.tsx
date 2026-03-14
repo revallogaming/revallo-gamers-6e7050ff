@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, doc, updateDoc, deleteDoc, setDoc, addDoc, getDoc, getDocs, query, where } from "firebase/firestore";
-import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -9,17 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
+import {
   Dialog, DialogContent, DialogDescription, DialogFooter, 
   DialogHeader, DialogTitle 
 } from "@/components/ui/dialog";
 import { 
   Search, RefreshCw, Plus, Minus, Coins, Ban, Trash2, 
-  UserX, CheckCircle, Edit3, Crown, UserMinus, Users, Key, Mail, ShieldCheck 
+  UserX, CheckCircle, Edit3, Key, ShieldCheck, Users 
 } from "lucide-react";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const SYSTEM_OWNER_ID = 'tjYoxEwnOAf1WmCJpWG0';
 
 interface UserWithCredits {
   id: string;
@@ -30,6 +29,8 @@ interface UserWithCredits {
   is_banned: boolean;
   ban_reason: string | null;
   verification_type?: "none" | "admin" | "influencer" | "verified";
+  admin_access_key?: string;
+  created_at?: string;
 }
 
 interface AdminUsersProps {
@@ -46,13 +47,12 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [setCreditsDialogOpen, setSetCreditsDialogOpen] = useState(false);
-  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [adminKeyDialogOpen, setAdminKeyDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithCredits | null>(null);
   const [banReason, setBanReason] = useState("");
   const [newCreditAmount, setNewCreditAmount] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [sendPasswordEmail, setSendPasswordEmail] = useState(true);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [newAdminKey, setNewAdminKey] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const filteredUsers = users.filter(u =>
     u.nickname.toLowerCase().includes(searchQuery.toLowerCase())
@@ -60,179 +60,138 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
 
   const formatCredits = (balance: number) => {
     if (balance >= 999999999) return "∞";
-    return balance.toLocaleString("pt-BR");
+    return balance.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+  
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Desconhecido";
+    return new Date(dateString).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
   };
 
-  const updateCredits = async (userId: string, amount: number) => {
+  const callProxy = async (action: string, data: any) => {
     try {
-      const creditsRef = doc(db, 'user_credits', userId);
-      const creditsSnap = await getDoc(creditsRef);
-      const currentBalance = creditsSnap.exists() ? creditsSnap.data().balance : 0;
-      await setDoc(creditsRef, { balance: currentBalance + amount, user_id: userId }, { merge: true });
+      setIsProcessing(true);
+      const key = sessionStorage.getItem("admin_access_key");
+      const response = await fetch("/api/admin/proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, key, data })
+      });
 
-      await addDoc(collection(db, 'credit_transactions'), {
-        user_id: userId,
-        amount,
+      const result = await response.json();
+      if (response.ok) {
+        return { success: true, ...result };
+      } else {
+        toast.error(result.error || "Erro ao realizar ação");
+        return { success: false };
+      }
+    } catch (e) {
+      toast.error("Erro técnico na comunicação com o servidor");
+      return { success: false };
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleUpdateVerification = async (userId: string, type: string) => {
+    const res = await callProxy("update_verification", { vUserId: userId, vType: type });
+    if (res.success) {
+      toast.success("Verificação atualizada");
+      onRefresh();
+    }
+  };
+
+  const handleUpdateCredits = async (userId: string, amount: number) => {
+    const res = await callProxy("update_credits", { 
+        userId, 
+        amount: parseFloat(amount.toString()), 
         type: amount > 0 ? "admin_add" : "admin_remove",
-        description: "Ajuste manual por administrador",
-        created_at: new Date().toISOString()
-      });
-
-      toast.success(`${amount > 0 ? "Adicionados" : "Removidos"} ${Math.abs(amount)} créditos`);
+        description: "Ajuste manual via Painel"
+    });
+    if (res.success) {
+      toast.success("Saldo atualizado");
       onRefresh();
-      setCreditAmounts((prev) => ({ ...prev, [userId]: "" }));
-    } catch (error: unknown) {
-      console.error("Error updating credits:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao atualizar créditos";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleAddAdminRole = async (userId: string, nickname: string) => {
-    try {
-      await setDoc(doc(db, 'user_roles', `${userId}_admin`), {
-        user_id: userId,
-        role: "admin",
-        created_at: new Date().toISOString()
-      });
-
-      toast.success(`${nickname} agora é administrador`);
-      onRefresh();
-    } catch (error: unknown) {
-      console.error("Error adding admin role:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao promover a admin";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleRemoveAdminRole = async (userId: string, nickname: string) => {
-    try {
-      // In Firestore, we might have multiple docs or a specific ID. Let's find and delete.
-      const rolesQ = query(collection(db, 'user_roles'), where('user_id', '==', userId), where('role', '==', 'admin'));
-      const rolesSn = await getDocs(rolesQ);
-      rolesSn.forEach(async (d) => await deleteDoc(doc(db, 'user_roles', d.id)));
-
-      toast.success(`${nickname} não é mais administrador`);
-      onRefresh();
-    } catch (error: unknown) {
-      console.error("Error removing admin role:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao remover admin";
-      toast.error(errorMessage);
+      setCreditAmounts(prev => ({ ...prev, [userId]: "" }));
     }
   };
 
   const handleSetCredits = async () => {
     if (!selectedUser) return;
-
-    try {
-      const amount = parseInt(newCreditAmount);
-      if (isNaN(amount) || amount < 0) {
-        toast.error("Valor inválido");
-        return;
-      }
-
-      await setDoc(doc(db, 'user_credits', selectedUser.id), {
-        user_id: selectedUser.id,
-        balance: amount
-      }, { merge: true });
-
-      await addDoc(collection(db, 'credit_transactions'), {
-        user_id: selectedUser.id,
-        amount,
-        type: "admin_set",
-        description: "Saldo definido por administrador",
-        created_at: new Date().toISOString()
-      });
-
-      toast.success(`Créditos definidos para ${amount}`);
+    const amount = parseFloat(newCreditAmount);
+    if (isNaN(amount) || amount < 0) {
+      toast.error("Valor inválido");
+      return;
+    }
+    const res = await callProxy("set_credits", { userId: selectedUser.id, amount });
+    if (res.success) {
+      toast.success("Saldo definido");
       setSetCreditsDialogOpen(false);
-      setNewCreditAmount("");
-      setSelectedUser(null);
       onRefresh();
-    } catch (error: unknown) {
-      console.error("Error setting credits:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao definir créditos";
-      toast.error(errorMessage);
+    }
+  };
+
+  const handleInputBlur = (value: string, setter: (val: string) => void) => {
+    const parsed = parseFloat(value);
+    if (!isNaN(parsed)) {
+      setter(parsed.toFixed(2));
+    }
+  };
+
+  const handleSetAdminKey = async () => {
+    if (!selectedUser || !newAdminKey) return;
+    const res = await callProxy("add_admin_role", { aUserId: selectedUser.id, aKey: newAdminKey });
+    if (res.success) {
+      toast.success("Chave de acesso definida");
+      setAdminKeyDialogOpen(false);
+      onRefresh();
+    }
+  };
+
+  const handlePromoteToAdmin = async (userId: string) => {
+    const res = await callProxy("add_admin_role", { aUserId: userId, aKey: "" }); // Key will be empty initially
+    if (res.success) {
+      toast.success("Promovido a Staff. Defina uma chave para acesso.");
+      onRefresh();
+    }
+  };
+
+  const handleRemoveAdminRole = async (userId: string) => {
+    const res = await callProxy("remove_admin_role", { rUserId: userId });
+    if (res.success) {
+      toast.success("Cargo removido");
+      onRefresh();
     }
   };
 
   const handleBanUser = async () => {
     if (!selectedUser) return;
-
-    try {
-      await updateDoc(doc(db, 'profiles', selectedUser.id), {
-        is_banned: true,
-        ban_reason: banReason || null
-      });
-
-      toast.success(`Usuário ${selectedUser.nickname} banido`);
+    const res = await callProxy("toggle_ban", { bUserId: selectedUser.id, isBanned: true, reason: banReason });
+    if (res.success) {
+      toast.success("Usuário banido");
       setBanDialogOpen(false);
-      setBanReason("");
-      setSelectedUser(null);
       onRefresh();
-    } catch (error: unknown) {
-      console.error("Error banning user:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao banir usuário";
-      toast.error(errorMessage);
     }
   };
 
-  const handleUnbanUser = async (userId: string, nickname: string) => {
-    try {
-      await updateDoc(doc(db, 'profiles', userId), {
-        is_banned: false,
-        ban_reason: null
-      });
-
-      toast.success(`Usuário ${nickname} desbanido`);
+  const handleUnbanUser = async (userId: string) => {
+    const res = await callProxy("toggle_ban", { bUserId: userId, isBanned: false });
+    if (res.success) {
+      toast.success("Usuário desbanido");
       onRefresh();
-    } catch (error: unknown) {
-      console.error("Error unbanning user:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao desbanir usuário";
-      toast.error(errorMessage);
     }
   };
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
-
-    try {
-      await deleteDoc(doc(db, 'profiles', selectedUser.id));
-      await deleteDoc(doc(db, 'user_credits', selectedUser.id));
-
-      toast.success(`Usuário ${selectedUser.nickname} removido permanentemente`);
+    const res = await callProxy("delete_user", { dUserId: selectedUser.id });
+    if (res.success) {
+      toast.success("Usuário removido permanentemente");
       setDeleteDialogOpen(false);
-      setSelectedUser(null);
       onRefresh();
-    } catch (error: unknown) {
-      console.error("Error deleting user:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao remover usuário";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleResetPassword = async () => {
-    if (!selectedUser) return;
-
-    if (!newPassword || newPassword.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
-      return;
-    }
-
-    setIsResettingPassword(true);
-
-    try {
-      // We cannot set arbitrary passwords for users in Firebase from the client SDK easily.
-      // Easiest is to send a password reset email if their profile has an email.
-      // However, we don't have the email in UserWithCredits interface.
-      // Let's throw an error indicating we need a backend for this.
-      throw new Error("A troca direta de senha requer Firebase Admin SDK. Por favor, redefina a senha via email no Firebase Console.");
-    } catch (error: unknown) {
-      console.error("Error resetting password:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao alterar senha";
-      toast.error(errorMessage);
-    } finally {
-      setIsResettingPassword(false);
     }
   };
 
@@ -247,7 +206,7 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                 Gerenciar Usuários
               </CardTitle>
               <CardDescription>
-                Gerencie créditos, banimentos e contas
+                Gerencie créditos, banimentos e contas via Proxy API
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -257,207 +216,250 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
                   placeholder="Buscar usuário..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-64 border-revallo-purple/50 bg-revallo-purple/5 focus:border-revallo-purple/80 focus:ring-revallo-highlight/60 focus:shadow-[0_0_15px_rgba(143,132,217,0.15)] rounded-xl transition-all shadow-[0_0_10px_rgba(143,132,217,0.05)]"
+                  className="pl-9 w-64 border-revallo-purple/50 bg-revallo-purple/5 focus:border-revallo-purple/80 focus:ring-revallo-highlight/60 rounded-xl transition-all"
                 />
               </div>
-              <Button variant="outline" size="icon" onClick={onRefresh}>
+              <Button variant="outline" size="icon" onClick={onRefresh} disabled={isProcessing}>
                 <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border border-border overflow-hidden max-h-[500px] overflow-y-auto">
+          <div className="rounded-[24px] border border-white/5 overflow-hidden max-h-[600px] overflow-y-auto custom-scrollbar">
             <Table>
-              <TableHeader className="sticky top-0 bg-muted/50">
-                <TableRow>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Créditos</TableHead>
-                  <TableHead className="text-center">Gerenciar Créditos</TableHead>
-                  <TableHead className="text-center">Ações</TableHead>
+              <TableHeader className="sticky top-0 bg-[#0B0B0F]/90 backdrop-blur-md z-30 border-b border-white/5">
+                <TableRow className="hover:bg-transparent border-white/5">
+                  <TableHead className="py-4 text-[10px] font-black uppercase italic tracking-widest text-gray-500">Usuário & Identidade</TableHead>
+                  <TableHead className="py-4 text-[10px] font-black uppercase italic tracking-widest text-gray-500">Privilégios & Status</TableHead>
+                  <TableHead className="py-4 text-right text-[10px] font-black uppercase italic tracking-widest text-gray-500">Balanço Atual</TableHead>
+                  <TableHead className="py-4 text-center text-[10px] font-black uppercase italic tracking-widest text-gray-500">Ajuste Rápido</TableHead>
+                  <TableHead className="py-4 text-right text-[10px] font-black uppercase italic tracking-widest text-gray-500">Gestão de Conta</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
+                    <TableCell colSpan={5} className="text-center py-20">
+                      <div className="flex flex-col items-center gap-4">
+                        <RefreshCw className="h-8 w-8 animate-spin text-primary opacity-50" />
+                        <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-gray-600">Sincronizando com Proxy...</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Nenhum usuário encontrado
+                    <TableCell colSpan={5} className="text-center py-20">
+                       <p className="text-[10px] font-black uppercase italic tracking-[0.2em] text-gray-600">Nenhum jogador encontrado na rede</p>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((u) => (
-                    <TableRow key={u.id} className={u.is_banned ? "bg-destructive/5" : ""}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`h-10 w-10 rounded-full flex items-center justify-center text-primary-foreground font-bold ${
-                              u.is_banned ? "bg-destructive" : "bg-gradient-primary"
-                            }`}
-                          >
-                            {u.nickname.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <p className="font-medium text-foreground">{u.nickname}</p>
-                              <VerificationBadge type={u.verification_type} size="xs" />
+                    <TableRow key={u.id} className={cn("group border-white/[0.03] transition-colors hover:bg-white/[0.02]", u.is_banned ? "bg-red-500/[0.02]" : "")}>
+                      <TableCell className="py-5">
+                        <div className="flex items-center gap-4">
+                           <div className="relative">
+                            <div className={cn(
+                                "h-12 w-12 rounded-[18px] flex items-center justify-center text-white font-black italic text-lg shadow-xl relative overflow-hidden",
+                                u.is_banned ? "bg-red-500/20 text-red-500 border border-red-500/30" : "bg-gradient-to-br from-primary to-primary/40"
+                              )}>
+                                {u.nickname.charAt(0).toUpperCase()}
+                                {!u.is_banned && <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />}
                             </div>
-                            <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                              {u.id}
-                            </p>
+                            {u.is_banned && (
+                                <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-[#0B0B0F] flex items-center justify-center animate-pulse">
+                                    <Ban size={8} className="text-white" />
+                                </div>
+                            )}
+                           </div>
+
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-white italic text-base tracking-tighter uppercase">{u.nickname}</p>
+                              <VerificationBadge type={u.verification_type} size="sm" />
+                            </div>
+                            <div className="flex items-center gap-2 text-[9px] font-bold tracking-widest">
+                                <span className="text-gray-500 font-mono uppercase opacity-60">ID: {u.id.slice(0, 10)}...</span>
+                                <span className="h-1 w-1 rounded-full bg-white/10" />
+                                <span className="text-primary/70 italic">Criado: {formatDate(u.created_at)}</span>
+                            </div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 flex-wrap">
+                      <TableCell className="py-5">
+                        <div className="flex gap-2 flex-wrap">
                           {u.is_banned ? (
-                            <Badge variant="destructive" className="gap-1 animate-pulse">
-                              <Ban className="h-3 w-3" />
-                              Banido
+                            <Badge variant="outline" className="bg-red-500/10 border-red-500/20 text-red-500 text-[9px] font-black italic uppercase tracking-widest px-2.5 py-1">
+                               Ban Total
                             </Badge>
                           ) : (
                             <>
                               {u.roles.includes("admin") && (
-                                <Badge className="bg-purple-500 hover:bg-purple-600 gap-1">
-                                  <ShieldCheck className="h-3 w-3" />
-                                  Staff
+                                <Badge className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 text-[9px] font-black italic uppercase tracking-widest px-2.5 py-1 gap-1.5 flex items-center">
+                                  <ShieldCheck className="h-3 w-3" /> Staff
                                 </Badge>
                               )}
                               {u.roles.filter(r => r !== "admin").map((role) => (
-                                <Badge
-                                  key={role}
-                                  variant="secondary"
-                                  className="capitalize"
-                                >
-                                  {role}
+                                <Badge key={role} variant="outline" className="bg-white/5 border-white/10 text-gray-400 text-[9px] font-black italic uppercase tracking-widest px-2.5 py-1">
+                                    {role}
                                 </Badge>
                               ))}
                               {u.roles.length === 0 && (
-                                <Badge variant="outline" className="text-muted-foreground">
-                                  Jogador
+                                <Badge variant="outline" className="border-white/5 text-gray-600 text-[9px] font-black italic uppercase tracking-widest px-2.5 py-1">
+                                    Jogador
                                 </Badge>
                               )}
                             </>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <span
-                            className={`font-mono font-bold text-lg ${
-                              u.balance >= 999999999 ? "text-primary" : "text-foreground"
-                            }`}
-                          >
-                            {formatCredits(u.balance)}
-                          </span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            onClick={() => {
-                              setSelectedUser(u);
-                              setNewCreditAmount(u.balance.toString());
-                              setSetCreditsDialogOpen(true);
+                      <TableCell className="text-right py-5">
+                        <div className="flex items-center justify-end gap-3 group/bal">
+                          <div className="text-right">
+                             <p className={cn(
+                               "font-mono font-black italic text-xl tracking-tighter leading-none",
+                               u.balance >= 999999999 ? "text-primary shadow-glow-sm" : "text-white"
+                             )}>
+                               {formatCredits(u.balance)}
+                             </p>
+                             <p className="text-[8px] font-black uppercase text-gray-600 tracking-[0.3em] mt-1.5 opacity-0 group-hover/bal:opacity-100 transition-opacity">Créditos</p>
+                          </div>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-9 w-9 hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10" 
+                            onClick={() => { 
+                              setSelectedUser(u); 
+                              setNewCreditAmount(u.balance.toFixed(2)); 
+                              setSetCreditsDialogOpen(true); 
                             }}
                           >
-                            <Edit3 className="h-3.5 w-3.5" />
+                            <Edit3 className="h-4 w-4 text-gray-500 hover:text-primary transition-colors" />
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-5">
                         <div className="flex items-center justify-center gap-2">
-                          <Input
-                            type="number"
-                            placeholder="Qtd"
-                            value={creditAmounts[u.id] || ""}
-                            onChange={(e) =>
-                              setCreditAmounts((prev) => ({ ...prev, [u.id]: e.target.value }))
-                            }
-                            className="w-20 text-center h-9"
-                          />
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="h-9 w-9 text-green-500 hover:text-green-600 hover:bg-green-500/10"
-                            onClick={() => {
-                              const amount = parseInt(creditAmounts[u.id] || "0");
-                              if (amount > 0) updateCredits(u.id, amount);
-                            }}
-                            disabled={!creditAmounts[u.id] || parseInt(creditAmounts[u.id]) <= 0}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                            onClick={() => {
-                              const amount = parseInt(creditAmounts[u.id] || "0");
-                              if (amount > 0) updateCredits(u.id, -amount);
-                            }}
-                            disabled={!creditAmounts[u.id] || parseInt(creditAmounts[u.id]) <= 0}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
+                          <div className="relative">
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="0,00" 
+                              value={creditAmounts[u.id] || ""} 
+                              onChange={(e) => setCreditAmounts(prev => ({ ...prev, [u.id]: e.target.value }))} 
+                              onBlur={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  const parsed = parseFloat(val);
+                                  if (!isNaN(parsed)) {
+                                    setCreditAmounts(prev => ({ ...prev, [u.id]: parsed.toFixed(2) }));
+                                  }
+                                }
+                              }}
+                              className="w-[110px] text-center h-10 font-mono font-bold bg-white/5 border-white/10 rounded-xl focus:ring-primary/40 focus:bg-white/[0.08] transition-all" 
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <Button 
+                                size="icon" 
+                                variant="outline" 
+                                className="h-[18px] w-8 border-white/10 hover:bg-green-500/20 hover:text-green-500 hover:border-green-500/30 rounded-md" 
+                                onClick={() => handleUpdateCredits(u.id, parseFloat(creditAmounts[u.id]))} 
+                                disabled={!creditAmounts[u.id] || isProcessing}
+                            >
+                                <Plus className="h-2 w-2" />
+                            </Button>
+                            <Button 
+                                size="icon" 
+                                variant="outline" 
+                                className="h-[18px] w-8 border-white/10 hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/30 rounded-md" 
+                                onClick={() => handleUpdateCredits(u.id, -parseFloat(creditAmounts[u.id]))} 
+                                disabled={!creditAmounts[u.id] || isProcessing}
+                            >
+                                <Minus className="h-2 w-2" />
+                            </Button>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center gap-2 flex-wrap">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
-                            onClick={() => {
-                              setSelectedUser(u);
-                              setNewPassword("");
-                              setResetPasswordDialogOpen(true);
-                            }}
-                          >
-                            <Key className="h-4 w-4" />
-                            Senha
-                          </Button>
-                          {u.is_banned ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="gap-1 text-green-500 hover:text-green-600 hover:bg-green-500/10"
-                              onClick={() => handleUnbanUser(u.id, u.nickname)}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                              Desbanir
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="gap-1 text-orange-500 hover:text-orange-600 hover:bg-orange-500/10"
-                              onClick={() => {
-                                setSelectedUser(u);
-                                setBanDialogOpen(true);
-                              }}
-                            >
-                              <Ban className="h-4 w-4" />
-                              Banir
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => {
-                              setSelectedUser(u);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Remover
-                          </Button>
+                      <TableCell className="text-right py-5">
+                        <div className="flex items-center justify-end gap-2">
+                           <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={u.id === SYSTEM_OWNER_ID || isProcessing}
+                                  className={cn(
+                                    "h-7 px-3 text-[9px] font-black uppercase italic tracking-widest rounded-lg border border-transparent transition-all",
+                                    u.roles.includes("admin") 
+                                      ? "bg-primary/20 border-primary/30 text-primary hover:bg-primary/30" 
+                                      : "text-gray-500 hover:text-white hover:bg-white/5"
+                                  )}
+                                  onClick={() => u.roles.includes("admin") ? handleRemoveAdminRole(u.id) : handlePromoteToAdmin(u.id)}
+                                >
+                                  {u.roles.includes("admin") ? "Staff OK" : "Tornar Staff"}
+                                </Button>
+
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className={cn(
+                                    "h-7 px-3 text-[9px] font-black uppercase italic tracking-widest rounded-lg border border-transparent transition-all",
+                                    u.verification_type === "influencer" 
+                                      ? "bg-[#FFD700]/20 border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700]/30 shadow-[0_0_15px_rgba(255,215,0,0.1)]" 
+                                      : "text-gray-500 hover:text-white hover:bg-white/5"
+                                  )}
+                                  onClick={() => handleUpdateVerification(u.id, u.verification_type === "influencer" ? "none" : "influencer")}
+                                >
+                                  {u.verification_type === "influencer" ? "Dourado OK" : "Dourado"}
+                                </Button>
+                              </div>
+
+                              <div className="flex items-center gap-1 justify-end">
+                                {u.roles.includes("admin") && u.id !== SYSTEM_OWNER_ID && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-3 text-[9px] font-black uppercase italic tracking-widest text-primary hover:bg-primary/10 border border-primary/10 rounded-lg"
+                                    onClick={() => { setSelectedUser(u); setNewAdminKey(u.admin_access_key || ""); setAdminKeyDialogOpen(true); }}
+                                  >
+                                    <Key className="h-3 w-3 mr-1.5" /> Chave Staff
+                                  </Button>
+                                )}
+                                
+                                {u.is_banned ? (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-7 px-3 text-[9px] font-black uppercase italic tracking-widest text-green-500 hover:bg-green-500/10 border border-green-500/10 rounded-lg" 
+                                    onClick={() => handleUnbanUser(u.id)} 
+                                    disabled={isProcessing}
+                                  >
+                                    Retirar Ban
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-7 px-3 text-[9px] font-black uppercase italic tracking-widest text-orange-500 hover:bg-orange-500/10 border border-orange-500/10 rounded-lg" 
+                                    onClick={() => { setSelectedUser(u); setBanDialogOpen(true); }} 
+                                    disabled={u.id === SYSTEM_OWNER_ID || isProcessing}
+                                  >
+                                    Banir
+                                  </Button>
+                                )}
+                                
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-7 px-3 text-[9px] font-black uppercase italic tracking-widest text-red-500 hover:bg-red-500/10 border border-red-500/10 rounded-lg" 
+                                  onClick={() => { setSelectedUser(u); setDeleteDialogOpen(true); }} 
+                                  disabled={u.id === SYSTEM_OWNER_ID || isProcessing}
+                                >
+                                  <Trash2 size={12} className="mr-1.5" /> Deletar
+                                </Button>
+                              </div>
+                           </div>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -469,178 +471,84 @@ export function AdminUsers({ users, isLoading, onRefresh }: AdminUsersProps) {
         </CardContent>
       </Card>
 
-      {/* Ban Dialog */}
+      {/* Dialogs using similar logic to original but calling Proxy */}
       <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-orange-500">
-              <Ban className="h-5 w-5" />
-              Banir Usuário
-            </DialogTitle>
-            <DialogDescription>
-              Você está prestes a banir <strong>{selectedUser?.nickname}</strong>. O usuário não
-              poderá mais acessar a plataforma.
-            </DialogDescription>
+            <DialogTitle>Banir Usuário</DialogTitle>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="ban-reason">Motivo do banimento (opcional)</Label>
-              <Textarea
-                id="ban-reason"
-                placeholder="Descreva o motivo do banimento..."
-                value={banReason}
-                onChange={(e) => setBanReason(e.target.value)}
-                className="min-h-[80px]"
-              />
-            </div>
+             <Textarea placeholder="Motivo..." value={banReason} onChange={(e) => setBanReason(e.target.value)} />
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBanDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleBanUser} className="gap-2">
-              <Ban className="h-4 w-4" />
-              Confirmar Banimento
-            </Button>
+            <Button variant="destructive" onClick={handleBanUser} disabled={isProcessing}>Confirmar Banimento</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <UserX className="h-5 w-5" />
-              Remover Conta Permanentemente
-            </DialogTitle>
-            <DialogDescription>
-              <strong className="text-destructive">ATENÇÃO: Esta ação é irreversível!</strong>
-              <br />
-              <br />
-              Você está prestes a remover permanentemente a conta de{" "}
-              <strong>{selectedUser?.nickname}</strong>. Todos os dados do usuário serão apagados,
-              incluindo:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Perfil e credenciais</li>
-                <li>Créditos e transações</li>
-                <li>Inscrições em torneios</li>
-                <li>Torneios criados</li>
-              </ul>
-            </DialogDescription>
+            <DialogTitle className="text-destructive">Remover Conta Permanentemente</DialogTitle>
+            <div className="text-sm text-muted-foreground mt-2">Ação irreversível para <strong>{selectedUser?.nickname}</strong>.</div>
           </DialogHeader>
-
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteUser} className="gap-2">
-              <Trash2 className="h-4 w-4" />
-              Remover Permanentemente
-            </Button>
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={isProcessing}>Remover Permanentemente</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Set Credits Dialog */}
       <Dialog open={setCreditsDialogOpen} onOpenChange={setSetCreditsDialogOpen}>
-        <DialogContent className="bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-primary" />
-              Definir Créditos
+         <DialogContent className="bg-[#0c0b14] border-white/10 rounded-[32px] max-w-sm overflow-hidden p-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
+          <DialogHeader className="p-8 pb-0 relative z-10">
+            <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-white">
+              Definir <span className="text-primary italic">Créditos</span>
             </DialogTitle>
-            <DialogDescription>
-              Defina o saldo de créditos de <strong>{selectedUser?.nickname}</strong>.
+            <DialogDescription className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1">
+              {selectedUser?.nickname} • ID: {selectedUser?.id.slice(0, 8)}
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-credits">Novo saldo de créditos</Label>
-              <Input
-                id="new-credits"
-                type="number"
-                min={0}
-                placeholder="0"
-                value={newCreditAmount}
-                onChange={(e) => setNewCreditAmount(e.target.value)}
-                className="text-lg font-mono"
-              />
-              <p className="text-xs text-muted-foreground">
-                Saldo atual: {formatCredits(selectedUser?.balance || 0)} créditos
-              </p>
-            </div>
+          <div className="p-8 space-y-6 relative z-10">
+             <div className="relative group">
+               <div className="absolute left-6 top-[38%] -translate-y-1/2 text-primary font-black italic text-sm z-20 group-focus-within:text-white transition-colors pointer-events-none opacity-80 uppercase tracking-tighter">
+                 CR
+               </div>
+               <Input 
+                type="number" 
+                step="0.01" 
+                value={newCreditAmount} 
+                onChange={(e) => setNewCreditAmount(e.target.value)} 
+                onBlur={() => handleInputBlur(newCreditAmount, setNewCreditAmount)}
+                className="bg-white/[0.03] border-white/10 h-16 pl-20 pr-6 rounded-2xl text-2xl font-mono font-black text-white focus-visible:ring-primary/40 focus-visible:bg-white/[0.07] transition-all text-left shadow-inner selection:bg-primary/30"
+               />
+               <div className="mt-4 text-[9px] font-black uppercase text-center text-gray-400 tracking-[0.2em] bg-white/[0.02] py-2.5 rounded-xl border border-white/5 backdrop-blur-sm">
+                 SALDO FINAL: <span className="text-primary">{parseFloat(newCreditAmount || "0").toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span> <span className="text-[8px] text-primary/40">CR</span>
+               </div>
+             </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSetCreditsDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSetCredits} className="gap-2 bg-gradient-primary">
-              <Coins className="h-4 w-4" />
-              Definir Créditos
+          <DialogFooter className="p-8 pt-0 relative z-10">
+            <Button 
+                onClick={handleSetCredits} 
+                disabled={isProcessing}
+                className="w-full h-14 bg-gradient-primary text-white font-black uppercase italic tracking-widest text-[11px] rounded-2xl shadow-glow-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+                Confirmar Novo Saldo
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Reset Password Dialog */}
-      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
-        <DialogContent className="bg-card border-border">
+      <Dialog open={adminKeyDialogOpen} onOpenChange={setAdminKeyDialogOpen}>
+        <DialogContent className="bg-[#0c0b14] border-white/10 rounded-[32px] max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-blue-500">
-              <Key className="h-5 w-5" />
-              Alterar Senha
-            </DialogTitle>
-            <DialogDescription>
-              Defina uma nova senha para <strong>{selectedUser?.nickname}</strong>.
-            </DialogDescription>
+            <DialogTitle className="text-white">Chave de <span className="text-primary">Acesso Staff</span></DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">Nova senha</Label>
-              <Input
-                id="new-password"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="text-lg"
-              />
-              <p className="text-xs text-muted-foreground">
-                O usuário precisará fazer login novamente após a alteração.
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="send-email" 
-                checked={sendPasswordEmail}
-                onCheckedChange={(checked) => setSendPasswordEmail(checked === true)}
-              />
-              <Label htmlFor="send-email" className="text-sm font-normal cursor-pointer flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                Enviar nova senha por email ao usuário
-              </Label>
-            </div>
+          <div className="space-y-6 py-4">
+            <Input type="text" value={newAdminKey} onChange={(e) => setNewAdminKey(e.target.value)} className="bg-white/5 border-white/10" />
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleResetPassword} 
-              className="gap-2"
-              disabled={isResettingPassword || !newPassword || newPassword.length < 6}
-            >
-              <Key className="h-4 w-4" />
-              {isResettingPassword ? "Alterando..." : "Alterar Senha"}
-            </Button>
+             <Button onClick={handleSetAdminKey} disabled={isProcessing}>Salvar Chave</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
