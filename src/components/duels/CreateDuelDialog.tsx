@@ -142,7 +142,7 @@ export function CreateDuelDialog({ children }: Props) {
                <div className="space-y-6">
                  <div className="space-y-2">
                    <Label className="text-[9px] font-black uppercase text-gray-500 tracking-widest italic ml-1">Modalidade do Game</Label>
-                   <Select value={game} onValueChange={(v) => setValue('game', v as GameType)}>
+                   <Select value={game} onValueChange={(v) => setValue('game', v as DuelFormData['game'])}>
                      <SelectTrigger className="bg-white/[0.03] border-white/5 h-14 rounded-2xl focus:ring-primary/40 focus:border-primary/50 transition-all font-bold">
                        <SelectValue />
                      </SelectTrigger>
