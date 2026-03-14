@@ -134,12 +134,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string, nickname: string) => {
+      let createdUser: User | null = null;
       try {
         const { user } = await createUserWithEmailAndPassword(
           auth,
           email,
           password,
         );
+        createdUser = user;
 
         await updateProfile(user, { displayName: nickname });
 
@@ -166,6 +168,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return { error: null };
       } catch (error: unknown) {
+        // Cleanup if Firestore fails
+        if (createdUser) {
+          try {
+            await createdUser.delete();
+          } catch (deleteError) {
+            console.error("Error deleting user after failed signup:", deleteError);
+          }
+        }
         return { error: new Error(sanitizeError(error)) };
       }
     },
