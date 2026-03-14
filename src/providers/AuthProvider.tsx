@@ -96,6 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       code = error.message;
     }
 
+    console.error("Auth Error Detail:", { 
+      code, 
+      errorStr: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      original: error 
+    });
+
     switch (code) {
       case "auth/user-not-found":
       case "auth/wrong-password":
@@ -111,8 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return "Muitas tentativas. Tente novamente mais tarde.";
       case "auth/network-request-failed":
         return "Erro de conexão. Verifique sua internet.";
+      case "permission-denied":
+        return "Erro de permissão no banco de dados. Contate o suporte.";
       default:
-        return "Ocorreu um erro na plataforma. Tente novamente.";
+        return `Ocorreu um erro na plataforma (${code}). Tente novamente.`;
     }
   }, []);
 

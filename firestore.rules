@@ -18,7 +18,8 @@ service cloud.firestore {
     // Profiles
     match /profiles/{userId} {
       allow read: if true;
-      allow write: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId) || isAdmin();
     }
 
     // User Roles
@@ -27,7 +28,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // User Credits
+    // User Credits - MODIFIED BY ANTIGRAVITY v3
     match /user_credits/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.balance == 0;
