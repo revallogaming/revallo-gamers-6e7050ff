@@ -22,18 +22,18 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "Revallo - Campeonatos • Comunidades e Squads",
+  title: "Revallo - Campeonatos • Apostados • Comunidades",
   description:
-    "Participe de campeonatos profissionais de Free Fire, encontre seu squad perfeito e suba no ranking. A maior plataforma competitiva para jogadores brasileiros.",
-  keywords: ["Free Fire", "Campeonatos", "Squads", "LFG", "Esports Brasil", "Revallo", "Gamer"],
+    "A plataforma competitiva do Brasil: campeonatos com premiação real, apostados com Pix instantâneo e comunidades de nível pro para Free Fire, Warzone, Valorant, Fortnite, CoD Mobile e Lumershift.",
+  keywords: ["Free Fire", "Warzone", "Valorant", "Fortnite", "CoD Mobile", "Campeonatos", "Apostados", "Esports Brasil", "Revallo"],
   authors: [{ name: "Revallo Team" }],
   metadataBase: new URL("https://revallo.com.br"), // Substitua pela URL real de produção
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Revallo - O Hub Supremo de Free Fire",
-    description: "Torneios profissionais, squads e ranking. O seu mundo gamer começa aqui.",
+    title: "Revallo - A Arena do Esports Brasileiro",
+    description: "Campeonatos com premiação real, apostados com Pix e comunidades pro. Free Fire, Warzone, Valorant e mais.",
     url: "https://revallo.com.br",
     siteName: "Revallo",
     images: [
@@ -49,8 +49,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Revallo - Domine o Competitivo",
-    description: "Encontre seu squad e vença torneios de Free Fire. A revolução do eSports brasileiro.",
+    title: "Revallo - Compete. Ganhe. Saca.",
+    description: "Campeonatos reais + apostados 4v4 com Pix na hora. Free Fire, Warzone, Valorant, Fortnite e mais.",
     images: ["/og-image.png"],
   },
   icons: {

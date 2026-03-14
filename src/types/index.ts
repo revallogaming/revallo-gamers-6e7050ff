@@ -1,4 +1,4 @@
-export type GameType = 'freefire' | 'valorant' | 'cod-warzone' | 'blood_strike';
+export type GameType = 'freefire' | 'valorant' | 'warzone' | 'cod_mobile' | 'fortnite' | 'lumershift' | 'cod-warzone' | 'blood_strike';
 export type TournamentType = 'bracket' | 'points' | 'duel';
 export type ScoringSystemType = 'lbff' | 'high_scoring' | 'simplified' | 'custom' | 'duel';
 export type MatchStatus = 'pending' | 'in_progress' | 'completed' | 'disputed' | 'cancelled';
@@ -371,10 +371,14 @@ export interface PrizeDistribution {
 }
 
 export const GAME_INFO: Record<GameType, { name: string; color: string }> = {
-  freefire: { name: 'Free Fire', color: 'freefire' },
-  valorant: { name: 'Valorant', color: 'valorant' },
-  'cod-warzone': { name: 'Warzone', color: 'cod' },
-  blood_strike: { name: 'Blood Strike', color: 'bloodstrike' },
+  freefire:     { name: 'Free Fire',    color: '#FF6B00' },
+  valorant:     { name: 'Valorant',     color: '#FF4655' },
+  warzone:      { name: 'CoD Warzone',  color: '#8BC34A' },
+  cod_mobile:   { name: 'CoD Mobile',  color: '#4CAF50' },
+  fortnite:     { name: 'Fortnite',    color: '#00BCD4' },
+  lumershift:   { name: 'Lumershift',  color: '#C084FC' },
+  'cod-warzone':{ name: 'Warzone',     color: '#8BC34A' }, // legacy
+  blood_strike: { name: 'Blood Strike',color: '#F59E0B' },
 };
 
 // Duel System Types

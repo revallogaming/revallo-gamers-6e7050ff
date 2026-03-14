@@ -44,9 +44,25 @@ function normalizeGameParam(raw: string | null | undefined): GameType | 'all' {
     all: 'all',
     freefire: 'freefire',
     free_fire: 'freefire',
+    warzone: 'warzone',
+    cod_warzone: 'warzone',
+    cod_mobile: 'cod_mobile',
+    valorant: 'valorant',
+    fortnite: 'fortnite',
+    lumershift: 'lumershift',
   };
   return aliases[s] ?? 'all';
 }
+
+const GAME_FILTERS: { key: GameType | 'all'; label: string; color: string }[] = [
+  { key: 'all',        label: 'Todos',       color: '#8b5cf6' },
+  { key: 'freefire',   label: 'Free Fire',   color: '#FF6B00' },
+  { key: 'warzone',    label: 'CoD Warzone', color: '#8BC34A' },
+  { key: 'cod_mobile', label: 'CoD Mobile',  color: '#4CAF50' },
+  { key: 'valorant',   label: 'Valorant',    color: '#FF4655' },
+  { key: 'fortnite',   label: 'Fortnite',    color: '#00BCD4' },
+  { key: 'lumershift', label: 'Lumershift',  color: '#C084FC' },
+];
 
 function TournamentsContent() {
   const searchParams = useSearchParams();
@@ -59,7 +75,7 @@ function TournamentsContent() {
 
   const [filters, setFilters] = useState<FilterType>(() => {
     const search = searchParams?.get("search") || undefined;
-    return { game: "freefire", search };
+    return { game: "all", search };
   });
 
   const { data, isLoading } = useInfiniteTournaments(filters);
@@ -144,7 +160,8 @@ function TournamentsContent() {
     return range;
   };
 
-  const gameTitle = "Free Fire";
+  const selectedGame = filters.game ?? 'all';
+  const gameTitle = selectedGame !== 'all' ? (GAME_INFO[selectedGame as GameType]?.name ?? 'Campeonatos') : 'Todos os Campeonatos';
 
   return (
     <>
@@ -194,6 +211,28 @@ function TournamentsContent() {
                 </Button>
               )}
             </div>
+          </div>
+
+          {/* Game Filter Pills */}
+          <div className="flex gap-2 overflow-x-auto px-6 py-3 border-b border-white/5 bg-black/30 backdrop-blur-sm scrollbar-hide">
+            {GAME_FILTERS.map((g) => {
+              const active = (filters.game ?? 'all') === g.key;
+              return (
+                <button
+                  key={g.key}
+                  onClick={() => handleGameChange(g.key)}
+                  className="shrink-0 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    borderColor: active ? g.color : 'rgba(255,255,255,0.15)',
+                    backgroundColor: active ? g.color + '28' : 'rgba(255,255,255,0.03)',
+                    color: active ? g.color : '#9ca3af',
+                    boxShadow: active ? `0 0 12px ${g.color}33` : 'none',
+                  }}
+                >
+                  {g.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Tournament Grid */}

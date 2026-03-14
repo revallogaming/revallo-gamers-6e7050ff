@@ -26,15 +26,15 @@ export function CTA() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter text-white leading-none mb-6">
-                SUA CARREIRA <br />
-                <span className="text-primary">COMEÇA AQUI</span>
+              <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter text-white leading-none mb-6 font-orbitron">
+                JOGA BEM? <br />
+                <span className="text-primary">COMPROVA.</span>
               </h2>
               <p className="text-gray-400 text-lg md:text-xl font-medium max-w-2xl mx-auto italic">
-                Não seja apenas mais um jogador. Entre para a elite, conquiste
-                seu espaço e seja pago por suas habilidades.{" "}
+                Campeonatos com premiação, apostados 4v4 com Pix e comunidades pro
+                em Free Fire, Warzone, Valorant, Fortnite e mais.{" "}
                 <span className="text-white">
-                  O próximo Apostado começa em minutos.
+                  Próximo apostado à sua espera.
                 </span>
               </p>
             </motion.div>

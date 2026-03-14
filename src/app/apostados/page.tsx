@@ -43,7 +43,7 @@ function ApostadosContent() {
   }, [user, authLoading, router]);
   
   const [filters, setFilters] = useState<{ game: GameType | "all"; search?: string }>({
-    game: "freefire",
+    game: "all",
     search: searchParams?.get("search") || undefined,
   });
 
@@ -110,7 +110,17 @@ function ApostadosContent() {
     router.push(`/apostados?${params.toString()}`);
   };
 
-  const gameTitle = "Free Fire";
+  const gameTitle = filters.game !== "all" ? (GAME_INFO[filters.game as GameType]?.name ?? "") : "";
+
+  const GAME_FILTERS: { key: GameType | 'all'; label: string; color: string }[] = [
+    { key: 'all',        label: 'Todos',       color: '#8b5cf6' },
+    { key: 'freefire',   label: 'Free Fire',   color: '#FF6B00' },
+    { key: 'warzone',    label: 'CoD Warzone', color: '#8BC34A' },
+    { key: 'cod_mobile', label: 'CoD Mobile',  color: '#4CAF50' },
+    { key: 'valorant',   label: 'Valorant',    color: '#FF4655' },
+    { key: 'fortnite',   label: 'Fortnite',    color: '#00BCD4' },
+    { key: 'lumershift', label: 'Lumershift',  color: '#C084FC' },
+  ];
 
   return (
     <>
@@ -145,10 +155,10 @@ function ApostadosContent() {
                 <Trophy className="h-8 w-8 text-primary" />
               </div>
               <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white mb-4">
-                Apostados <span className="text-primary italic">FF</span>
+                Apostados{gameTitle ? <span className="text-primary italic"> {gameTitle}</span> : null}
               </h1>
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-500 italic mb-8 max-w-md leading-relaxed">
-                Desafie oponentes em tempo real, aposte alto e domine o cenário competitivo do Free Fire.
+                Desafie oponentes em tempo real, aposte alto e domine o cenário competitivo.
               </p>
               
               <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
@@ -170,6 +180,28 @@ function ApostadosContent() {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Game Filter Pills */}
+          <div className="flex gap-2 overflow-x-auto px-6 pb-4 scrollbar-hide">
+            {GAME_FILTERS.map((g) => {
+              const active = (filters.game ?? 'all') === g.key;
+              return (
+                <button
+                  key={g.key}
+                  onClick={() => handleGameChange(g.key)}
+                  className="shrink-0 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    borderColor: active ? g.color : 'rgba(255,255,255,0.15)',
+                    backgroundColor: active ? g.color + '28' : 'rgba(255,255,255,0.03)',
+                    color: active ? g.color : '#9ca3af',
+                    boxShadow: active ? `0 0 12px ${g.color}33` : 'none',
+                  }}
+                >
+                  {g.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Main Layout Grid */}
